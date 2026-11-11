@@ -1,4 +1,7 @@
+using Anarres.Core.Export;
 using Anarres.Core.Settings;
+using Anarres.Core.Spells;
+using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -201,6 +204,7 @@ public sealed class MainWindow : Window
         file.Items.Add(Item("_Project settings...", OpenSettingsAsync));
         file.Items.Add(Item("_Import...", OpenImportAsync));
         file.Items.Add(Item("_Export and deploy...", OpenExportAsync));
+        file.Items.Add(Item("_Apply to server and client", ApplyAsync, "F6"));
         file.Items.Add(new Separator());
         file.Items.Add(Item("_Save", SaveCurrentAsync, "Ctrl+S"));
         file.Items.Add(Item("Save _all", SaveAllAsync));
@@ -238,12 +242,15 @@ public sealed class MainWindow : Window
         menu.Items.Add(help);
 
         Button import = Ui.AsyncButton("Import", OpenImportAsync);
-        Button export = Ui.AsyncButton("Export", OpenExportAsync, accent: true);
+        Button export = Ui.AsyncButton("Export", OpenExportAsync);
+        Button apply = Ui.AsyncButton("Apply", ApplyAsync, accent: true);
+        ToolTip.SetTip(apply, "Save, then put the changes in place: the server's dbc folder, the client patch and, " +
+                              "as set in Project settings, acore_world");
         ToolTip.SetTip(import, "Bring .dbc files into the project from a folder or the client's MPQs");
         ToolTip.SetTip(export, "Write .dbc files, copy them to the server and build the client patch MPQ");
         StackPanel tabs = Ui.Horizontal(_spellTab, _tableTab);
         tabs.Spacing = 2;
-        StackPanel actions = Ui.Horizontal(import, export);
+        StackPanel actions = Ui.Horizontal(import, export, apply);
         actions.VerticalAlignment = VerticalAlignment.Center;
 
         Grid bar = new Grid
@@ -416,6 +423,73 @@ public sealed class MainWindow : Window
         ExportWindow dialog = new ExportWindow(_session);
         await dialog.ShowDialog(this);
         _session.Settings.Save();
+    }
+
+    // The one-click deploy: save, then write the files where the server and client read them
+    private async Task ApplyAsync()
+    {
+        CommitEdits();
+        if (!await EnsureStoreAsync())
+            return;
+        ProjectSettings settings = _session.Settings;
+        List<string> plan = new List<string>();
+        if (settings.ApplyToServer && settings.ServerDbc().Length > 0)
+            plan.Add("copy them to " + settings.ServerDbc() + (settings.ApplyBackupServer
+                                                                  ? ", keeping the server's own copies once"
+                                                                  : string.Empty));
+        if (settings.ApplyPatch && settings.ClientData().Length > 0)
+            plan.Add("build " + settings.PatchPath());
+        if (settings.ApplyClearClientCache && settings.ClientData().Length > 0)
+            plan.Add("empty " + settings.ClientCache());
+        if (settings.ApplyWorldDatabase)
+            plan.Add("put changed rows in " + settings.WorldDatabase + " on " + settings.WorldHost);
+        if (plan.Count == 0)
+        {
+            await Dialogs.MessageAsync(this, "Apply", "Apply has nothing to do yet. Set the server data folder " +
+                                                      "and the WoW client folder, and choose the steps, in File > " +
+                                                      "Project settings.");
+            return;
+        }
+
+        List<string> files = settings.ExportTables.Count > 0 ? settings.ExportTables
+                                                             : new List<string> { SpellRecord.FILE };
+        List<string> unsaved = _session.ModifiedTables.Select(table => table.Definition.File).ToList();
+        string message = (unsaved.Count > 0 ? "Save " + string.Join(", ", unsaved) + ", then write " : "Write ") +
+                         string.Join(", ", files) + ", and " + string.Join("; ", plan) + ".";
+        if (_options.ConfirmApply && !await Dialogs.ConfirmAsync(this, "Apply", message, "Apply"))
+            return;
+
+        await SaveAllAsync();
+        if (_session.ModifiedTables.Any())
+            return;
+        try
+        {
+            IDbcStore store = await _session.StoreAsync();
+            Progress<(string File, double Done)> progress = new Progress<(string File, double Done)>(update =>
+            {
+                if (update.File.Length > 0)
+                    SetStatus("Applying " + update.File + "...");
+            });
+            ApplyResult result = await Task.Run(() => Deployment.ApplyAsync(store, settings, files,
+                                                                             _session.Definitions, progress));
+            List<string> lines = new List<string>(result.Done);
+            lines.AddRange(result.Problems);
+            if (System.Diagnostics.Process.GetProcessesByName("worldserver").Length > 0)
+                lines.Add("The worldserver is running: restart it to load the new files.");
+            if (System.Diagnostics.Process.GetProcessesByName("Wow").Length > 0)
+                lines.Add("WoW is open: the patch loads when it starts again.");
+            SetStatus(result.Problems.Count == 0 ? "Applied." : "Applied, with problems.");
+            await Dialogs.MessageAsync(this, result.Problems.Count == 0 ? "Applied" : "Applied, with problems",
+                                       string.Join("\n", lines.Select(line => "- " + line)));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+                                              InvalidOperationException or System.Data.Common.DbException)
+        {
+            await Dialogs.MessageAsync(this, "Not applied", "Apply stopped: " + exception.Message +
+                                                            (exception is IOException
+                                                                 ? " A file may be in use; close WoW and try again."
+                                                                 : string.Empty));
+        }
     }
 
     private async Task BuildPatchFromFilesAsync()

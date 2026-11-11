@@ -45,6 +45,7 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _hex = new CheckBox { Content = "Show Flags, Mask and Attributes columns in hex" };
     private readonly ComboBox _start = new ComboBox { ItemsSource = StartNames, Width = 240 };
     private readonly CheckBox _confirm = new CheckBox { Content = "Ask before deleting spells and rows" };
+    private readonly CheckBox _confirmApply = new CheckBox { Content = "Show what Apply will do and ask first" };
     private readonly ComboBox _undo = new ComboBox { Width = 120 };
     private readonly CheckBox _window = new CheckBox { Content = "Remember the window's size and position" };
     private Dictionary<string, Theme> _listedThemes = new Dictionary<string, Theme>(StringComparer.OrdinalIgnoreCase);
@@ -71,6 +72,7 @@ public sealed class OptionsWindow : Window
         _hex.IsChecked = _options.FlagsInHex;
         _start.SelectedIndex = (int)_options.StartIn;
         _confirm.IsChecked = _options.ConfirmDeletes;
+        _confirmApply.IsChecked = _options.ConfirmApply;
         _undo.ItemsSource = AppOptions.UndoSteps.Select(steps => steps.ToString("N0", CultureInfo.InvariantCulture))
                                       .ToList();
         _undo.SelectedIndex = Math.Max(0, Array.IndexOf(AppOptions.UndoSteps, _options.MaxUndoSteps));
@@ -89,6 +91,7 @@ public sealed class OptionsWindow : Window
         _pages[GENERAL] = Page(Ui.Title("General"),
                                Ui.Row("Start in", _start),
                                _confirm,
+                               _confirmApply,
                                Ui.Row("Undo steps per table", _undo),
                                _window);
 
@@ -283,6 +286,7 @@ public sealed class OptionsWindow : Window
         options.FlagsInHex = _hex.IsChecked == true;
         options.StartIn = (StartEditor)Math.Max(0, _start.SelectedIndex);
         options.ConfirmDeletes = _confirm.IsChecked == true;
+        options.ConfirmApply = _confirmApply.IsChecked == true;
         options.MaxUndoSteps = AppOptions.UndoSteps[Math.Max(0, _undo.SelectedIndex)];
         options.RememberWindow = _window.IsChecked == true;
         return options;

@@ -50,6 +50,27 @@ public sealed class SettingsWindow : Window
     private readonly TextBox _patch = new TextBox { Width = 200 };
     private readonly CheckBox _patchInLocale = new CheckBox { Content = "Put the patch in Data's locale folder" };
     private readonly TextBox _definitions = new TextBox();
+    private readonly TextBlock _serverResolved = new TextBlock { Classes = { "hint" } };
+    private readonly TextBlock _clientResolved = new TextBlock { Classes = { "hint" } };
+    private readonly CheckBox _applyServer = new CheckBox { Content = "Copy the .dbc files to the server" };
+    private readonly CheckBox _applyBackup = new CheckBox
+    {
+        Content = "Keep the server's own copy of each file the first time it's replaced"
+    };
+    private readonly CheckBox _applyPatch = new CheckBox { Content = "Build the client patch MPQ" };
+    private readonly CheckBox _applyWorld = new CheckBox
+    {
+        Content = "Put rows changed from the clean files into acore_world's _dbc tables"
+    };
+    private readonly CheckBox _applyCache = new CheckBox
+    {
+        Content = "Empty the client's Cache folder, so it shows the new spell text"
+    };
+    private readonly TextBox _worldHost = new TextBox { Width = 200 };
+    private readonly TextBox _worldPort = new TextBox { Width = 80 };
+    private readonly TextBox _worldUser = new TextBox { Width = 200 };
+    private readonly TextBox _worldPassword = new TextBox { Width = 200, PasswordChar = '*' };
+    private readonly TextBox _worldDatabase = new TextBox { Width = 200 };
     private readonly StackPanel _mysqlPanel;
 
     public SettingsWindow(ProjectSettings settings)
@@ -76,6 +97,21 @@ public sealed class SettingsWindow : Window
         _patch.Text = settings.PatchName;
         _patchInLocale.IsChecked = settings.PatchInLocaleFolder;
         _definitions.Text = settings.DefinitionsFolder;
+        _applyServer.IsChecked = settings.ApplyToServer;
+        _applyBackup.IsChecked = settings.ApplyBackupServer;
+        _applyPatch.IsChecked = settings.ApplyPatch;
+        _applyWorld.IsChecked = settings.ApplyWorldDatabase;
+        _applyCache.IsChecked = settings.ApplyClearClientCache;
+        _worldHost.Text = settings.WorldHost;
+        _worldPort.Text = settings.WorldPort.ToString(CultureInfo.InvariantCulture);
+        _worldUser.Text = settings.WorldUser;
+        _worldPassword.Text = settings.WorldPassword;
+        _worldDatabase.Text = settings.WorldDatabase;
+        _server.TextChanged += (_, _) => ShowResolved();
+        _client.TextChanged += (_, _) => ShowResolved();
+        _locale.TextChanged += (_, _) => ShowResolved();
+        _patch.TextChanged += (_, _) => ShowResolved();
+        _patchInLocale.IsCheckedChanged += (_, _) => ShowResolved();
         _sqlite.IsChecked = settings.Store == StoreKind.Sqlite;
         _mysql.IsChecked = settings.Store == StoreKind.MySql;
 
@@ -110,16 +146,30 @@ public sealed class SettingsWindow : Window
                                    Ui.Row("Clean DBC folder", Ui.FolderPicker(this, _source, "Clean DBC folder")),
                                    Ui.Hint("Unmodified 3.3.5a .dbc files, such as the dbc folder of AzerothCore's " +
                                            "client data, or an extracted DBFilesClient folder."),
-                                   Ui.Row("WoW Data folder", Ui.FolderPicker(this, _client, "WoW Data folder")),
                                    Ui.Row("Locale", _locale)));
-        body.Children.Add(Ui.Group("Export and deploy",
-                                   Ui.Row("Export folder", Ui.FolderPicker(this, _export, "Export folder")),
-                                   Ui.Row("Server dbc folder", Ui.FolderPicker(this, _server, "Server dbc folder")),
-                                   Ui.Hint("The worldserver's DataDir dbc folder; exported files are copied there."),
+        body.Children.Add(Ui.Group("Server and client",
+                                   Ui.Row("Server data folder", Ui.FolderPicker(this, _server, "Server data folder")),
+                                   Ui.Row(string.Empty, _serverResolved),
+                                   Ui.Hint("The worldserver's DataDir (the folder with dbc, maps and vmaps), or its " +
+                                           "dbc folder."),
+                                   Ui.Row("WoW client folder", Ui.FolderPicker(this, _client, "WoW client folder")),
+                                   Ui.Row(string.Empty, _clientResolved),
+                                   Ui.Hint("The folder with Wow.exe, or its Data folder. Its MPQs give icons and " +
+                                           "clean files, and the patch goes into it."),
                                    Ui.Row("Patch name", _patch),
                                    Ui.Row(string.Empty, _patchInLocale),
-                                   Ui.Hint("The patch is written to the WoW Data folder above. Later letters win: " +
-                                           "patch-A.MPQ loads after patch-3.MPQ.")));
+                                   Ui.Hint("Later letters win: patch-A.MPQ loads after patch-3.MPQ."),
+                                   Ui.Row("Export folder", Ui.FolderPicker(this, _export, "Export folder"))));
+        body.Children.Add(Ui.Group("Apply (one click: save, then put the changes in place)",
+                                   _applyServer, _applyBackup, _applyPatch, _applyCache, _applyWorld,
+                                   Ui.Row("World database", _worldHost, _worldPort),
+                                   Ui.Row("User", _worldUser),
+                                   Ui.Row("Password", _worldPassword),
+                                   Ui.Row("Database", _worldDatabase),
+                                   Ui.Hint("Apply writes the tables ticked in the last export (Spell.dbc to start " +
+                                           "with). Rows for acore_world are only those that differ from the clean " +
+                                           "files; the worldserver loads them over its .dbc files.")));
+        ShowResolved();
         body.Children.Add(Ui.Group("Other",
                                    Ui.Row("Extra definitions", Ui.FolderPicker(this, _definitions,
                                                                                "Definitions folder")),
@@ -176,9 +226,36 @@ public sealed class SettingsWindow : Window
                                                                : _patch.Text.Trim(),
             PatchInLocaleFolder = _patchInLocale.IsChecked == true,
             DefinitionsFolder = (_definitions.Text ?? string.Empty).Trim(),
-            ExportTables = _original.ExportTables
+            ExportTables = _original.ExportTables,
+            ApplyToServer = _applyServer.IsChecked == true,
+            ApplyBackupServer = _applyBackup.IsChecked == true,
+            ApplyPatch = _applyPatch.IsChecked == true,
+            ApplyWorldDatabase = _applyWorld.IsChecked == true,
+            ApplyClearClientCache = _applyCache.IsChecked == true,
+            WorldHost = (_worldHost.Text ?? string.Empty).Trim(),
+            WorldPort = int.TryParse(_worldPort.Text, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                     out int worldPort) ? worldPort : MySqlSettings.DEFAULT_PORT,
+            WorldUser = (_worldUser.Text ?? string.Empty).Trim(),
+            WorldPassword = _worldPassword.Text ?? string.Empty,
+            WorldDatabase = (_worldDatabase.Text ?? ProjectSettings.DEFAULT_WORLD_DATABASE).Trim()
         };
         return settings;
+    }
+
+    // Where files will actually go, so a DataDir or WoW folder can be checked before saving
+    private void ShowResolved()
+    {
+        string server = ProjectSettings.ResolveServerDbc(_server.Text ?? string.Empty);
+        _serverResolved.Text = server.Length == 0 ? "Not set." : "Files go to " + server;
+        ProjectSettings probe = new ProjectSettings
+        {
+            ClientDataFolder = _client.Text ?? string.Empty,
+            Locale = (_locale.Text ?? ProjectSettings.DEFAULT_LOCALE).Trim(),
+            PatchName = string.IsNullOrWhiteSpace(_patch.Text) ? ProjectSettings.DEFAULT_PATCH_NAME
+                                                               : _patch.Text.Trim(),
+            PatchInLocaleFolder = _patchInLocale.IsChecked == true
+        };
+        _clientResolved.Text = probe.ClientData().Length == 0 ? "Not set." : "The patch goes to " + probe.PatchPath();
     }
 
     private async Task TestAsync()

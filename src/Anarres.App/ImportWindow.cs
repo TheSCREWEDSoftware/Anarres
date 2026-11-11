@@ -1,6 +1,7 @@
 using Anarres.Core;
 using Anarres.Core.Export;
 using Anarres.Core.Mpq;
+using Anarres.Core.Settings;
 using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
@@ -28,7 +29,7 @@ public sealed class ImportWindow : Window
         Content = "A folder of .dbc files",
         GroupName = "from"
     };
-    private readonly RadioButton _fromClient = new RadioButton { Content = "The client's MPQs (WoW Data folder)",
+    private readonly RadioButton _fromClient = new RadioButton { Content = "The client's MPQs (WoW folder)",
                                                                  GroupName = "from" };
     private readonly TextBox _folder = new TextBox();
     private readonly TextBox _client = new TextBox();
@@ -73,7 +74,7 @@ public sealed class ImportWindow : Window
         top.Children.Add(_fromFolder);
         top.Children.Add(Ui.Row("Folder", Ui.FolderPicker(this, _folder, "Folder of .dbc files")));
         top.Children.Add(_fromClient);
-        top.Children.Add(Ui.Row("WoW Data folder", Ui.FolderPicker(this, _client, "WoW Data folder")));
+        top.Children.Add(Ui.Row("WoW client folder", Ui.FolderPicker(this, _client, "WoW client folder")));
         top.Children.Add(Ui.Row("Locale", _locale));
         top.Children.Add(Ui.Hint("Importing replaces the project's copy of each ticked table. Files without a " +
                                  "known layout get one guessed from their data; rename its columns later in the " +
@@ -125,7 +126,7 @@ public sealed class ImportWindow : Window
             }
             else
             {
-                string data = (_client.Text ?? string.Empty).Trim();
+                string data = ProjectSettings.ResolveClientData(_client.Text ?? string.Empty);
                 string locale = (_locale.Text ?? string.Empty).Trim();
                 if (Directory.Exists(data))
                     names = await Task.Run(() =>
@@ -201,9 +202,9 @@ public sealed class ImportWindow : Window
             }
             else
             {
-                string data = (_client.Text ?? string.Empty).Trim();
+                string data = ProjectSettings.ResolveClientData(_client.Text ?? string.Empty);
                 string locale = (_locale.Text ?? string.Empty).Trim();
-                _session.Settings.ClientDataFolder = data;
+                _session.Settings.ClientDataFolder = (_client.Text ?? string.Empty).Trim();
                 _session.Settings.Locale = locale;
                 results = await Task.Run(() => Deployment.ImportClientAsync(store, data, locale, _session.Definitions,
                                                                              chosen, progress));

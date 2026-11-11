@@ -29,8 +29,8 @@ public sealed class ExportWindow : Window
         Height = WINDOW_HEIGHT;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-        string serverFolder = session.Settings.ServerDbcFolder;
-        string dataFolder = session.Settings.ClientDataFolder;
+        string serverFolder = session.Settings.ServerDbc();
+        string dataFolder = session.Settings.ClientData();
         _server.Content = serverFolder.Length > 0 ? "Copy to the server: " + serverFolder
                                                   : "Copy to the server (set its dbc folder in Project settings)";
         _server.IsEnabled = serverFolder.Length > 0;

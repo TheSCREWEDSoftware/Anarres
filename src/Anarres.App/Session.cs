@@ -69,7 +69,7 @@ public sealed class Session : IDisposable
         {
             try
             {
-                return new IconLibrary(settings.ClientDataFolder, settings.Locale);
+                return new IconLibrary(settings.ClientData(), settings.Locale);
             }
             catch (Exception exception) when (exception is IOException or InvalidDataException or
                                                   UnauthorizedAccessException)
