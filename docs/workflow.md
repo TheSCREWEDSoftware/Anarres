@@ -44,6 +44,9 @@ Import once; the project keeps the data from then on.
 
 Unsaved changes are marked in the status line; Anarres asks before closing or importing over them.
 
+Shortcuts: Ctrl+S saves, Ctrl+Z and Ctrl+Y undo and redo, Ctrl+F goes to the search box or the filter, and
+Ctrl+, opens the options.
+
 ## 4. Export and deploy
 
 **Export** writes the ticked tables as `.dbc` files, then, when ticked:

@@ -18,7 +18,8 @@ with an Avalonia interface, so it runs on Windows and Linux, and it shares its l
   - Effects, auras, targets, mechanics, powers and the rest are picked from named lists. Attribute, school,
     proc, interrupt, target-flag and shapeshift masks show the names of their set bits; `...` opens the bit list,
     with each bit's value and AzerothCore's name and notes.
-  - Every field has a readable label; its tooltip gives the `spell_dbc` column name.
+  - Every field has a readable label; its tooltip gives the `spell_dbc` column name. Misc values say what they
+    mean for the chosen effect or aura (a stat, a power, a school mask, a creature entry...).
   - Cast times, durations, ranges, radii, icons and other spells are shown by what they mean, not just their index.
   - Spell icons from the client's MPQs (with the WoW Data folder set), in the header and in an icon picker.
   - A Visual tab for the spell's SpellVisual row and its kits; "own copy" gives the spell its own visual or kit so
@@ -38,6 +39,13 @@ with an Avalonia interface, so it runs on Windows and Linux, and it shares its l
 ![The DBC editor with Spell.dbc](docs/screenshots/dbc-editor.png)
 
 ![Picking attribute bits, with AzerothCore's names and notes](docs/screenshots/flags.png)
+
+## Themes and options
+
+**View > Options** sets the look (System, Dark or Light), the colours, text sizes, the language of spell names,
+which editor opens first, confirmations, undo depth and more. Colours come built in, as ready-made themes (Urras,
+Frost, Fel, Horde, Alliance, Parchment), or as your own themes, made in the theme editor and kept as files in the
+same format as Urras's. See [docs/themes.md](docs/themes.md).
 
 ## The workflow
 
