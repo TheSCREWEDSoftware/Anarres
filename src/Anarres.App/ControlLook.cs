@@ -18,9 +18,9 @@ public static class ControlLook
     private const byte SELECTION_ALPHA = 0x40;
     private const byte SELECTION_HOVER_ALPHA = 0x55;
 
-    public static void Apply(ThemeBase theme, IResourceDictionary resources)
+    public static void Apply(Theme theme, IResourceDictionary resources)
     {
-        Color accent = Color.Parse(ThemeColours.Colour(theme, ThemeColours.ACCENT));
+        Color accent = Color.Parse(theme.Colour(ThemeColours.ACCENT));
         resources["SystemAccentColor"] = accent;
         for (int shade = 1; shade <= SHADES; shade++)
         {
@@ -89,9 +89,9 @@ public static class ControlLook
             "TextControlPlaceholderForegroundPointerOver", "TextControlPlaceholderForegroundFocused");
     }
 
-    private static IBrush Brush(ThemeBase theme, string key)
+    private static IBrush Brush(Theme theme, string key)
     {
-        return new SolidColorBrush(Color.Parse(ThemeColours.Colour(theme, key)));
+        return new SolidColorBrush(Color.Parse(theme.Colour(key)));
     }
 
     private static void Set(IResourceDictionary resources, IBrush brush, params string[] keys)

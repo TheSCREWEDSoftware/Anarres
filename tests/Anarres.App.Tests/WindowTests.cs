@@ -1,4 +1,5 @@
 using Anarres.Core.Dbc;
+using Anarres.Core.Settings;
 using Anarres.Core.Spells;
 using Avalonia.Controls;
 
@@ -9,7 +10,7 @@ public static class WindowTests
     public static async Task MainWindowLoadsSpells()
     {
         using TestProject project = await TestProject.CreateAsync();
-        MainWindow window = new MainWindow(project.Settings);
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
         window.Show();
         await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
         Assert.Equal(3, window.SpellEditor.Spells!.Rows.Count, "spells");
@@ -20,7 +21,7 @@ public static class WindowTests
     public static async Task SpellEditsUndoAndSave()
     {
         using TestProject project = await TestProject.CreateAsync();
-        MainWindow window = new MainWindow(project.Settings);
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
         window.Show();
         await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
         DbcTable spells = window.SpellEditor.Spells!;
@@ -43,7 +44,7 @@ public static class WindowTests
     public static async Task GridSortsAndHides()
     {
         using TestProject project = await TestProject.CreateAsync();
-        MainWindow window = new MainWindow(project.Settings);
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
         window.Show();
         await window.ShowTablesForTestAsync();
         await window.TableEditor.OpenForTestAsync(SpellRecord.FILE);
@@ -68,7 +69,7 @@ public static class WindowTests
     public static async Task DialogsOpen()
     {
         using TestProject project = await TestProject.CreateAsync();
-        MainWindow window = new MainWindow(project.Settings);
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
         window.Show();
         await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
         DbcDefinition spell = DbcDefinitions.Default.Find(SpellRecord.FILE)!;
@@ -79,7 +80,9 @@ public static class WindowTests
             new ExportWindow(window.Session),
             new ColumnsWindow(spell, project.Settings.DefinitionsFolder),
             new WorldDatabaseWindow(project.Settings, 133, "Fireball"),
-            new FlagsDialog("Attributes", SpellEnums.Get("Attributes"), 0x10000)
+            new FlagsDialog("Attributes", SpellEnums.Get("Attributes"), 0x10000),
+            new OptionsWindow(new AppOptions(), OptionsWindow.GENERAL),
+            new ThemeEditorWindow(Theme.BuiltIn(ThemeBase.Light), new ThemeStore(project.Folder))
         };
         foreach (Window dialog in dialogs)
         {
@@ -88,6 +91,29 @@ public static class WindowTests
             dialog.Close();
         }
 
+        window.Session.Close();
+        window.Close();
+    }
+
+    public static async Task OptionsApply()
+    {
+        using TestProject project = await TestProject.CreateAsync();
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
+        window.Show();
+        await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
+        AppOptions options = new AppOptions
+        {
+            Look = ThemeLook.Light,
+            Colours = ThemePresets.PARCHMENT,
+            GridFontSize = 16,
+            FlagsInHex = false
+        };
+        App.UseOptions(options);
+        window.SpellEditor.UseOptions(options);
+        window.TableEditor.UseOptions(options);
+        Assert.Equal(ThemePresets.PARCHMENT, ThemeBrushes.Current.Name, "theme in use");
+        Assert.Equal(16.0, window.TableEditor.Grid.CellFontSize, "grid text size");
+        App.UseOptions(new AppOptions());
         window.Session.Close();
         window.Close();
     }

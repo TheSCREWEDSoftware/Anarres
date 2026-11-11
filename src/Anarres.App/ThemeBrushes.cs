@@ -9,9 +9,9 @@ public static class ThemeBrushes
 {
     public const string RESOURCE_PREFIX = "Anarres.";
 
-    private static Dictionary<string, IBrush> _brushes = Build(ThemeBase.Dark);
+    private static Dictionary<string, IBrush> _brushes = Build(Theme.BuiltIn(ThemeBase.Dark));
 
-    public static ThemeBase Current { get; private set; } = ThemeBase.Dark;
+    public static Theme Current { get; private set; } = Theme.BuiltIn(ThemeBase.Dark);
 
     public static IBrush Text => Get(ThemeColours.TEXT);
     public static IBrush MutedText => Get(ThemeColours.MUTED_TEXT);
@@ -23,7 +23,7 @@ public static class ThemeBrushes
     public static IBrush Surface => Get(ThemeColours.SURFACE);
     public static IBrush Border => Get(ThemeColours.BORDER);
 
-    public static void Use(ThemeBase theme, IResourceDictionary? resources)
+    public static void Use(Theme theme, IResourceDictionary? resources)
     {
         Current = theme;
         _brushes = Build(theme);
@@ -41,14 +41,14 @@ public static class ThemeBrushes
 
     public static Color ColourOf(string key)
     {
-        return Color.Parse(ThemeColours.Colour(Current, key));
+        return Color.Parse(Current.Colour(key));
     }
 
-    private static Dictionary<string, IBrush> Build(ThemeBase theme)
+    private static Dictionary<string, IBrush> Build(Theme theme)
     {
         Dictionary<string, IBrush> brushes = new Dictionary<string, IBrush>(StringComparer.Ordinal);
         foreach (ThemeColour colour in ThemeColours.All)
-            brushes[colour.Key] = new SolidColorBrush(Color.Parse(ThemeColours.Colour(theme, colour.Key)));
+            brushes[colour.Key] = new SolidColorBrush(Color.Parse(theme.Colour(colour.Key)));
         return brushes;
     }
 }

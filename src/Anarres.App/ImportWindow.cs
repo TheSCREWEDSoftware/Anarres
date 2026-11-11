@@ -169,6 +169,18 @@ public sealed class ImportWindow : Window
             return;
         }
 
+        // AzerothCore's tables override the client's files row by row, so a whole file there overrides every row
+        if (_session.Settings.Store == Anarres.Core.Settings.StoreKind.MySql &&
+            _session.Settings.MySqlNaming == TableNaming.AzerothCore &&
+            !await Dialogs.ConfirmAsync(this, "Import into AzerothCore's tables",
+                                        "This replaces the rows of " + string.Join(", ", chosen.Take(5)) +
+                                        (chosen.Count > 5 ? " and more" : string.Empty) + " in " +
+                                        _session.Settings.MySqlDatabase + " with every row of the files. The " +
+                                        "worldserver then loads all of them over its .dbc files, including " +
+                                        "AzerothCore's own fixes in those tables. Usually only changed rows " +
+                                        "belong there; use DBC names for a full working copy.", "Import anyway"))
+            return;
+
         IDbcStore store = await _session.StoreAsync(createDatabase: true);
         Progress<(string File, double Done)> progress = new Progress<(string File, double Done)>(update =>
         {

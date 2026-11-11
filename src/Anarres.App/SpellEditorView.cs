@@ -42,6 +42,13 @@ public sealed class SpellEditorView : Grid
     private DbcTable? _spells;
     private TabControl? _tabs;
     private IconImages? _images;
+    private Border? _previewBox;
+    private string _locale = SpellRecord.ENGLISH;
+    private bool _showRank = true;
+    private bool _showPreview = true;
+    private bool _confirmDeletes = true;
+    // The spell to show when Spell.dbc first loads, from the last run
+    private uint? _reopen;
 
     public SpellEditorView(MainWindow window, Session session)
     {
@@ -80,6 +87,31 @@ public sealed class SpellEditorView : Grid
 
     public DbcTable? Spells => _spells;
 
+    public uint? CurrentSpellId => (_list.SelectedItem as SpellItem)?.Id;
+
+    public void FocusSearch()
+    {
+        _search.Focus();
+        _search.SelectAll();
+    }
+
+    public void UseOptions(AppOptions options)
+    {
+        bool listChanged = _locale != options.DisplayLocale || _showRank != options.ShowRankInList;
+        _locale = options.DisplayLocale;
+        _showRank = options.ShowRankInList;
+        _showPreview = options.ShowTooltipPreview;
+        _confirmDeletes = options.ConfirmDeletes;
+        if (_spells == null)
+            _reopen = options.ReopenLastSpell && options.LastSpellId > 0 ? options.LastSpellId : null;
+        if (_previewBox != null)
+            _previewBox.IsVisible = _showPreview;
+        if (listChanged && _spells != null)
+            Filter();
+        UpdateHeading();
+        UpdatePreview();
+    }
+
     public async Task LoadAsync()
     {
         _spells = null;
@@ -110,6 +142,9 @@ public sealed class SpellEditorView : Grid
             await _visual.LoadAsync(_spells);
             BuildEditor(_spells.Definition);
             Filter();
+            if (_reopen is { } last && _spells.FindRow(last) >= 0)
+                Select(last);
+            _reopen = null;
             if (_list.SelectedIndex < 0 && _list.ItemCount > 0)
                 _list.SelectedIndex = 0;
             _window.SetStatus("Loaded " + _spells.Rows.Count.ToString("N0", CultureInfo.InvariantCulture) +
@@ -127,14 +162,34 @@ public sealed class SpellEditorView : Grid
 
     private DbcTable? Icons { get; set; }
 
+    // Selects a spell in the list; the search is cleared first when it hides the spell
     public void Select(uint id)
     {
         if (_spells == null)
             return;
-        _search.Text = id.ToString(CultureInfo.InvariantCulture);
-        Filter();
-        if (_list.ItemCount > 0)
-            _list.SelectedIndex = 0;
+        int index = IndexInList(id);
+        if (index < 0)
+        {
+            // A new spell isn't listed yet, and the search may hide an existing one
+            if ((_search.Text ?? string.Empty).Length > 0)
+            {
+                _search.Text = string.Empty;
+                _searchTimer.Stop();
+            }
+
+            Filter();
+            index = IndexInList(id);
+        }
+
+        if (index < 0)
+            return;
+        _list.SelectedIndex = index;
+        _list.ScrollIntoView(index);
+    }
+
+    private int IndexInList(uint id)
+    {
+        return _list.ItemsSource is List<SpellItem> items ? items.FindIndex(item => item.Id == id) : -1;
     }
 
     private Control BuildListPanel()
@@ -291,6 +346,8 @@ public sealed class SpellEditorView : Grid
             Padding = new Thickness(10),
             Child = Ui.Vertical(6, Ui.Hint("Tooltip preview"), _preview, Ui.Hint("Buff preview"), _auraPreview)
         }, Border.BackgroundProperty, ThemeColours.RAISED);
+        previewBox.IsVisible = _showPreview;
+        _previewBox = previewBox;
 
         return Ui.Vertical(0,
             Ui.Group("Name and text",
@@ -431,8 +488,10 @@ public sealed class SpellEditorView : Grid
             Ui.Group("Details",
                      Enum("Mechanic", Column("EffectMechanic"), SpellEnums.MECHANIC),
                      Cell("Aura period (ms)", Column("EffectAuraPeriod")),
-                     Cell("Misc value", Column("EffectMiscValue")),
-                     Cell("Misc value B", Column("EffectMiscValueB")),
+                     new MiscField(_binding, Column("EffectMiscValue"), Column("Effect"), Column("EffectAura"),
+                                   second: false, "Misc value").View,
+                     new MiscField(_binding, Column("EffectMiscValueB"), Column("Effect"), Column("EffectAura"),
+                                   second: true, "Misc value B").View,
                      Lookup("Trigger spell", Column("EffectTriggerSpell"), SpellName),
                      Cell("Item created", Column("EffectItemType")),
                      Named(Ui.Row("Affected family mask",
@@ -618,16 +677,20 @@ public sealed class SpellEditorView : Grid
         if (_spells == null)
             return;
         DbcTable table = _spells;
-        int nameColumn = table.Definition.IndexOf("Name_Lang_enUS");
-        int rankColumn = table.Definition.IndexOf("NameSubtext_Lang_enUS");
+        int nameColumn = table.Definition.IndexOf("Name_Lang_" + _locale);
+        int rankColumn = table.Definition.IndexOf("NameSubtext_Lang_" + _locale);
+        int englishName = table.Definition.IndexOf("Name_Lang_" + SpellRecord.ENGLISH);
+        int englishRank = table.Definition.IndexOf("NameSubtext_Lang_" + SpellRecord.ENGLISH);
         string query = (_search.Text ?? string.Empty).Trim();
         Func<int, bool> matches = SpellSearch.Build(table, query);
         List<SpellItem> items = new List<SpellItem>();
         for (int row = 0; row < table.Rows.Count; ++row)
         {
-            if (matches(row))
-                items.Add(new SpellItem(table.Key(row), table.GetString(row, nameColumn),
-                                        table.GetString(row, rankColumn)));
+            if (!matches(row))
+                continue;
+            string name = Localised(table, row, nameColumn, englishName);
+            string rank = _showRank ? Localised(table, row, rankColumn, englishRank) : string.Empty;
+            items.Add(new SpellItem(table.Key(row), name, rank));
         }
 
         uint? selected = (_list.SelectedItem as SpellItem)?.Id;
@@ -636,6 +699,12 @@ public sealed class SpellEditorView : Grid
                       table.Rows.Count.ToString("N0", CultureInfo.InvariantCulture) + " spells";
         if (selected is { } id && items.FindIndex(item => item.Id == id) is var index and >= 0)
             _list.SelectedIndex = index;
+    }
+
+    private static string Localised(DbcTable table, int row, int column, int english)
+    {
+        string text = column >= 0 ? table.GetString(row, column) : string.Empty;
+        return text.Length > 0 || english < 0 ? text : table.GetString(row, english);
     }
 
     private void ShowSelected()
@@ -660,9 +729,11 @@ public sealed class SpellEditorView : Grid
         if (!_binding.IsBound)
             return;
         SpellRecord spell = new SpellRecord(_spells!, _binding.Row);
-        _title.Text = spell.Name.Length == 0 ? "(no name)" : spell.Name;
+        string name = spell.Text("Name", _locale);
+        string rank = spell.Text("NameSubtext", _locale);
+        _title.Text = name.Length == 0 ? "(no name)" : name;
         _subtitle.Text = "Spell " + spell.Id.ToString(CultureInfo.InvariantCulture) +
-                         (spell.Rank.Length > 0 ? "  -  " + spell.Rank : string.Empty) + "  -  " +
+                         (rank.Length > 0 ? "  -  " + rank : string.Empty) + "  -  " +
                          SpellEnums.Get(SpellEnums.SCHOOL).Describe(spell.U("SchoolMask"));
         _unsaved.IsVisible = _session.ModifiedTables.Any();
         _headerIcon.Source = _images?.Get(spell.U("SpellIconID"));
@@ -674,8 +745,8 @@ public sealed class SpellEditorView : Grid
         if (!_binding.IsBound)
             return;
         SpellRecord spell = new SpellRecord(_spells!, _binding.Row);
-        _preview.Text = SpellText.Render(spell, spell.Description, _lookups);
-        _auraPreview.Text = SpellText.Render(spell, spell.AuraDescription, _lookups);
+        _preview.Text = SpellText.Render(spell, spell.Text("Description", _locale), _lookups);
+        _auraPreview.Text = SpellText.Render(spell, spell.Text("AuraDescription", _locale), _lookups);
     }
 
     private void Edited()
@@ -684,10 +755,12 @@ public sealed class SpellEditorView : Grid
         if (_list.SelectedItem is SpellItem item && _binding.IsBound)
         {
             SpellRecord spell = new SpellRecord(_spells!, _binding.Row);
-            if (item.Name != spell.Name || item.Rank != spell.Rank || item.Id != spell.Id)
+            string name = spell.Text("Name", _locale);
+            string rank = _showRank ? spell.Text("NameSubtext", _locale) : string.Empty;
+            if (item.Name != name || item.Rank != rank || item.Id != spell.Id)
             {
-                item.Name = spell.Name;
-                item.Rank = spell.Rank;
+                item.Name = name;
+                item.Rank = rank;
                 item.Id = spell.Id;
             }
         }
@@ -735,9 +808,10 @@ public sealed class SpellEditorView : Grid
         if (_spells == null || !_binding.IsBound)
             return;
         SpellRecord spell = new SpellRecord(_spells, _binding.Row);
-        if (!await Dialogs.ConfirmAsync(_window, "Delete spell", "Delete spell " + spell.Id + " (" + spell.Name +
-                                                                 ")? It's removed from the project when you save.",
-                                        "Delete"))
+        if (_confirmDeletes &&
+            !await Dialogs.ConfirmAsync(_window, "Delete spell", "Delete spell " + spell.Id + " (" + spell.Name +
+                                                                 ")? It's removed from the project when you save; " +
+                                                                 "Undo brings it back.", "Delete"))
             return;
         _spells.RemoveRow(_binding.Row);
         _binding.Bind(_spells, -1);

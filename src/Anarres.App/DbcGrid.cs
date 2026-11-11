@@ -14,14 +14,15 @@ namespace Anarres.App;
 // A table of a whole .dbc file, drawn cell by cell so even Spell.dbc's 50,000 rows by 234 columns stay quick
 public sealed class DbcGrid : Grid
 {
-    private const double ROW_HEIGHT = 24;
+    // Row height is the text size plus this much room
+    private const double ROW_PADDING = 11;
     private const double HEADER_HEIGHT = 30;
     private const double CELL_PADDING = 6;
     private const double NUMBER_WIDTH = 96;
     private const double STRING_WIDTH = 240;
     private const double MIN_COLUMN_WIDTH = 40;
     private const double RESIZE_GRIP = 5;
-    private const double FONT_SIZE = 13;
+    private const double DEFAULT_FONT_SIZE = 13;
     private const double WHEEL_ROWS = 3;
 
     private readonly Surface _surface;
@@ -29,7 +30,7 @@ public sealed class DbcGrid : Grid
     private readonly ScrollBar _horizontal = new ScrollBar { Orientation = Orientation.Horizontal };
     private readonly Canvas _overlay = new Canvas();
     private readonly TextBox _editor = new TextBox { IsVisible = false, Padding = new Thickness(4, 2),
-                                                     MinHeight = 0, FontSize = FONT_SIZE };
+                                                     MinHeight = 0, FontSize = DEFAULT_FONT_SIZE };
     private DbcTable? _table;
     private List<int> _rows = new List<int>();
     private double[] _widths = Array.Empty<double>();
@@ -72,6 +73,40 @@ public sealed class DbcGrid : Grid
 
     public DbcTable? Table => _table;
 
+    public double CellFontSize { get; private set; } = DEFAULT_FONT_SIZE;
+
+    public double RowHeight => CellFontSize + ROW_PADDING;
+
+    // Flags, Mask and Attributes columns drawn as 0x...; editing still shows and takes either form
+    public bool FlagsInHex { get; set; } = true;
+
+    // New tables open with their all-zero columns hidden
+    public bool HideEmptyByDefault { get; set; }
+
+    public void UseFontSize(double size)
+    {
+        CellFontSize = size;
+        _editor.FontSize = size;
+        UpdateScrollBars();
+        _surface.InvalidateVisual();
+    }
+
+    // How a cell is drawn: as the table writes it, or in hex for flag columns
+    private string Display(DbcTable table, int row, int column)
+    {
+        DbcColumn definition = table.Definition.Columns[column];
+        if (FlagsInHex && DbcColumnTypes.IsInteger(definition.Type) && IsFlagColumn(definition.Name))
+            return "0x" + table.GetRaw(row, column).ToString("X8", CultureInfo.InvariantCulture);
+        return table.GetText(row, column);
+    }
+
+    private static bool IsFlagColumn(string name)
+    {
+        return name.Contains("Flags", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Mask", StringComparison.OrdinalIgnoreCase) ||
+               name.StartsWith("Attributes", StringComparison.OrdinalIgnoreCase);
+    }
+
     // Row of the table under the selection, or -1
     public int SelectedRow => SelectedIndex >= 0 && SelectedIndex < _rows.Count ? _rows[SelectedIndex] : -1;
 
@@ -107,6 +142,8 @@ public sealed class DbcGrid : Grid
         }
 
         _rows = Sorted(_baseRows);
+        if (!sameTable && HideEmptyByDefault && table != null)
+            HideEmptyColumns();
 
         SelectedIndex = _rows.Count == 0 ? -1 : Math.Clamp(SelectedIndex, 0, _rows.Count - 1);
         UpdateScrollBars();
@@ -243,10 +280,10 @@ public sealed class DbcGrid : Grid
     {
         double viewHeight = Math.Max(0, _surface.Bounds.Height - HEADER_HEIGHT);
         double viewWidth = _surface.Bounds.Width;
-        _vertical.Maximum = Math.Max(0, _rows.Count * ROW_HEIGHT - viewHeight);
+        _vertical.Maximum = Math.Max(0, _rows.Count * RowHeight - viewHeight);
         _vertical.ViewportSize = viewHeight;
-        _vertical.SmallChange = ROW_HEIGHT;
-        _vertical.LargeChange = Math.Max(ROW_HEIGHT, viewHeight - ROW_HEIGHT);
+        _vertical.SmallChange = RowHeight;
+        _vertical.LargeChange = Math.Max(RowHeight, viewHeight - RowHeight);
         _horizontal.Maximum = Math.Max(0, ContentWidth - viewWidth);
         _horizontal.ViewportSize = viewWidth;
         _horizontal.SmallChange = NUMBER_WIDTH / 2;
@@ -266,12 +303,12 @@ public sealed class DbcGrid : Grid
 
     private void ScrollIntoView()
     {
-        double top = SelectedIndex * ROW_HEIGHT;
+        double top = SelectedIndex * RowHeight;
         double viewHeight = _surface.Bounds.Height - HEADER_HEIGHT;
         if (top < _vertical.Value)
             _vertical.Value = top;
-        else if (top + ROW_HEIGHT > _vertical.Value + viewHeight)
-            _vertical.Value = Math.Min(_vertical.Maximum, top + ROW_HEIGHT - viewHeight);
+        else if (top + RowHeight > _vertical.Value + viewHeight)
+            _vertical.Value = Math.Min(_vertical.Maximum, top + RowHeight - viewHeight);
 
         double left = LeftOf(SelectedColumn);
         double right = left + _widths[SelectedColumn];
@@ -283,7 +320,7 @@ public sealed class DbcGrid : Grid
 
     private (int Index, int Column) HitTest(Point point)
     {
-        int index = point.Y < HEADER_HEIGHT ? -1 : (int)((point.Y - HEADER_HEIGHT + _vertical.Value) / ROW_HEIGHT);
+        int index = point.Y < HEADER_HEIGHT ? -1 : (int)((point.Y - HEADER_HEIGHT + _vertical.Value) / RowHeight);
         double x = point.X + _horizontal.Value;
         double left = 0;
         foreach (int column in _order)
@@ -321,11 +358,11 @@ public sealed class DbcGrid : Grid
         _editRow = SelectedRow;
         _editColumn = SelectedColumn;
         double left = LeftOf(SelectedColumn) - _horizontal.Value;
-        double top = HEADER_HEIGHT + SelectedIndex * ROW_HEIGHT - _vertical.Value;
+        double top = HEADER_HEIGHT + SelectedIndex * RowHeight - _vertical.Value;
         Canvas.SetLeft(_editor, left);
         Canvas.SetTop(_editor, top);
         _editor.Width = _widths[SelectedColumn];
-        _editor.Height = ROW_HEIGHT;
+        _editor.Height = RowHeight;
         _editor.Text = startText ?? _table.GetText(_editRow, _editColumn);
         _editor.IsVisible = true;
         _editor.Focus();
@@ -427,9 +464,9 @@ public sealed class DbcGrid : Grid
 
             double offsetX = _grid._horizontal.Value;
             double offsetY = _grid._vertical.Value;
-            int first = Math.Max(0, (int)(offsetY / ROW_HEIGHT));
+            int first = Math.Max(0, (int)(offsetY / _grid.RowHeight));
             int last = Math.Min(_grid._rows.Count - 1,
-                                first + (int)((Bounds.Height - HEADER_HEIGHT) / ROW_HEIGHT) + 1);
+                                first + (int)((Bounds.Height - HEADER_HEIGHT) / _grid.RowHeight) + 1);
             (int firstPosition, double firstLeft) = FirstColumn(offsetX);
             List<int> order = _grid._order;
 
@@ -439,8 +476,8 @@ public sealed class DbcGrid : Grid
                 for (int index = first; index <= last; ++index)
                 {
                     int row = _grid._rows[index];
-                    double top = HEADER_HEIGHT + index * ROW_HEIGHT - offsetY;
-                    Rect rowRect = new Rect(0, top, Bounds.Width, ROW_HEIGHT);
+                    double top = HEADER_HEIGHT + index * _grid.RowHeight - offsetY;
+                    Rect rowRect = new Rect(0, top, Bounds.Width, _grid.RowHeight);
                     if (index == _grid.SelectedIndex)
                         context.FillRectangle(selectedRow, rowRect);
                     else if (table.ChangedKeys.Contains(table.Key(row)))
@@ -453,18 +490,18 @@ public sealed class DbcGrid : Grid
                     {
                         int column = order[position];
                         double width = _grid._widths[column];
-                        Rect cell = new Rect(left, top, width, ROW_HEIGHT);
+                        Rect cell = new Rect(left, top, width, _grid.RowHeight);
                         if (index == _grid.SelectedIndex && column == _grid.SelectedColumn)
                             context.FillRectangle(selectedCell, cell);
-                        DrawText(context, table.GetText(row, column), cell, text, _typeface,
+                        DrawText(context, _grid.Display(table, row, column), cell, text, _typeface,
                                  table.Definition.Columns[column].Type != DbcColumnType.String);
                         context.DrawLine(line, new Point(left + width - 0.5, top), new Point(left + width - 0.5,
-                                                                                             top + ROW_HEIGHT));
+                                                                                             top + _grid.RowHeight));
                         left += width;
                     }
 
-                    context.DrawLine(line, new Point(0, top + ROW_HEIGHT - 0.5), new Point(Bounds.Width,
-                                                                                           top + ROW_HEIGHT - 0.5));
+                    double bottom = top + _grid.RowHeight - 0.5;
+                    context.DrawLine(line, new Point(0, bottom), new Point(Bounds.Width, bottom));
                 }
             }
 
@@ -500,13 +537,13 @@ public sealed class DbcGrid : Grid
             return (_grid._order.Count, left);
         }
 
-        private static void DrawText(DrawingContext context, string value, Rect cell, IBrush brush,
-                                     Typeface typeface, bool rightAlign)
+        private void DrawText(DrawingContext context, string value, Rect cell, IBrush brush, Typeface typeface,
+                              bool rightAlign)
         {
             if (value.Length == 0)
                 return;
             FormattedText formatted = new FormattedText(value.Replace('\n', ' '), CultureInfo.InvariantCulture,
-                                                        FlowDirection.LeftToRight, typeface, FONT_SIZE, brush)
+                                                        FlowDirection.LeftToRight, typeface, _grid.CellFontSize, brush)
             {
                 MaxTextWidth = Math.Max(1, cell.Width - CELL_PADDING * 2),
                 MaxLineCount = 1,
@@ -598,7 +635,7 @@ public sealed class DbcGrid : Grid
                                                      _grid._horizontal.Maximum);
             }
             else
-                _grid._vertical.Value = Math.Clamp(_grid._vertical.Value - e.Delta.Y * ROW_HEIGHT * WHEEL_ROWS, 0,
+                _grid._vertical.Value = Math.Clamp(_grid._vertical.Value - e.Delta.Y * _grid.RowHeight * WHEEL_ROWS, 0,
                                                    _grid._vertical.Maximum);
             e.Handled = true;
         }
@@ -608,7 +645,7 @@ public sealed class DbcGrid : Grid
             base.OnKeyDown(e);
             if (_grid._table == null || _grid._order.Count == 0)
                 return;
-            int page = Math.Max(1, (int)((Bounds.Height - HEADER_HEIGHT) / ROW_HEIGHT) - 1);
+            int page = Math.Max(1, (int)((Bounds.Height - HEADER_HEIGHT) / _grid.RowHeight) - 1);
             bool control = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
             switch (e.Key)
             {

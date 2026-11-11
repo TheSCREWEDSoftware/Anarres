@@ -293,6 +293,73 @@ public sealed class FlagsField : IField
     }
 }
 
+// An effect's misc value, labelled and explained by what the effect or its aura uses it for
+public sealed class MiscField : IField
+{
+    private readonly RecordBinding _binding;
+    private readonly string _effectColumn;
+    private readonly string _auraColumn;
+    private readonly bool _second;
+    private readonly string _defaultLabel;
+    private readonly TextBlock _label;
+    private readonly TextBlock _meaning = new TextBlock
+    {
+        Classes = { "label" },
+        MaxWidth = 420,
+        TextTrimming = TextTrimming.CharacterEllipsis
+    };
+    private MiscMeaning _current = MiscMeaning.Plain;
+
+    public MiscField(RecordBinding binding, string column, string effectColumn, string auraColumn, bool second,
+                     string label)
+    {
+        _binding = binding;
+        _effectColumn = effectColumn;
+        _auraColumn = auraColumn;
+        _second = second;
+        _defaultLabel = label;
+        _label = Ui.Label(label);
+        Value = new CellField(binding, column, 110);
+        Value.ValueChanged += Describe;
+        binding.Add(this);
+        binding.Edited += edited =>
+        {
+            if (edited == _effectColumn || edited == _auraColumn)
+                Refresh();
+        };
+        View = Ui.Horizontal(_label, Value.Box, _meaning);
+        View.Margin = new Thickness(0, 2);
+        ToolTip.SetTip(View, "spell_dbc: " + column);
+    }
+
+    public CellField Value { get; }
+
+    public StackPanel View { get; }
+
+    public void Refresh()
+    {
+        int effect = _binding.Column(_effectColumn);
+        int aura = _binding.Column(_auraColumn);
+        if (_binding.IsBound && effect >= 0 && aura >= 0)
+        {
+            (MiscMeaning a, MiscMeaning b) = SpellMiscValues.For(_binding.Table!.GetRaw(_binding.Row, effect),
+                                                                 _binding.Table.GetRaw(_binding.Row, aura));
+            _current = _second ? b : a;
+        }
+        else
+            _current = MiscMeaning.Plain;
+
+        _label.Text = _current.Label.Length > 0 ? _defaultLabel + ": " + _current.Label : _defaultLabel;
+        Describe();
+    }
+
+    private void Describe()
+    {
+        uint raw = Value.Raw();
+        _meaning.Text = _current.Values?.Describe(_current.Values.Flags ? raw : unchecked((int)raw)) ?? string.Empty;
+    }
+}
+
 // An index into another table, with what it means shown beside it, such as "1.5 sec" for a cast time
 public sealed class LookupField : IField
 {

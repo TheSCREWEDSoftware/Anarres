@@ -13,6 +13,7 @@
       <Setter Property="Icon" Value="/Assets/anarres.ico" />
       <Setter Property="Background" Value="{DynamicResource Anarres.Background}" />
       <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource Anarres.FontSize}" />
     </Style>
     <!-- The main areas sit on raised, rounded panels above the window background -->
     <Style Selector="Border.card">

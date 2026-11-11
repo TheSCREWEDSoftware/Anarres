@@ -50,7 +50,6 @@ public sealed class SettingsWindow : Window
     private readonly TextBox _patch = new TextBox { Width = 200 };
     private readonly CheckBox _patchInLocale = new CheckBox { Content = "Put the patch in Data's locale folder" };
     private readonly TextBox _definitions = new TextBox();
-    private readonly ComboBox _theme = new ComboBox { Width = 140, ItemsSource = new[] { "Dark", "Light" } };
     private readonly StackPanel _mysqlPanel;
 
     public SettingsWindow(ProjectSettings settings)
@@ -77,7 +76,6 @@ public sealed class SettingsWindow : Window
         _patch.Text = settings.PatchName;
         _patchInLocale.IsChecked = settings.PatchInLocaleFolder;
         _definitions.Text = settings.DefinitionsFolder;
-        _theme.SelectedIndex = settings.Theme == "Light" ? 1 : 0;
         _sqlite.IsChecked = settings.Store == StoreKind.Sqlite;
         _mysql.IsChecked = settings.Store == StoreKind.MySql;
 
@@ -127,7 +125,7 @@ public sealed class SettingsWindow : Window
                                                                                "Definitions folder")),
                                    Ui.Hint("Layouts saved from the DBC editor's Columns window go here and replace " +
                                            "the built-in ones."),
-                                   Ui.Row("Theme", _theme)));
+                                   Ui.Hint("Theme, text size and how the editors behave are under View > Options.")));
 
         Button save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
@@ -178,8 +176,7 @@ public sealed class SettingsWindow : Window
                                                                : _patch.Text.Trim(),
             PatchInLocaleFolder = _patchInLocale.IsChecked == true,
             DefinitionsFolder = (_definitions.Text ?? string.Empty).Trim(),
-            ExportTables = _original.ExportTables,
-            Theme = _theme.SelectedIndex == 1 ? "Light" : "Dark"
+            ExportTables = _original.ExportTables
         };
         return settings;
     }
@@ -190,10 +187,15 @@ public sealed class SettingsWindow : Window
         ProjectSettings settings = Build();
         try
         {
-            using MySqlDbcStore store = await MySqlDbcStore.OpenAsync(settings.MySql(), settings.MySqlNaming,
-                                                                      createDatabase: true);
+            using MySqlDbcStore store = await MySqlDbcStore.OpenAsync(settings.MySql(), settings.MySqlNaming);
             List<StoredTable> tables = await store.ListTablesAsync();
             _test.Text = "Connected. " + tables.Count + (tables.Count == 1 ? " DBC table" : " DBC tables") + " found.";
+        }
+        catch (MySqlConnector.MySqlException exception) when (exception.ErrorCode ==
+                                                              MySqlConnector.MySqlErrorCode.UnknownDatabase)
+        {
+            _test.Text = "Connected. The database " + settings.MySqlDatabase + " doesn't exist yet; it's made " +
+                         "the first time the project opens.";
         }
         catch (Exception exception) when (exception is System.Data.Common.DbException or InvalidOperationException)
         {

@@ -37,10 +37,18 @@ public sealed class MainWindow : Window
     private readonly ToggleButton _spellTab = new ToggleButton { Content = "Spell Editor", Classes = { "subtle" } };
     private readonly ToggleButton _tableTab = new ToggleButton { Content = "DBC Editor", Classes = { "subtle" } };
     private readonly Grid _root = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto") };
-    private bool _closingConfirmed;
+    private const int STATUS_SECONDS = 12;
 
-    public MainWindow(ProjectSettings settings)
+    private readonly Avalonia.Threading.DispatcherTimer _statusTimer = new Avalonia.Threading.DispatcherTimer
     {
+        Interval = TimeSpan.FromSeconds(STATUS_SECONDS)
+    };
+    private bool _closingConfirmed;
+    private AppOptions _options;
+
+    public MainWindow(ProjectSettings settings, AppOptions? options = null)
+    {
+        _options = options ?? new AppOptions();
         Title = "Anarres";
         Width = 1400;
         Height = 880;
@@ -83,6 +91,14 @@ public sealed class MainWindow : Window
                 e.Handled = true;
                 await SaveCurrentAsync();
             }
+            else if (e.Key == Key.F && control)
+            {
+                e.Handled = true;
+                if (_content.Content == _spells)
+                    _spells.FocusSearch();
+                else
+                    _tables.FocusFilter();
+            }
             // A text box handles its own undo first; this one undoes table edits
             else if ((e.Key == Key.Z || e.Key == Key.Y) && control)
             {
@@ -90,7 +106,21 @@ public sealed class MainWindow : Window
                 await UndoAsync(redo: e.Key == Key.Y || (e.KeyModifiers & KeyModifiers.Shift) != 0);
             }
         };
-        Opened += async (_, _) => await ShowSpellsAsync();
+        _statusTimer.Tick += (_, _) =>
+        {
+            _statusTimer.Stop();
+            _status.Text = string.Empty;
+        };
+        RestoreWindow();
+        UseOptions(_options);
+        Opened += async (_, _) =>
+        {
+            StartEditor start = _options.StartIn == StartEditor.Last ? _options.LastEditor : _options.StartIn;
+            if (start == StartEditor.Tables)
+                await ShowTablesAsync();
+            else
+                await ShowSpellsAsync();
+        };
         Closing += OnClosing;
         UpdateStatus();
     }
@@ -99,6 +129,9 @@ public sealed class MainWindow : Window
 
     internal SpellEditorView SpellEditor => _spells;
 
+    // Tests don't write options.json in the user's folder
+    internal bool IsTest { get; set; }
+
     internal DbcEditorView TableEditor => _tables;
 
     internal Task ShowTablesForTestAsync()
@@ -106,9 +139,13 @@ public sealed class MainWindow : Window
         return ShowTablesAsync();
     }
 
+    // Messages fade from the status line after a while, so an old one isn't read as news
     public void SetStatus(string text)
     {
         _status.Text = text;
+        _statusTimer.Stop();
+        if (text.Length > 0)
+            _statusTimer.Start();
     }
 
     public void ShowError(Exception exception, string? log)
@@ -184,8 +221,11 @@ public sealed class MainWindow : Window
             return Task.CompletedTask;
         }));
         MenuItem view = new MenuItem { Header = "_View" };
-        view.Items.Add(Item("_Dark", () => SetThemeAsync(nameof(ThemeBase.Dark))));
-        view.Items.Add(Item("_Light", () => SetThemeAsync(nameof(ThemeBase.Light))));
+        view.Items.Add(Item("_Options...", () => OpenOptionsAsync(OptionsWindow.APPEARANCE), "Ctrl+OemComma"));
+        view.Items.Add(new Separator());
+        view.Items.Add(Item("_Dark", () => SetLookAsync(ThemeLook.Dark)));
+        view.Items.Add(Item("_Light", () => SetLookAsync(ThemeLook.Light)));
+        view.Items.Add(Item("_System", () => SetLookAsync(ThemeLook.System)));
         MenuItem help = new MenuItem { Header = "_Help" };
         help.Items.Add(Item("_About Anarres", () => Dialogs.MessageAsync(this, "About Anarres",
             "Anarres 0.1.0\nA spell and DBC editor for AzerothCore (WoW 3.3.5a), on .NET and Avalonia.\n\n" +
@@ -276,8 +316,15 @@ public sealed class MainWindow : Window
         await _tables.RefreshListAsync();
     }
 
+    // A number typed in a box is written when the box loses focus; Ctrl+S and the menus don't move focus
+    private void CommitEdits()
+    {
+        FocusManager?.ClearFocus();
+    }
+
     private async Task SaveCurrentAsync()
     {
+        CommitEdits();
         if (_content.Content == _spells)
             await _spells.SaveAsync();
         else
@@ -286,6 +333,7 @@ public sealed class MainWindow : Window
 
     private Task UndoAsync(bool redo)
     {
+        CommitEdits();
         if (_content.Content == _spells)
             _spells.Undo(redo);
         else
@@ -295,6 +343,7 @@ public sealed class MainWindow : Window
 
     private async Task SaveAllAsync()
     {
+        CommitEdits();
         try
         {
             await _session.SaveAllAsync();
@@ -310,6 +359,7 @@ public sealed class MainWindow : Window
     // Unsaved tables are offered for saving before anything replaces them
     private async Task<bool> ResolveUnsavedAsync()
     {
+        CommitEdits();
         List<string> modified = _session.ModifiedTables.Select(table => table.Definition.File).ToList();
         if (_tables.UnsavedFile is { } file)
             modified.Add(file);
@@ -342,7 +392,6 @@ public sealed class MainWindow : Window
         _session.Use(settings);
         _tables.ForgetStoredTable();
         _session.MySqlPassword = dialog.TypedPassword;
-        App.UseTheme(settings.Theme);
         await ReloadAsync();
     }
 
@@ -383,15 +432,74 @@ public sealed class MainWindow : Window
         SetStatus("Built " + path + " with " + files.Count + " files under DBFilesClient.");
     }
 
-    private Task SetThemeAsync(string theme)
+    private async Task OpenOptionsAsync(string section)
     {
-        _session.Settings.Theme = theme;
-        _session.Settings.Save();
-        App.UseTheme(theme);
+        AppOptions? options = await new OptionsWindow(_options, section).ShowDialog<AppOptions?>(this);
+        if (options == null)
+            return;
+        UseOptions(options);
+        options.Save();
+        SetStatus("Options saved.");
+    }
+
+    // The look alone, from the View menu; the colours go back to the built-in ones of that look
+    private Task SetLookAsync(ThemeLook look)
+    {
+        AppOptions options = _options.Copy();
+        options.Look = look;
+        options.Colours = AppOptions.BUILT_IN_COLOURS;
+        UseOptions(options);
+        options.Save();
+        return Task.CompletedTask;
+    }
+
+    private void UseOptions(AppOptions options)
+    {
+        _options = options;
+        App.UseOptions(options);
+        _spells.UseOptions(options);
+        _tables.UseOptions(options);
         // Code-drawn parts pick the new colours up when they're drawn again
         InvalidateVisual();
-        _tables.InvalidateVisual();
-        return Task.CompletedTask;
+    }
+
+    private void RestoreWindow()
+    {
+        const double MIN_VISIBLE = 100;
+        if (!_options.RememberWindow || _options.WindowWidth < MinWidth || _options.WindowHeight < MinHeight)
+            return;
+        Width = _options.WindowWidth;
+        Height = _options.WindowHeight;
+        if (_options.WindowX is { } x && _options.WindowY is { } y && x > -_options.WindowWidth + MIN_VISIBLE &&
+            y >= 0)
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Position = new PixelPoint((int)x, (int)y);
+        }
+
+        if (_options.WindowMaximized)
+            WindowState = WindowState.Maximized;
+    }
+
+    // Where the window was, which editor and which spell, for next time
+    private void RememberState()
+    {
+        _options.LastEditor = _content.Content == _tables ? StartEditor.Tables : StartEditor.Spells;
+        if (_spells.CurrentSpellId is { } spell)
+            _options.LastSpellId = spell;
+        if (_options.RememberWindow)
+        {
+            _options.WindowMaximized = WindowState == WindowState.Maximized;
+            if (WindowState == WindowState.Normal)
+            {
+                _options.WindowX = Position.X;
+                _options.WindowY = Position.Y;
+                _options.WindowWidth = Width;
+                _options.WindowHeight = Height;
+            }
+        }
+
+        _options.Save();
     }
 
     private async Task ReloadAsync()
@@ -405,8 +513,11 @@ public sealed class MainWindow : Window
 
     private async void OnClosing(object? sender, WindowClosingEventArgs e)
     {
+        CommitEdits();
         if (_closingConfirmed || (!_session.ModifiedTables.Any() && _tables.UnsavedFile == null))
         {
+            if (!IsTest)
+                RememberState();
             _session.Dispose();
             return;
         }

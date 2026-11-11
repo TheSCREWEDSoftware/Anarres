@@ -53,6 +53,10 @@ public sealed class ExportWindow : Window
                                  Path.Combine(session.Settings.ExportFolder, ClientArchives.DBC_FOLDER) +
                                  ". The server needs them in its dbc folder, and the client in a patch MPQ under " +
                                  "DBFilesClient. Restart the worldserver and the client to see the changes."));
+        if (session.Settings.Store == Anarres.Core.Settings.StoreKind.MySql &&
+            session.Settings.MySqlNaming == TableNaming.AzerothCore)
+            top.Children.Add(Ui.Hint("AzerothCore's tables hold only the rows that differ, so each table is laid " +
+                                     "over its clean file from the Clean DBC folder or the client's MPQs."));
         top.Children.Add(_server);
         top.Children.Add(_patch);
         top.Children.Add(Ui.Horizontal(all, none));

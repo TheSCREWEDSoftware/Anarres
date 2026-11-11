@@ -37,6 +37,7 @@ public sealed class DbcEditorView : Grid
     private DbcTable? _table;
     // Set when the table came from a file on disk instead of the project
     private string? _filePath;
+    private bool _refreshing;
 
     public DbcEditorView(MainWindow window, Session session)
     {
@@ -56,7 +57,7 @@ public sealed class DbcEditorView : Grid
         };
         _tables.SelectionChanged += async (_, _) =>
         {
-            if (_tables.SelectedItem is StoredTable stored)
+            if (!_refreshing && _tables.SelectedItem is StoredTable stored)
                 await OpenStoredAsync(stored.File);
         };
         _tables.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<StoredTable>((table, _) =>
@@ -92,7 +93,23 @@ public sealed class DbcEditorView : Grid
 
     public DbcTable? Current => _table;
 
+    private bool ConfirmDeletes { get; set; } = true;
+
+    public void UseOptions(AppOptions options)
+    {
+        ConfirmDeletes = options.ConfirmDeletes;
+        _grid.FlagsInHex = options.FlagsInHex;
+        _grid.HideEmptyByDefault = options.HideEmptyColumns;
+        _grid.UseFontSize(options.GridFontSize);
+    }
+
     internal DbcGrid Grid => _grid;
+
+    public void FocusFilter()
+    {
+        _filter.Focus();
+        _filter.SelectAll();
+    }
 
     internal Task OpenForTestAsync(string file)
     {
@@ -152,6 +169,18 @@ public sealed class DbcEditorView : Grid
         {
             _window.SetStatus("The tables couldn't be listed: " + exception.Message);
         }
+    }
+
+    // Row counts in the table list after rows were added or removed; the selection stays
+    private async Task RefreshCountsAsync()
+    {
+        string? selected = (_tables.SelectedItem as StoredTable)?.File;
+        IDbcStore store = await _session.StoreAsync();
+        List<StoredTable> tables = await store.ListTablesAsync();
+        _refreshing = true;
+        _tables.ItemsSource = tables;
+        _tables.SelectedItem = tables.FirstOrDefault(table => table.File == selected);
+        _refreshing = false;
     }
 
     private Control BuildList()
@@ -359,6 +388,7 @@ public sealed class DbcEditorView : Grid
             {
                 await _session.SaveAsync(_table);
                 _window.SetStatus("Saved " + _table.Definition.File + " to the project.");
+                await RefreshCountsAsync();
             }
 
             _grid.Refresh();
@@ -392,7 +422,9 @@ public sealed class DbcEditorView : Grid
         if (_table == null || _grid.SelectedRow < 0)
             return;
         uint key = _table.Key(_grid.SelectedRow);
-        if (!await Dialogs.ConfirmAsync(_window, "Delete row", "Delete the row with key " + key + "?", "Delete"))
+        if (ConfirmDeletes &&
+            !await Dialogs.ConfirmAsync(_window, "Delete row", "Delete the row with key " + key + "? Undo brings " +
+                                                               "it back until you close the table.", "Delete"))
             return;
         _table.RemoveRow(_grid.SelectedRow);
         ApplyFilter();
