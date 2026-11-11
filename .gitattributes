@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+# Windows batch scripts need CRLF to run
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Visual Studio solution files use CRLF
+*.sln text eol=crlf
+
+*.cs whitespace=trailing-space,space-before-tab,tab-in-indent,cr-at-eol
+*.axaml whitespace=trailing-space,space-before-tab,tab-in-indent,cr-at-eol
+
+# Images are binary
+*.ico binary
+*.png binary
