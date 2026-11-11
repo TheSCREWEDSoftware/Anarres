@@ -36,6 +36,14 @@ public readonly struct SpellRecord
 
     public string AuraDescription => S("AuraDescription_Lang_enUS");
 
+    // Name, NameSubtext, Description or AuraDescription in a language; enUS when that language's text is empty
+    public string Text(string field, string locale)
+    {
+        int column = Table.Definition.IndexOf(field + "_Lang_" + locale);
+        string text = column >= 0 ? Table.GetString(Row, column) : string.Empty;
+        return text.Length > 0 || locale == ENGLISH ? text : S(field + "_Lang_" + ENGLISH);
+    }
+
     public uint DurationIndex => U("DurationIndex");
 
     public uint RangeIndex => U("RangeIndex");

@@ -73,4 +73,37 @@ public static class SpellTests
         Assert.True(!SpellSearch.Build(table, "effect:2")(spell.Row), "an effect it doesn't have");
         Assert.True(SpellSearch.Build(table, "DurationIndex:5")(spell.Row), "by any column name");
     }
+
+    private static long Value(string table, string name)
+    {
+        return SpellEnums.Get(table).Values.First(entry => entry.Name == name).Value;
+    }
+
+    public static void ExplainsMiscValues()
+    {
+        (MiscMeaning stat, MiscMeaning _) = SpellMiscValues.For(Value(SpellEnums.EFFECT, "SPELL_EFFECT_APPLY_AURA"),
+                                                               Value(SpellEnums.AURA, "SPELL_AURA_MOD_STAT"));
+        Assert.Equal("Stat", stat.Label, "stat aura");
+        Assert.Equal("Stamina (2)", stat.Values!.Describe(2), "stamina");
+
+        (MiscMeaning creature, MiscMeaning properties) =
+            SpellMiscValues.For(Value(SpellEnums.EFFECT, "SPELL_EFFECT_SUMMON"), 0);
+        Assert.Equal("Creature entry", creature.Label, "summon");
+        Assert.True(properties.Label.StartsWith("Summon properties", StringComparison.Ordinal), "summon B");
+
+        (MiscMeaning school, MiscMeaning _) = SpellMiscValues.For(Value(SpellEnums.EFFECT, "SPELL_EFFECT_APPLY_AURA"),
+                                                                 Value(SpellEnums.AURA, "SPELL_AURA_SCHOOL_ABSORB"));
+        Assert.Equal("Fire, Frost", school.Values!.Describe(4 | 16), "school mask");
+        Assert.Equal(string.Empty, SpellMiscValues.For(Value(SpellEnums.EFFECT, "SPELL_EFFECT_SCHOOL_DAMAGE"), 0)
+                                                  .A.Label, "nothing special");
+    }
+
+    public static void FallsBackToEnglish()
+    {
+        SpellRecord spell = NewSpell(out SpellLookups _);
+        spell.Table.SetString(spell.Row, spell.Column("Name_Lang_enUS"), "Fireball");
+        spell.Table.SetString(spell.Row, spell.Column("Name_Lang_deDE"), "Feuerball");
+        Assert.Equal("Feuerball", spell.Text("Name", "deDE"), "German");
+        Assert.Equal("Fireball", spell.Text("Name", "frFR"), "French falls back");
+    }
 }
