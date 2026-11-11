@@ -15,6 +15,8 @@ Commands:
   import-client <Data folder>  Import DBFilesClient files from the client's MPQs (--locale enUS)
   export                       Write .dbc files to the export folder (--only some, or every table)
                                --server copies them to the server's dbc folder, --patch builds the client MPQ
+  apply                        Save nothing, but do what the app's Apply does with the settings: write the tables,
+                               copy them to the server, build the patch, and the other steps chosen (--only some)
   patch <out.MPQ> <files...>   Pack .dbc files into a patch MPQ under DBFilesClient
   sql <file> --ids 1,2,...     Write AzerothCore SQL for those rows (--out file.sql, --table name)
   sql <file> --changed         ... or for every row that differs from the clean file (the Clean DBC folder)
@@ -125,6 +127,20 @@ try
             if (result.PatchPath != null)
                 Console.WriteLine("Built " + result.PatchPath + ".");
             return 0;
+        }
+        case "apply":
+        {
+            using IDbcStore store = await settings.OpenStoreAsync();
+            List<string> files = only ?? (settings.ExportTables.Count > 0
+                                              ? settings.ExportTables
+                                              : (await store.ListTablesAsync()).Select(table => table.File).ToList());
+            ApplyResult result = await Deployment.ApplyAsync(store, settings, files, definitions, progress);
+            Console.WriteLine();
+            foreach (string line in result.Done)
+                Console.WriteLine(line);
+            foreach (string line in result.Problems)
+                Console.Error.WriteLine(line);
+            return result.Problems.Count == 0 ? 0 : 1;
         }
         case "sql":
         {

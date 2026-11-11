@@ -72,6 +72,9 @@ public sealed class AppOptions
 
     public bool ConfirmDeletes { get; set; } = true;
 
+    // Apply lists what it's about to do and waits for OK
+    public bool ConfirmApply { get; set; } = true;
+
     public int MaxUndoSteps { get; set; } = DEFAULT_UNDO_STEPS;
 
     public bool RememberWindow { get; set; } = true;

@@ -20,9 +20,10 @@ public static class DbcMerge
                 return DbcFile.Read(path, definitions);
         }
 
-        if (settings.ClientDataFolder.Length > 0 && Directory.Exists(settings.ClientDataFolder))
+        string client = settings.ClientData();
+        if (client.Length > 0 && Directory.Exists(client))
         {
-            using ClientArchives archives = ClientArchives.Open(settings.ClientDataFolder, settings.Locale);
+            using ClientArchives archives = ClientArchives.Open(client, settings.Locale);
             byte[]? data = archives.TryRead(ClientArchives.DBC_FOLDER + "\\" + name);
             if (data is { Length: > 0 })
                 return DbcFile.Read(data, name, definitions);

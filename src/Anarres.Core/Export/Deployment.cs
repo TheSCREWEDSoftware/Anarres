@@ -10,6 +10,9 @@ public sealed record ImportResult(string File, int Rows, bool Inferred, bool Ski
 
 public sealed record ExportResult(List<string> DbcFiles, string? ServerFolder, string? PatchPath);
 
+// What Apply did, one line a step, and what it couldn't do
+public sealed record ApplyResult(List<string> Done, List<string> Problems);
+
 // Moves data between .dbc files, MPQs and the store: the import, export and deploy steps of the workflow
 public static class Deployment
 {
@@ -91,16 +94,17 @@ public static class Deployment
         }
 
         string? server = null;
-        if (copyToServer && settings.ServerDbcFolder.Length > 0)
+        string serverDbc = settings.ServerDbc();
+        if (copyToServer && serverDbc.Length > 0)
         {
-            Directory.CreateDirectory(settings.ServerDbcFolder);
+            Directory.CreateDirectory(serverDbc);
             foreach (string path in written)
-                File.Copy(path, Path.Combine(settings.ServerDbcFolder, Path.GetFileName(path)), overwrite: true);
-            server = settings.ServerDbcFolder;
+                File.Copy(path, Path.Combine(serverDbc, Path.GetFileName(path)), overwrite: true);
+            server = serverDbc;
         }
 
         string? patchPath = null;
-        if (buildPatch && settings.ClientDataFolder.Length > 0)
+        if (buildPatch && settings.ClientData().Length > 0)
         {
             patchPath = settings.PatchPath();
             MpqWriter.Write(patchPath, patch);
@@ -118,6 +122,120 @@ public static class Deployment
                    "AzerothCore's " + table + " table holds only the rows that differ from the client's file, so " +
                    "exporting needs the clean file to lay them over. Set the Clean DBC folder or the WoW Data " +
                    "folder in Project settings.");
+    }
+
+    public const string BACKUP_FOLDER = "server-backup";
+
+    // The one-click deploy: tables written, server copies backed up and replaced, patch built, and the chosen extras
+    public static async Task<ApplyResult> ApplyAsync(IDbcStore store, ProjectSettings settings,
+                                                     IReadOnlyCollection<string> files, DbcDefinitions definitions,
+                                                     IProgress<(string File, double Done)>? progress = null,
+                                                     CancellationToken cancellation = default)
+    {
+        List<string> done = new List<string>();
+        List<string> problems = new List<string>();
+        string serverDbc = settings.ServerDbc();
+        bool toServer = settings.ApplyToServer && serverDbc.Length > 0;
+        bool patch = settings.ApplyPatch && settings.ClientData().Length > 0;
+        if (settings.ApplyToServer && serverDbc.Length == 0)
+            problems.Add("No server data folder is set, so the server's files weren't replaced.");
+        if (settings.ApplyPatch && settings.ClientData().Length == 0)
+            problems.Add("No client folder is set, so no patch was built.");
+
+        if (toServer && settings.ApplyBackupServer)
+        {
+            int kept = BackUpServerFiles(settings, files, serverDbc);
+            if (kept > 0)
+                done.Add("Kept the server's own copy of " + kept + (kept == 1 ? " file" : " files") + " in " +
+                         Path.Combine(settings.ExportFolder, BACKUP_FOLDER) + ".");
+        }
+
+        ExportResult result = await ExportAsync(store, settings, files, definitions, toServer, patch, progress,
+                                                cancellation);
+        done.Add("Wrote " + result.DbcFiles.Count + " .dbc " + (result.DbcFiles.Count == 1 ? "file" : "files") +
+                 " to " + Path.Combine(settings.ExportFolder, ClientArchives.DBC_FOLDER) + ".");
+        if (result.ServerFolder != null)
+            done.Add("Copied them to the server's " + result.ServerFolder + ". Restart the worldserver.");
+        if (result.PatchPath != null)
+            done.Add("Built " + result.PatchPath + ". Restart the client.");
+
+        if (settings.ApplyWorldDatabase)
+            await ApplyWorldAsync(store, settings, files, definitions, done, problems, cancellation);
+
+        if (settings.ApplyClearClientCache)
+        {
+            string cache = settings.ClientCache();
+            if (cache.Length > 0 && Directory.Exists(cache))
+            {
+                try
+                {
+                    Directory.Delete(cache, recursive: true);
+                    done.Add("Emptied the client's cache (" + cache + ").");
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                {
+                    problems.Add("The client's cache couldn't be emptied; is WoW still open? " + exception.Message);
+                }
+            }
+        }
+
+        return new ApplyResult(done, problems);
+    }
+
+    // Copies the server's file aside the first time it would be replaced; later runs keep that first copy
+    private static int BackUpServerFiles(ProjectSettings settings, IEnumerable<string> files, string serverDbc)
+    {
+        string backup = Path.Combine(settings.ExportFolder, BACKUP_FOLDER);
+        int kept = 0;
+        foreach (string file in files)
+        {
+            string name = file.EndsWith(".dbc", StringComparison.OrdinalIgnoreCase) ? file : file + ".dbc";
+            string source = Path.Combine(serverDbc, name);
+            string target = Path.Combine(backup, name);
+            if (!File.Exists(source) || File.Exists(target))
+                continue;
+            Directory.CreateDirectory(backup);
+            File.Copy(source, target);
+            ++kept;
+        }
+
+        return kept;
+    }
+
+    // Rows that differ from the clean files go into acore_world's matching _dbc tables
+    private static async Task ApplyWorldAsync(IDbcStore store, ProjectSettings settings, IEnumerable<string> files,
+                                              DbcDefinitions definitions, List<string> done, List<string> problems,
+                                              CancellationToken cancellation)
+    {
+        try
+        {
+            using MySqlDbcStore world = await MySqlDbcStore.OpenAsync(settings.World(), TableNaming.AzerothCore,
+                                                                      cancellation: cancellation);
+            foreach (string file in files)
+            {
+                DbcTable table = await store.LoadAsync(file, definitions, null, cancellation);
+                if (table.Definition.Table.Length == 0)
+                    continue;
+                DbcTable? clean = DbcMerge.LoadSource(settings, file, definitions);
+                if (clean == null)
+                {
+                    problems.Add("There's no clean " + table.Definition.File + " to compare with, so its rows " +
+                                 "weren't put in " + table.Definition.Table + ".");
+                    continue;
+                }
+
+                List<int> rows = DbcMerge.Changed(clean, table);
+                if (rows.Count == 0)
+                    continue;
+                await world.UpsertRowsAsync(table, rows, cancellation);
+                done.Add("Put " + rows.Count + " changed " + (rows.Count == 1 ? "row" : "rows") + " in " +
+                         settings.WorldDatabase + "." + table.Definition.Table + ".");
+            }
+        }
+        catch (Exception exception) when (exception is System.Data.Common.DbException or InvalidOperationException)
+        {
+            problems.Add("The world database couldn't be updated: " + exception.Message);
+        }
     }
 
     // A patch MPQ from .dbc files already on disk, such as the export folder's

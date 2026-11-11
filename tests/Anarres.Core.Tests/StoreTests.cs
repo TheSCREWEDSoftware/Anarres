@@ -151,4 +151,59 @@ public static class StoreTests
         List<int> rows = DbcMerge.Changed(clean, merged);
         Assert.Equal("11,5", string.Join(",", rows.Select(row => merged.Key(row))), "changed and new rows");
     }
+
+    public static void FindsServerAndClientFolders()
+    {
+        using TempFolder temp = new TempFolder();
+        string data = Directory.CreateDirectory(temp.File("server-data")).FullName;
+        Directory.CreateDirectory(Path.Combine(data, "dbc"));
+        Directory.CreateDirectory(Path.Combine(data, "maps"));
+        Assert.Equal(Path.Combine(data, "dbc"), ProjectSettings.ResolveServerDbc(data), "DataDir to its dbc folder");
+        Assert.Equal(Path.Combine(data, "dbc"), ProjectSettings.ResolveServerDbc(Path.Combine(data, "dbc")),
+                     "the dbc folder itself");
+
+        string wow = Directory.CreateDirectory(temp.File("WoW")).FullName;
+        Directory.CreateDirectory(Path.Combine(wow, "Data"));
+        File.WriteAllBytes(Path.Combine(wow, "Data", "common.MPQ"), Array.Empty<byte>());
+        Assert.Equal(Path.Combine(wow, "Data"), ProjectSettings.ResolveClientData(wow), "WoW folder to Data");
+        Assert.Equal(Path.Combine(wow, "Data"), ProjectSettings.ResolveClientData(Path.Combine(wow, "Data")),
+                     "Data itself");
+        ProjectSettings settings = new ProjectSettings { ClientDataFolder = wow };
+        Assert.Equal(Path.Combine(wow, "Cache"), settings.ClientCache(), "Cache beside Data");
+        Assert.Equal(string.Empty, ProjectSettings.ResolveServerDbc(" "), "unset");
+    }
+
+    public static async Task AppliesToServerAndClient()
+    {
+        using TempFolder temp = new TempFolder();
+        string wow = Directory.CreateDirectory(temp.File("WoW")).FullName;
+        Directory.CreateDirectory(Path.Combine(wow, "Data"));
+        Directory.CreateDirectory(Path.Combine(wow, "Cache", "WDB"));
+        string dbc = Directory.CreateDirectory(Path.Combine(temp.File("server"), "dbc")).FullName;
+        File.WriteAllText(Path.Combine(dbc, "Sample.dbc"), "the server's own file");
+
+        using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
+        await store.ImportAsync(DbcTests.SampleTable());
+        ProjectSettings settings = new ProjectSettings
+        {
+            ExportFolder = temp.File("Export"),
+            ServerDbcFolder = temp.File("server"),
+            ClientDataFolder = wow,
+            ApplyClearClientCache = true
+        };
+
+        ApplyResult result = await Deployment.ApplyAsync(store, settings, new[] { "Sample.dbc" }, Definitions());
+        Assert.Equal(0, result.Problems.Count, "no problems: " + string.Join(" ", result.Problems));
+        Assert.Equal("the server's own file",
+                     File.ReadAllText(Path.Combine(settings.ExportFolder, Deployment.BACKUP_FOLDER, "Sample.dbc")),
+                     "the server's copy kept");
+        Assert.Equal(3, DbcFile.Read(Path.Combine(dbc, "Sample.dbc"), Definitions()).Rows.Count, "server replaced");
+        Assert.True(File.Exists(Path.Combine(wow, "Data", "patch-A.MPQ")), "patch in the client's Data");
+        Assert.True(!Directory.Exists(Path.Combine(wow, "Cache")), "cache emptied");
+
+        await Deployment.ApplyAsync(store, settings, new[] { "Sample.dbc" }, Definitions());
+        Assert.Equal("the server's own file",
+                     File.ReadAllText(Path.Combine(settings.ExportFolder, Deployment.BACKUP_FOLDER, "Sample.dbc")),
+                     "the first copy stays the backup");
+    }
 }
