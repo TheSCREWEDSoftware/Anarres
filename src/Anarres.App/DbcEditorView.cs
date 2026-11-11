@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
+using Anarres.Core.Settings;
 using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
@@ -67,9 +68,12 @@ public sealed class DbcEditorView : Grid
                 {
                     new TextBlock { Text = table?.File ?? string.Empty, Width = 170,
                                     TextTrimming = TextTrimming.CharacterEllipsis },
-                    new TextBlock { Text = table?.Rows.ToString("N0", CultureInfo.InvariantCulture) ?? string.Empty,
-                                    Foreground = ThemeBrushes.MutedText, FontSize = 12,
-                                    VerticalAlignment = VerticalAlignment.Center }
+                    Ui.Themed(new TextBlock
+                    {
+                        Text = table?.Rows.ToString("N0", CultureInfo.InvariantCulture) ?? string.Empty,
+                        FontSize = 12,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }, TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT)
                 }
             });
         _grid.SelectionChanged += ShowCell;
@@ -87,6 +91,49 @@ public sealed class DbcEditorView : Grid
     }
 
     public DbcTable? Current => _table;
+
+    internal DbcGrid Grid => _grid;
+
+    internal Task OpenForTestAsync(string file)
+    {
+        return OpenStoredAsync(file);
+    }
+
+    // A file opened from disk with changes not written back; the project's tables are tracked by the session
+    public string? UnsavedFile => _filePath != null && _table is { IsModified: true } ? _filePath : null;
+
+    public async Task SaveFileAsync()
+    {
+        if (UnsavedFile != null)
+            await SaveAsync();
+    }
+
+    // After an import the project's copy is stale; a file from disk stays open
+    public void ForgetStoredTable()
+    {
+        if (_filePath != null)
+            return;
+        _table = null;
+        _grid.Show(null);
+        _info.Text = string.Empty;
+    }
+
+    // Asks before a file's unsaved changes would be dropped; false when the user cancels
+    private async Task<bool> LeaveFileAsync()
+    {
+        if (UnsavedFile is not { } file)
+            return true;
+        switch (await Dialogs.UnsavedAsync(_window, new[] { Path.GetFileName(file) }))
+        {
+            case Dialogs.UnsavedChoice.Save:
+                await SaveAsync();
+                return UnsavedFile == null;
+            case Dialogs.UnsavedChoice.Discard:
+                return true;
+            default:
+                return false;
+        }
+    }
 
     public async Task RefreshListAsync()
     {
@@ -132,14 +179,27 @@ public sealed class DbcEditorView : Grid
         Button remove = Ui.AsyncButton("Delete row", DeleteRowAsync);
         Button export = Ui.AsyncButton("Save as .dbc...", SaveAsDbcAsync);
         Button csv = Ui.AsyncButton("CSV...", ExportCsvAsync);
-        Button sql = Ui.AsyncButton("SQL...", ExportSqlAsync);
+        Button importCsv = Ui.AsyncButton("Import CSV...", ImportCsvAsync);
+        Button sql = new Button { Content = "SQL..." };
+        sql.Flyout = new MenuFlyout
+        {
+            Items =
+            {
+                MenuItem("Rows shown (after the filter)", () => ExportSqlAsync(changedOnly: false)),
+                MenuItem("Rows changed from the clean file", () => ExportSqlAsync(changedOnly: true))
+            }
+        };
+        ToolTip.SetTip(importCsv, "Replace the table's rows with a CSV file's; columns are matched by name");
         Button columns = Ui.AsyncButton("Columns...", ShowColumnsAsync);
         ToolTip.SetTip(save, "Save changes to the project, or to the file when one was opened from disk (Ctrl+S)");
-        ToolTip.SetTip(sql, "SQL for the filtered rows, for AzerothCore's matching _dbc table");
+        ToolTip.SetTip(sql, "SQL for AzerothCore's matching _dbc table");
         ToolTip.SetTip(columns, "The column layout, and renaming the columns of a guessed layout");
 
         WrapPanel toolbar = new WrapPanel { Margin = new Thickness(12, 10, 12, 6) };
-        foreach (Control control in new Control[] { save, add, copy, remove, _filter, export, csv, sql, columns })
+        foreach (Control control in new Control[]
+                 {
+                     save, add, copy, remove, _filter, export, csv, importCsv, sql, columns
+                 })
         {
             control.Margin = new Thickness(0, 0, 8, 4);
             toolbar.Children.Add(control);
@@ -159,6 +219,8 @@ public sealed class DbcEditorView : Grid
 
     private async Task OpenStoredAsync(string file)
     {
+        if (!await LeaveFileAsync())
+            return;
         try
         {
             _window.SetStatus("Loading " + file + "...");
@@ -178,6 +240,8 @@ public sealed class DbcEditorView : Grid
 
     private async Task OpenFileAsync()
     {
+        if (!await LeaveFileAsync())
+            return;
         List<string> files = await Ui.PickFilesAsync(_window, "Open a .dbc file", "DBC files", new[] { "*.dbc" },
                                                      many: false);
         if (files.Count == 0)
@@ -209,7 +273,8 @@ public sealed class DbcEditorView : Grid
         string changes = _table.IsModified ? ", unsaved changes" : string.Empty;
         _info.Text = definition.File + "  -  " + _table.Rows.Count.ToString("N0", CultureInfo.InvariantCulture) +
                      " rows, " + definition.Columns.Count + " columns, " + layout + changes + "  -  " + source;
-        _info.Foreground = _table.IsModified ? ThemeBrushes.Warning : ThemeBrushes.MutedText;
+        Ui.Themed(_info, TextBlock.ForegroundProperty,
+                  _table.IsModified ? ThemeColours.WARNING : ThemeColours.MUTED_TEXT);
     }
 
     private void ShowCell()
@@ -224,8 +289,10 @@ public sealed class DbcEditorView : Grid
         uint raw = _table.GetRaw(_grid.SelectedRow, _grid.SelectedColumn);
         string hex = "  -  0x" + raw.ToString("X8", CultureInfo.InvariantCulture);
         string bits = column.Type == DbcColumnType.String ? string.Empty : hex;
+        string hidden = _grid.HiddenColumnCount > 0 ? "  -  " + _grid.HiddenColumnCount + " columns hidden" : "";
         _cell.Text = column.Name + " (" + column.Type + "), row key " + _table.Key(_grid.SelectedRow) + bits +
-                     "  -  Enter or double-click to edit, Ctrl+C to copy";
+                     hidden + "  -  Enter or double-click to edit, Ctrl+C to copy, click a header to sort, " +
+                     "right-click it to hide";
     }
 
     private void ApplyFilter()
@@ -329,7 +396,6 @@ public sealed class DbcEditorView : Grid
             return;
         _table.RemoveRow(_grid.SelectedRow);
         ApplyFilter();
-        _grid.Show(_table);
         _session.NotifyChanged();
         ShowInfo();
     }
@@ -364,32 +430,113 @@ public sealed class DbcEditorView : Grid
         if (path == null)
             return;
         DbcTable table = _table;
-        await Task.Run(() =>
-        {
-            using StreamWriter writer = new StreamWriter(path, false, new UTF8Encoding(false));
-            writer.WriteLine(string.Join(",", table.Definition.Columns.Select(column => Csv(column.Name))));
-            for (int row = 0; row < table.Rows.Count; ++row)
-                writer.WriteLine(string.Join(",", Enumerable.Range(0, table.ColumnCount)
-                                                            .Select(column => Csv(table.GetText(row, column)))));
-        });
+        await Task.Run(() => CsvFile.Write(path, table));
         _window.SetStatus("Wrote " + path + ".");
     }
 
-    private async Task ExportSqlAsync()
+    private async Task ImportCsvAsync()
     {
         if (_table == null)
             return;
-        string target = _table.Definition.Table.Length > 0 ? _table.Definition.Table : _table.Definition.Name;
+        List<string> files = await Ui.PickFilesAsync(_window, "Import a CSV file", "CSV files", new[] { "*.csv" },
+                                                     many: false);
+        if (files.Count == 0)
+            return;
+        DbcDefinition definition = _table.Definition;
+        if (!await Dialogs.ConfirmAsync(_window, "Import CSV", "Replace every row of " + definition.File +
+                                                               " with the rows of " + Path.GetFileName(files[0]) +
+                                                               "? Columns are matched by name.", "Replace"))
+            return;
+        try
+        {
+            string path = files[0];
+            DbcTable imported = await Task.Run(() => CsvFile.Read(path, definition));
+            if (_filePath != null)
+            {
+                // A file from disk: the rows are replaced here and written when it's saved
+                _table = imported;
+                imported.MarkModified();
+            }
+            else
+            {
+                IDbcStore store = await _session.StoreAsync();
+                await Task.Run(() => store.ImportAsync(imported));
+                _session.Forget(definition.File);
+                _table = await _session.LoadAsync(definition.File);
+            }
+
+            _filter.Text = string.Empty;
+            _grid.Show(_table);
+            ShowInfo();
+            _window.SetStatus("Replaced " + definition.File + " with " + imported.Rows.Count + " rows from the CSV.");
+        }
+        catch (Exception exception) when (exception is InvalidDataException or IOException or
+                                              InvalidOperationException or System.Data.Common.DbException)
+        {
+            await Dialogs.MessageAsync(_window, "Not imported", "The CSV file couldn't be imported: " +
+                                                                exception.Message);
+        }
+    }
+
+    private async Task ExportSqlAsync(bool changedOnly)
+    {
+        if (_table == null)
+            return;
+        DbcTable table = _table;
+        List<int> rows;
+        if (changedOnly)
+        {
+            DbcTable? clean = await Task.Run(() => DbcMerge.LoadSource(_session.Settings, table.Definition.File,
+                                                                       _session.Definitions));
+            if (clean == null)
+            {
+                await Dialogs.MessageAsync(_window, "No clean file", "There's no clean " + table.Definition.File +
+                                                                     " to compare with. Set the Clean DBC folder " +
+                                                                     "or the WoW Data folder in Project settings.");
+                return;
+            }
+
+            rows = DbcMerge.Changed(clean, table);
+        }
+        else
+        {
+            string filterText = (_filter.Text ?? string.Empty).Trim();
+            rows = filterText.Length == 0 ? Enumerable.Range(0, table.Rows.Count).ToList()
+                                          : Enumerable.Range(0, table.Rows.Count).Where(Matcher(table, filterText))
+                                                      .ToList();
+        }
+
+        string target = table.Definition.Table.Length > 0 ? table.Definition.Table : table.Definition.Name;
         string? path = await Ui.SaveFileAsync(_window, "Save SQL", target + ".sql", "SQL file", "sql");
         if (path == null)
             return;
-        string filterText = (_filter.Text ?? string.Empty).Trim();
-        List<int> tableRows = filterText.Length == 0
-                                  ? Enumerable.Range(0, _table.Rows.Count).ToList()
-                                  : Enumerable.Range(0, _table.Rows.Count).Where(Matcher(_table, filterText)).ToList();
-        DbcTable table = _table;
-        await Task.Run(() => SqlExport.Write(path, table, tableRows, target));
-        _window.SetStatus("Wrote " + tableRows.Count + " rows to " + path + ".");
+        await Task.Run(() => SqlExport.Write(path, table, rows, target));
+        _window.SetStatus("Wrote " + rows.Count + " rows to " + path + ".");
+    }
+
+    // Undoes or redoes the last change to the open table
+    public void Undo(bool redo)
+    {
+        if (_table == null)
+            return;
+        int row = redo ? _table.Redo() : _table.Undo();
+        if (row < 0)
+        {
+            _window.SetStatus(redo ? "Nothing to redo." : "Nothing to undo.");
+            return;
+        }
+
+        ApplyFilter();
+        _grid.SelectRow(row);
+        _session.NotifyChanged();
+        ShowInfo();
+    }
+
+    private static MenuItem MenuItem(string header, Func<Task> action)
+    {
+        MenuItem item = new MenuItem { Header = header };
+        item.Click += async (_, _) => await action();
+        return item;
     }
 
     private async Task ShowColumnsAsync()
@@ -399,15 +546,9 @@ public sealed class DbcEditorView : Grid
         ColumnsWindow dialog = new ColumnsWindow(_table.Definition, _session.Settings.DefinitionsFolder);
         if (await dialog.ShowDialog<bool>(_window))
         {
-            _session.Use(_session.Settings);
+            _session.ReloadDefinitions();
             _window.SetStatus("Saved the layout. Import " + _table.Definition.File + " again to use the new names " +
                               "in the project.");
         }
-    }
-
-    private static string Csv(string value)
-    {
-        bool quote = value.IndexOfAny(new[] { ',', '"', '\n', '\r' }) >= 0;
-        return quote ? "\"" + value.Replace("\"", "\"\"") + "\"" : value;
     }
 }

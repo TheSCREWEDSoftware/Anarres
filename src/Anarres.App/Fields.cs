@@ -82,7 +82,11 @@ public sealed class CellField : IField
 
         ToolTip.SetTip(Box, "Column: " + column);
         _binding.Add(this);
-        Box.LostFocus += (_, _) => Commit();
+        Box.LostFocus += (_, _) =>
+        {
+            Commit();
+            _binding.Table?.BreakUndoStep();
+        };
         Box.KeyDown += (_, e) =>
         {
             if (e.Key == Key.Enter && !multiline)

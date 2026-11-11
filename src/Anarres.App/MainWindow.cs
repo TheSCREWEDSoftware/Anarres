@@ -77,10 +77,17 @@ public sealed class MainWindow : Window
         _tableTab.Click += async (_, _) => await ShowTablesAsync();
         KeyDown += async (_, e) =>
         {
-            if (e.Key == Key.S && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0)
+            bool control = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
+            if (e.Key == Key.S && control)
             {
                 e.Handled = true;
                 await SaveCurrentAsync();
+            }
+            // A text box handles its own undo first; this one undoes table edits
+            else if ((e.Key == Key.Z || e.Key == Key.Y) && control)
+            {
+                e.Handled = true;
+                await UndoAsync(redo: e.Key == Key.Y || (e.KeyModifiers & KeyModifiers.Shift) != 0);
             }
         };
         Opened += async (_, _) => await ShowSpellsAsync();
@@ -89,6 +96,15 @@ public sealed class MainWindow : Window
     }
 
     public Session Session => _session;
+
+    internal SpellEditorView SpellEditor => _spells;
+
+    internal DbcEditorView TableEditor => _tables;
+
+    internal Task ShowTablesForTestAsync()
+    {
+        return ShowTablesAsync();
+    }
 
     public void SetStatus(string text)
     {
@@ -157,6 +173,9 @@ public sealed class MainWindow : Window
             Close();
             return Task.CompletedTask;
         }));
+        MenuItem edit = new MenuItem { Header = "_Edit" };
+        edit.Items.Add(Item("_Undo", () => UndoAsync(redo: false), "Ctrl+Z"));
+        edit.Items.Add(Item("_Redo", () => UndoAsync(redo: true), "Ctrl+Y"));
         MenuItem tools = new MenuItem { Header = "_Tools" };
         tools.Items.Add(Item("Build _patch MPQ from .dbc files...", BuildPatchFromFilesAsync));
         tools.Items.Add(Item("_Open the export folder", () =>
@@ -173,6 +192,7 @@ public sealed class MainWindow : Window
             "Layouts and names come from AzerothCore. The workflow follows Stoneharry's WoW Spell Editor and " +
             "WDBX Editor.\n\nLicensed under the AGPL-3.0-or-later.")));
         menu.Items.Add(file);
+        menu.Items.Add(edit);
         menu.Items.Add(view);
         menu.Items.Add(tools);
         menu.Items.Add(help);
@@ -232,7 +252,8 @@ public sealed class MainWindow : Window
         List<string> modified = _session.ModifiedTables.Select(table => table.Definition.File).ToList();
         _store.Text = _session.Description + (modified.Count > 0 ? "  -  unsaved: " + string.Join(", ", modified)
                                                                  : string.Empty);
-        _store.Foreground = modified.Count > 0 ? ThemeBrushes.Warning : ThemeBrushes.MutedText;
+        Ui.Themed(_store, TextBlock.ForegroundProperty,
+                  modified.Count > 0 ? ThemeColours.WARNING : ThemeColours.MUTED_TEXT);
         string title = modified.Count > 0 ? "Anarres *" : "Anarres";
         Title = title;
         _windowTitle.Text = title;
@@ -263,6 +284,15 @@ public sealed class MainWindow : Window
             await _tables.SaveAsync();
     }
 
+    private Task UndoAsync(bool redo)
+    {
+        if (_content.Content == _spells)
+            _spells.Undo(redo);
+        else
+            _tables.Undo(redo);
+        return Task.CompletedTask;
+    }
+
     private async Task SaveAllAsync()
     {
         try
@@ -281,13 +311,18 @@ public sealed class MainWindow : Window
     private async Task<bool> ResolveUnsavedAsync()
     {
         List<string> modified = _session.ModifiedTables.Select(table => table.Definition.File).ToList();
+        if (_tables.UnsavedFile is { } file)
+            modified.Add(file);
         if (modified.Count == 0)
             return true;
         switch (await Dialogs.UnsavedAsync(this, modified))
         {
             case Dialogs.UnsavedChoice.Save:
+            {
                 await SaveAllAsync();
-                return !_session.ModifiedTables.Any();
+                await _tables.SaveFileAsync();
+                return !_session.ModifiedTables.Any() && _tables.UnsavedFile == null;
+            }
             case Dialogs.UnsavedChoice.Discard:
                 return true;
             default:
@@ -305,6 +340,7 @@ public sealed class MainWindow : Window
             return;
         settings.Save();
         _session.Use(settings);
+        _tables.ForgetStoredTable();
         _session.MySqlPassword = dialog.TypedPassword;
         App.UseTheme(settings.Theme);
         await ReloadAsync();
@@ -320,6 +356,7 @@ public sealed class MainWindow : Window
             return;
         _session.Settings.Save();
         _session.ForgetAll();
+        _tables.ForgetStoredTable();
         await ReloadAsync();
     }
 
@@ -368,7 +405,7 @@ public sealed class MainWindow : Window
 
     private async void OnClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (_closingConfirmed || !_session.ModifiedTables.Any())
+        if (_closingConfirmed || (!_session.ModifiedTables.Any() && _tables.UnsavedFile == null))
         {
             _session.Dispose();
             return;

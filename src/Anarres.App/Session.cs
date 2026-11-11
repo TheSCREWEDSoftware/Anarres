@@ -1,4 +1,5 @@
 using Anarres.Core.Dbc;
+using Anarres.Core.Mpq;
 using Anarres.Core.Settings;
 using Anarres.Core.Storage;
 
@@ -10,6 +11,7 @@ public sealed class Session : IDisposable
     private readonly Dictionary<string, DbcTable> _tables =
         new Dictionary<string, DbcTable>(StringComparer.OrdinalIgnoreCase);
     private IDbcStore? _store;
+    private Task<IconLibrary>? _icons;
 
     public Session(ProjectSettings settings)
     {
@@ -53,8 +55,36 @@ public sealed class Session : IDisposable
         Changed?.Invoke();
     }
 
+    // Picks up layouts saved to the definitions folder; loaded tables and their changes stay as they are
+    public void ReloadDefinitions()
+    {
+        Definitions = DbcDefinitions.Default.WithFolder(Settings.DefinitionsFolder);
+    }
+
+    // The client's icons, opened once in the background; empty when no WoW Data folder is set
+    public Task<IconLibrary> IconLibraryAsync()
+    {
+        ProjectSettings settings = Settings;
+        _icons ??= Task.Run(() =>
+        {
+            try
+            {
+                return new IconLibrary(settings.ClientDataFolder, settings.Locale);
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException or
+                                                  UnauthorizedAccessException)
+            {
+                return new IconLibrary(string.Empty, settings.Locale);
+            }
+        });
+        return _icons;
+    }
+
     public void Close()
     {
+        if (_icons is { IsCompletedSuccessfully: true })
+            _icons.Result.Dispose();
+        _icons = null;
         _store?.Dispose();
         _store = null;
         _tables.Clear();

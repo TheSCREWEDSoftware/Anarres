@@ -1,4 +1,5 @@
 using System.Globalization;
+using Anarres.Core.Settings;
 using Anarres.Core.Spells;
 using Avalonia;
 using Avalonia.Controls;
@@ -79,7 +80,7 @@ public sealed class FlagsDialog : Window
     private static Control Header()
     {
         Grid header = Columns();
-        header.Background = ThemeBrushes.Get(Anarres.Core.Settings.ThemeColours.GRID_HEADER);
+        Ui.Themed(header, Panel.BackgroundProperty, ThemeColours.GRID_HEADER);
         AddCell(header, 1, new TextBlock { Text = "Bit", FontWeight = FontWeight.SemiBold });
         AddCell(header, 2, new TextBlock { Text = "Value (2^Bit)", FontWeight = FontWeight.SemiBold });
         AddCell(header, 3, new TextBlock { Text = "Description", FontWeight = FontWeight.SemiBold });
@@ -117,7 +118,7 @@ public sealed class FlagsDialog : Window
 
         Grid row = Columns();
         if (bit % 2 == 1)
-            row.Background = ThemeBrushes.Get(Anarres.Core.Settings.ThemeColours.GRID_ALTERNATE);
+            Ui.Themed(row, Panel.BackgroundProperty, ThemeColours.GRID_ALTERNATE);
         AddCell(row, 0, toggle);
         AddCell(row, 1, new TextBlock { Text = bit.ToString(CultureInfo.InvariantCulture) });
         AddCell(row, 2, value);

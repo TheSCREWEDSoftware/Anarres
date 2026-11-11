@@ -26,6 +26,11 @@
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
 
+  <!-- The interface tests reach the windows' parts -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Anarres.App.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Anarres.Core\Anarres.Core.csproj" />
   </ItemGroup>

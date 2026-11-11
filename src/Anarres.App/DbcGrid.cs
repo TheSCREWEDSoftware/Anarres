@@ -33,6 +33,11 @@ public sealed class DbcGrid : Grid
     private DbcTable? _table;
     private List<int> _rows = new List<int>();
     private double[] _widths = Array.Empty<double>();
+    // The columns shown, in order; hidden ones are left out
+    private List<int> _order = new List<int>();
+    private List<int> _baseRows = new List<int>();
+    private int _sortColumn = -1;
+    private bool _sortDescending;
     private int _editRow = -1;
     private int _editColumn = -1;
 
@@ -87,17 +92,21 @@ public sealed class DbcGrid : Grid
         EndEdit(commit: false);
         bool sameTable = ReferenceEquals(table, _table);
         _table = table;
-        _rows = rows ?? (table == null ? new List<int>() : Enumerable.Range(0, table.Rows.Count).ToList());
+        _baseRows = rows ?? (table == null ? new List<int>() : Enumerable.Range(0, table.Rows.Count).ToList());
         if (!sameTable)
         {
             _widths = table?.Definition.Columns.Select(column => column.Type == DbcColumnType.String
                                                                      ? STRING_WIDTH
                                                                      : NUMBER_WIDTH).ToArray()
                       ?? Array.Empty<double>();
+            _order = Enumerable.Range(0, _widths.Length).ToList();
+            _sortColumn = -1;
             _vertical.Value = 0;
             _horizontal.Value = 0;
             SelectedColumn = 0;
         }
+
+        _rows = Sorted(_baseRows);
 
         SelectedIndex = _rows.Count == 0 ? -1 : Math.Clamp(SelectedIndex, 0, _rows.Count - 1);
         UpdateScrollBars();
@@ -108,6 +117,112 @@ public sealed class DbcGrid : Grid
     public void Refresh()
     {
         _surface.InvalidateVisual();
+    }
+
+    public bool IsSorted => _sortColumn >= 0;
+
+    // Table rows in the order they're shown, after the filter and the sort
+    public IReadOnlyList<int> ShownRows => _rows;
+
+    public IReadOnlyList<int> ShownColumns => _order;
+
+    public int HiddenColumnCount => _widths.Length - _order.Count;
+
+    // Sorts the shown rows by a column, or back to the table's order with column -1
+    public void SortBy(int column, bool descending)
+    {
+        int selected = SelectedRow;
+        _sortColumn = column;
+        _sortDescending = descending;
+        _rows = Sorted(_baseRows);
+        SelectedIndex = selected >= 0 ? _rows.IndexOf(selected) : SelectedIndex;
+        _surface.InvalidateVisual();
+        SelectionChanged?.Invoke();
+    }
+
+    public void HideColumn(int column)
+    {
+        if (_order.Count <= 1)
+            return;
+        int position = _order.IndexOf(column);
+        _order.Remove(column);
+        if (column == SelectedColumn)
+            SelectedColumn = _order[Math.Clamp(position, 0, _order.Count - 1)];
+        UpdateScrollBars();
+        _surface.InvalidateVisual();
+    }
+
+    public void ShowAllColumns()
+    {
+        _order = Enumerable.Range(0, _widths.Length).ToList();
+        UpdateScrollBars();
+        _surface.InvalidateVisual();
+    }
+
+    // Hides the columns that are zero or empty in every row
+    public void HideEmptyColumns()
+    {
+        if (_table == null)
+            return;
+        DbcTable table = _table;
+        _order = _order.Where(column => column == 0 || table.Rows.Any(cells => cells[column] != 0)).ToList();
+        if (!_order.Contains(SelectedColumn))
+            SelectedColumn = _order[0];
+        UpdateScrollBars();
+        _surface.InvalidateVisual();
+    }
+
+    private List<int> Sorted(List<int> rows)
+    {
+        if (_table == null || _sortColumn < 0 || _sortColumn >= _widths.Length)
+            return rows;
+        DbcTable table = _table;
+        int column = _sortColumn;
+        DbcColumnType type = table.Definition.Columns[column].Type;
+        Comparison<int> compare = type switch
+        {
+            DbcColumnType.String => (left, right) => string.Compare(table.GetString(left, column),
+                                                                    table.GetString(right, column),
+                                                                    StringComparison.OrdinalIgnoreCase),
+            DbcColumnType.Float => (left, right) => table.GetFloat(left, column)
+                                                         .CompareTo(table.GetFloat(right, column)),
+            DbcColumnType.Int32 or DbcColumnType.SByte or DbcColumnType.Int16 =>
+                (left, right) => table.GetInt(left, column).CompareTo(table.GetInt(right, column)),
+            _ => (left, right) => table.GetUInt(left, column).CompareTo(table.GetUInt(right, column))
+        };
+        List<int> sorted = new List<int>(rows);
+        // A stable sort, so rows with equal values keep their order
+        List<(int Row, int Position)> keyed = sorted.Select((row, position) => (row, position)).ToList();
+        keyed.Sort((left, right) =>
+        {
+            int result = compare(left.Row, right.Row);
+            if (_sortDescending)
+                result = -result;
+            return result != 0 ? result : left.Position.CompareTo(right.Position);
+        });
+        return keyed.Select(entry => entry.Row).ToList();
+    }
+
+    private double LeftOf(int column)
+    {
+        double left = 0;
+        foreach (int shown in _order)
+        {
+            if (shown == column)
+                break;
+            left += _widths[shown];
+        }
+
+        return left;
+    }
+
+    // The shown column delta places away from a column
+    private int Step(int column, int delta)
+    {
+        int position = _order.IndexOf(column);
+        if (position < 0)
+            return _order.Count > 0 ? _order[0] : 0;
+        return _order[Math.Clamp(position + delta, 0, _order.Count - 1)];
     }
 
     public void SelectRow(int tableRow)
@@ -122,7 +237,7 @@ public sealed class DbcGrid : Grid
         _surface.Focus();
     }
 
-    private double ContentWidth => _widths.Sum();
+    private double ContentWidth => _order.Sum(column => _widths[column]);
 
     private void UpdateScrollBars()
     {
@@ -143,7 +258,7 @@ public sealed class DbcGrid : Grid
         if (_table == null || _rows.Count == 0)
             return;
         SelectedIndex = Math.Clamp(index, 0, _rows.Count - 1);
-        SelectedColumn = Math.Clamp(column, 0, _widths.Length - 1);
+        SelectedColumn = _order.Contains(column) ? column : Step(column, 0);
         ScrollIntoView();
         _surface.InvalidateVisual();
         SelectionChanged?.Invoke();
@@ -158,7 +273,7 @@ public sealed class DbcGrid : Grid
         else if (top + ROW_HEIGHT > _vertical.Value + viewHeight)
             _vertical.Value = Math.Min(_vertical.Maximum, top + ROW_HEIGHT - viewHeight);
 
-        double left = _widths.Take(SelectedColumn).Sum();
+        double left = LeftOf(SelectedColumn);
         double right = left + _widths[SelectedColumn];
         if (left < _horizontal.Value)
             _horizontal.Value = left;
@@ -171,7 +286,7 @@ public sealed class DbcGrid : Grid
         int index = point.Y < HEADER_HEIGHT ? -1 : (int)((point.Y - HEADER_HEIGHT + _vertical.Value) / ROW_HEIGHT);
         double x = point.X + _horizontal.Value;
         double left = 0;
-        for (int column = 0; column < _widths.Length; ++column)
+        foreach (int column in _order)
         {
             if (x < left + _widths[column])
                 return (index, column);
@@ -188,7 +303,7 @@ public sealed class DbcGrid : Grid
             return -1;
         double x = point.X + _horizontal.Value;
         double right = 0;
-        for (int column = 0; column < _widths.Length; ++column)
+        foreach (int column in _order)
         {
             right += _widths[column];
             if (Math.Abs(x - right) <= RESIZE_GRIP)
@@ -205,7 +320,7 @@ public sealed class DbcGrid : Grid
         ScrollIntoView();
         _editRow = SelectedRow;
         _editColumn = SelectedColumn;
-        double left = _widths.Take(SelectedColumn).Sum() - _horizontal.Value;
+        double left = LeftOf(SelectedColumn) - _horizontal.Value;
         double top = HEADER_HEIGHT + SelectedIndex * ROW_HEIGHT - _vertical.Value;
         Canvas.SetLeft(_editor, left);
         Canvas.SetTop(_editor, top);
@@ -254,7 +369,7 @@ public sealed class DbcGrid : Grid
             case Key.Tab:
             {
                 EndEdit(commit: true);
-                Select(SelectedIndex, SelectedColumn + ((e.KeyModifiers & KeyModifiers.Shift) != 0 ? -1 : 1));
+                Select(SelectedIndex, Step(SelectedColumn, (e.KeyModifiers & KeyModifiers.Shift) != 0 ? -1 : 1));
                 e.Handled = true;
                 break;
             }
@@ -315,7 +430,8 @@ public sealed class DbcGrid : Grid
             int first = Math.Max(0, (int)(offsetY / ROW_HEIGHT));
             int last = Math.Min(_grid._rows.Count - 1,
                                 first + (int)((Bounds.Height - HEADER_HEIGHT) / ROW_HEIGHT) + 1);
-            (int firstColumn, double firstLeft) = FirstColumn(offsetX);
+            (int firstPosition, double firstLeft) = FirstColumn(offsetX);
+            List<int> order = _grid._order;
 
             using (context.PushClip(new Rect(0, HEADER_HEIGHT, Bounds.Width, Math.Max(0, Bounds.Height -
                                                                                          HEADER_HEIGHT))))
@@ -333,8 +449,9 @@ public sealed class DbcGrid : Grid
                         context.FillRectangle(alternate, rowRect);
 
                     double left = firstLeft - offsetX;
-                    for (int column = firstColumn; column < _grid._widths.Length && left < Bounds.Width; ++column)
+                    for (int position = firstPosition; position < order.Count && left < Bounds.Width; ++position)
                     {
+                        int column = order[position];
                         double width = _grid._widths[column];
                         Rect cell = new Rect(left, top, width, ROW_HEIGHT);
                         if (index == _grid.SelectedIndex && column == _grid.SelectedColumn)
@@ -353,11 +470,13 @@ public sealed class DbcGrid : Grid
 
             context.FillRectangle(header, new Rect(0, 0, Bounds.Width, HEADER_HEIGHT));
             double headerLeft = firstLeft - offsetX;
-            for (int column = firstColumn; column < _grid._widths.Length && headerLeft < Bounds.Width; ++column)
+            for (int position = firstPosition; position < order.Count && headerLeft < Bounds.Width; ++position)
             {
+                int column = order[position];
                 double width = _grid._widths[column];
                 DbcColumn definition = table.Definition.Columns[column];
-                DrawText(context, definition.Name, new Rect(headerLeft, 0, width, HEADER_HEIGHT),
+                string arrow = column == _grid._sortColumn ? (_grid._sortDescending ? " v" : " ^") : string.Empty;
+                DrawText(context, definition.Name + arrow, new Rect(headerLeft, 0, width, HEADER_HEIGHT),
                          column == _grid.SelectedColumn ? text : muted, _bold, rightAlign: false);
                 context.DrawLine(line, new Point(headerLeft + width - 0.5, 0),
                                  new Point(headerLeft + width - 0.5, HEADER_HEIGHT));
@@ -370,14 +489,15 @@ public sealed class DbcGrid : Grid
         private (int Column, double Left) FirstColumn(double offsetX)
         {
             double left = 0;
-            for (int column = 0; column < _grid._widths.Length; ++column)
+            for (int position = 0; position < _grid._order.Count; ++position)
             {
-                if (left + _grid._widths[column] > offsetX)
-                    return (column, left);
-                left += _grid._widths[column];
+                double width = _grid._widths[_grid._order[position]];
+                if (left + width > offsetX)
+                    return (position, left);
+                left += width;
             }
 
-            return (_grid._widths.Length, left);
+            return (_grid._order.Count, left);
         }
 
         private static void DrawText(DrawingContext context, string value, Rect cell, IBrush brush,
@@ -418,6 +538,20 @@ public sealed class DbcGrid : Grid
                 return;
             if (index < 0)
             {
+                if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+                {
+                    HeaderMenu(column).Open(this);
+                    return;
+                }
+
+                // Clicking a header sorts by it: up, then down, then back to the table's order
+                bool same = _grid._sortColumn == column;
+                if (!same)
+                    _grid.SortBy(column, descending: false);
+                else if (!_grid._sortDescending)
+                    _grid.SortBy(column, descending: true);
+                else
+                    _grid.SortBy(-1, descending: false);
                 _grid.Select(_grid.SelectedIndex, column);
                 return;
             }
@@ -472,6 +606,8 @@ public sealed class DbcGrid : Grid
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
+            if (_grid._table == null || _grid._order.Count == 0)
+                return;
             int page = Math.Max(1, (int)((Bounds.Height - HEADER_HEIGHT) / ROW_HEIGHT) - 1);
             bool control = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
             switch (e.Key)
@@ -483,11 +619,11 @@ public sealed class DbcGrid : Grid
                     _grid.Select(_grid.SelectedIndex + 1, _grid.SelectedColumn);
                     break;
                 case Key.Left:
-                    _grid.Select(_grid.SelectedIndex, _grid.SelectedColumn - 1);
+                    _grid.Select(_grid.SelectedIndex, _grid.Step(_grid.SelectedColumn, -1));
                     break;
                 case Key.Right:
                 case Key.Tab:
-                    _grid.Select(_grid.SelectedIndex, _grid.SelectedColumn + 1);
+                    _grid.Select(_grid.SelectedIndex, _grid.Step(_grid.SelectedColumn, 1));
                     break;
                 case Key.PageUp:
                     _grid.Select(_grid.SelectedIndex - page, _grid.SelectedColumn);
@@ -496,10 +632,10 @@ public sealed class DbcGrid : Grid
                     _grid.Select(_grid.SelectedIndex + page, _grid.SelectedColumn);
                     break;
                 case Key.Home:
-                    _grid.Select(control ? 0 : _grid.SelectedIndex, 0);
+                    _grid.Select(control ? 0 : _grid.SelectedIndex, _grid._order[0]);
                     break;
                 case Key.End:
-                    _grid.Select(control ? _grid._rows.Count - 1 : _grid.SelectedIndex, _grid._widths.Length - 1);
+                    _grid.Select(control ? _grid._rows.Count - 1 : _grid.SelectedIndex, _grid._order[^1]);
                     break;
                 case Key.Enter:
                 case Key.F2:
@@ -513,6 +649,28 @@ public sealed class DbcGrid : Grid
             }
 
             e.Handled = true;
+        }
+
+        private ContextMenu HeaderMenu(int column)
+        {
+            string name = _grid._table?.Definition.Columns[column].Name ?? string.Empty;
+            ContextMenu menu = new ContextMenu();
+            menu.Items.Add(MenuItem("Sort " + name + " up", () => _grid.SortBy(column, descending: false)));
+            menu.Items.Add(MenuItem("Sort " + name + " down", () => _grid.SortBy(column, descending: true)));
+            menu.Items.Add(MenuItem("Table order", () => _grid.SortBy(-1, descending: false)));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(MenuItem("Hide " + name, () => _grid.HideColumn(column)));
+            menu.Items.Add(MenuItem("Hide empty columns", _grid.HideEmptyColumns));
+            menu.Items.Add(MenuItem("Show all columns", _grid.ShowAllColumns));
+            return menu;
+        }
+
+        private static MenuItem MenuItem(string header, Action action)
+        {
+            // Underscores are doubled so column names aren't read as access keys
+            MenuItem item = new MenuItem { Header = header.Replace("_", "__") };
+            item.Click += (_, _) => action();
+            return item;
         }
 
         // Typing on a selected cell starts editing it with what was typed

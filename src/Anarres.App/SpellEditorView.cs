@@ -1,6 +1,7 @@
 using System.Globalization;
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
+using Anarres.Core.Settings;
 using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 using Avalonia;
@@ -35,8 +36,12 @@ public sealed class SpellEditorView : Grid
     private readonly SelectableTextBlock _preview = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap };
     private readonly SelectableTextBlock _auraPreview = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap };
     private readonly DispatcherTimer _searchTimer;
+    private readonly Image _headerIcon = new Image { Width = 48, Height = 48, Margin = new Thickness(0, 0, 12, 0) };
+    private readonly Image _lookIcon = new Image { Width = 32, Height = 32 };
+    private readonly SpellVisualView _visual;
     private DbcTable? _spells;
     private TabControl? _tabs;
+    private IconImages? _images;
 
     public SpellEditorView(MainWindow window, Session session)
     {
@@ -55,8 +60,16 @@ public sealed class SpellEditorView : Grid
             _searchTimer.Start();
         };
         _list.SelectionChanged += (_, _) => ShowSelected();
-        _binding.Edited += _ => Edited();
-        _unsaved.Foreground = ThemeBrushes.Warning;
+        _visual = new SpellVisualView(session, () => session.NotifyChanged());
+        _binding.Edited += column =>
+        {
+            Edited();
+            if (SpellVisualView.IsVisualColumn(column))
+                _visual.Show(_binding.Row);
+            if (column is "SpellIconID")
+                UpdateHeading();
+        };
+        Ui.Themed(_unsaved, TextBlock.ForegroundProperty, ThemeColours.WARNING);
 
         Children.Add(BuildListPanel());
         Border editor = Ui.Card(BuildEditorPanel());
@@ -93,6 +106,8 @@ public sealed class SpellEditorView : Grid
             _lookups.Variables = await _session.TryLoadAsync("SpellDescriptionVariables.dbc");
             CastTimes = await _session.TryLoadAsync("SpellCastTimes.dbc");
             Icons = await _session.TryLoadAsync("SpellIcon.dbc");
+            _images = new IconImages(await _session.IconLibraryAsync(), Icons);
+            await _visual.LoadAsync(_spells);
             BuildEditor(_spells.Definition);
             Filter();
             if (_list.SelectedIndex < 0 && _list.ItemCount > 0)
@@ -134,11 +149,12 @@ public sealed class SpellEditorView : Grid
 
         _list.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<SpellItem>((_, _) =>
         {
-            TextBlock id = new TextBlock { Width = 58, Foreground = ThemeBrushes.MutedText, FontSize = 12,
-                                           VerticalAlignment = VerticalAlignment.Center };
+            TextBlock id = Ui.Themed(new TextBlock { Width = 58, FontSize = 12,
+                                                     VerticalAlignment = VerticalAlignment.Center },
+                                     TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT);
             TextBlock name = new TextBlock { TextTrimming = TextTrimming.CharacterEllipsis };
-            TextBlock rank = new TextBlock { Foreground = ThemeBrushes.MutedText, FontSize = 12,
-                                             VerticalAlignment = VerticalAlignment.Center };
+            TextBlock rank = Ui.Themed(new TextBlock { FontSize = 12, VerticalAlignment = VerticalAlignment.Center },
+                                       TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT);
             id.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Id)));
             name.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.DisplayName)));
             rank.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Rank)));
@@ -160,14 +176,22 @@ public sealed class SpellEditorView : Grid
     {
         Button save = Ui.AsyncButton("Save", SaveAsync, accent: true);
         Button revert = Ui.AsyncButton("Revert", RevertAsync);
-        Button sql = Ui.AsyncButton("SQL...", ExportSqlAsync);
+        Button sql = new Button { Content = "SQL..." };
+        sql.Flyout = new MenuFlyout
+        {
+            Items =
+            {
+                Item("This spell", () => ExportSqlAsync(changedOnly: false)),
+                Item("Every spell changed from the clean Spell.dbc", () => ExportSqlAsync(changedOnly: true))
+            }
+        };
         Button world = Ui.AsyncButton("Send to world DB...", SendToWorldAsync);
         ToolTip.SetTip(save, "Save every changed spell to the project (Ctrl+S)");
         ToolTip.SetTip(revert, "Drop changes not saved yet and load the saved spells again");
-        ToolTip.SetTip(sql, "Write this spell as SQL for AzerothCore's spell_dbc table");
+        ToolTip.SetTip(sql, "Write spells as SQL for AzerothCore's spell_dbc table");
         ToolTip.SetTip(world, "Write this spell straight into spell_dbc in your AzerothCore world database");
 
-        StackPanel heading = Ui.Vertical(2, _title, _subtitle);
+        StackPanel heading = Ui.Horizontal(_headerIcon, Ui.Vertical(2, _title, _subtitle));
         StackPanel actions = Ui.Horizontal(_unsaved, sql, world, revert, save);
         actions.HorizontalAlignment = HorizontalAlignment.Right;
         actions.VerticalAlignment = VerticalAlignment.Center;
@@ -209,6 +233,7 @@ public sealed class SpellEditorView : Grid
         _tabs.Items.Add(Tab("Targets & Requirements", TargetsTab()));
         _tabs.Items.Add(Tab("Procs & Interrupts", ProcsTab()));
         _tabs.Items.Add(Tab("Items & Reagents", ItemsTab()));
+        _tabs.Items.Add(Tab("Visual", _visual));
         _tabs.Items.Add(Tab("Localisation", LocalesTab()));
         _tabs.Items.Add(new TabItem { Header = "All fields", Content = new AllFieldsView(_binding, definition).View });
         _tabs.SelectedIndex = Math.Clamp(selected, 0, _tabs.ItemCount - 1);
@@ -260,13 +285,12 @@ public sealed class SpellEditorView : Grid
         aura.ValueChanged += UpdatePreview;
         _binding.Edited += _ => UpdatePreview();
 
-        Border previewBox = new Border
+        Border previewBox = Ui.Themed(new Border
         {
-            Background = ThemeBrushes.Get(Anarres.Core.Settings.ThemeColours.RAISED),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(10),
             Child = Ui.Vertical(6, Ui.Hint("Tooltip preview"), _preview, Ui.Hint("Buff preview"), _auraPreview)
-        };
+        }, Border.BackgroundProperty, ThemeColours.RAISED);
 
         return Ui.Vertical(0,
             Ui.Group("Name and text",
@@ -319,12 +343,39 @@ public sealed class SpellEditorView : Grid
                      Cell("Spell level", "SpellLevel"),
                      Cell("Max level", "MaxLevel")),
             Ui.Group("Look",
-                     Lookup("Icon", "SpellIconID", Icon),
+                     IconRow(),
                      Lookup("Active icon", "ActiveIconID", Icon),
                      Cell("Visual 1", "SpellVisualID_1"),
                      Cell("Visual 2", "SpellVisualID_2"),
                      Cell("Missile", "SpellMissileID"),
                      Cell("Stance bar order", "StanceBarOrder")));
+    }
+
+    private Control IconRow()
+    {
+        LookupField icon = new LookupField(_binding, "SpellIconID", Icon);
+        icon.Value.ValueChanged += () => _lookIcon.Source = _images?.Get(icon.Value.Raw());
+        Button pick = Ui.AsyncButton("Pick...", PickIconAsync);
+        ToolTip.SetTip(pick, "Choose from every icon in SpellIcon.dbc");
+        return Named(Ui.Row("Icon", _lookIcon, icon.View, pick), "SpellIconID");
+    }
+
+    private async Task PickIconAsync()
+    {
+        if (_spells == null || !_binding.IsBound || _images?.Icons == null)
+        {
+            _window.SetStatus("Import SpellIcon.dbc to pick icons.");
+            return;
+        }
+
+        int column = _spells.Definition.IndexOf("SpellIconID");
+        IconPickerWindow picker = new IconPickerWindow(_images, _spells.GetUInt(_binding.Row, column));
+        uint? chosen = await picker.ShowDialog<uint?>(_window);
+        if (chosen is not { } icon)
+            return;
+        _spells.SetUInt(_binding.Row, column, icon);
+        _binding.Refresh();
+        Edited();
     }
 
     private Control AttributesTab()
@@ -596,9 +647,12 @@ public sealed class SpellEditorView : Grid
         }
 
         int row = _spells.FindRow(item.Id);
+        // Edits to one spell are a separate undo step from the next spell's
+        _spells.BreakUndoStep();
         _binding.Bind(_spells, row);
         UpdateHeading();
         UpdatePreview();
+        _visual.Show(row);
     }
 
     private void UpdateHeading()
@@ -610,7 +664,9 @@ public sealed class SpellEditorView : Grid
         _subtitle.Text = "Spell " + spell.Id.ToString(CultureInfo.InvariantCulture) +
                          (spell.Rank.Length > 0 ? "  -  " + spell.Rank : string.Empty) + "  -  " +
                          SpellEnums.Get(SpellEnums.SCHOOL).Describe(spell.U("SchoolMask"));
-        _unsaved.IsVisible = _spells!.IsModified;
+        _unsaved.IsVisible = _session.ModifiedTables.Any();
+        _headerIcon.Source = _images?.Get(spell.U("SpellIconID"));
+        _lookIcon.Source = _headerIcon.Source;
     }
 
     private void UpdatePreview()
@@ -689,6 +745,7 @@ public sealed class SpellEditorView : Grid
         _session.NotifyChanged();
     }
 
+    // Saves Spell.dbc and the other tables the spell editor changed, such as visuals and kits
     public async Task SaveAsync()
     {
         if (_spells == null)
@@ -696,8 +753,12 @@ public sealed class SpellEditorView : Grid
         try
         {
             int changed = _spells.ChangedKeys.Count + _spells.RemovedKeys.Count;
-            await _session.SaveAsync(_spells);
-            _window.SetStatus("Saved " + changed + (changed == 1 ? " spell" : " spells") + " to the project.");
+            List<string> others = _session.ModifiedTables.Where(table => table != _spells)
+                                          .Select(table => table.Definition.File).ToList();
+            await _session.SaveAllAsync();
+            _window.SetStatus("Saved " + changed + (changed == 1 ? " spell" : " spells") +
+                              (others.Count > 0 ? " and " + string.Join(", ", others) : string.Empty) +
+                              " to the project.");
             UpdateHeading();
         }
         catch (Exception exception) when (exception is InvalidOperationException or IOException or
@@ -709,29 +770,88 @@ public sealed class SpellEditorView : Grid
 
     private async Task RevertAsync()
     {
-        if (_spells is not { IsModified: true })
+        if (_spells == null || !_session.ModifiedTables.Any())
             return;
-        if (!await Dialogs.ConfirmAsync(_window, "Revert", "Drop every spell change that isn't saved yet?",
+        if (!await Dialogs.ConfirmAsync(_window, "Revert", "Drop every spell and visual change that isn't saved yet?",
                                         "Revert"))
             return;
         uint? selected = (_list.SelectedItem as SpellItem)?.Id;
         _session.Forget(SpellRecord.FILE);
+        foreach (string file in new[] { "SpellVisual.dbc", "SpellVisualKit.dbc" })
+            _session.Forget(file);
         await LoadAsync();
         if (selected is { } id)
             Select(id);
     }
 
-    private async Task ExportSqlAsync()
+    private async Task ExportSqlAsync(bool changedOnly)
     {
-        if (_spells == null || !_binding.IsBound)
+        if (_spells == null || (!changedOnly && !_binding.IsBound))
             return;
-        SpellRecord spell = new SpellRecord(_spells, _binding.Row);
-        string? path = await Ui.SaveFileAsync(_window, "Save SQL for spell_dbc", "spell_" + spell.Id + ".sql",
-                                              "SQL file", "sql");
+        DbcTable spells = _spells;
+        List<int> rows;
+        string suggested;
+        if (changedOnly)
+        {
+            _window.SetStatus("Comparing with the clean Spell.dbc...");
+            DbcTable? clean = await Task.Run(() => DbcMerge.LoadSource(_session.Settings, SpellRecord.FILE,
+                                                                       _session.Definitions));
+            if (clean == null)
+            {
+                await Dialogs.MessageAsync(_window, "No clean Spell.dbc", "There's no clean Spell.dbc to compare " +
+                                                                          "with. Set the Clean DBC folder or the " +
+                                                                          "WoW Data folder in Project settings.");
+                return;
+            }
+
+            rows = await Task.Run(() => DbcMerge.Changed(clean, spells));
+            suggested = "spell_dbc_changed.sql";
+        }
+        else
+        {
+            rows = new List<int> { _binding.Row };
+            suggested = "spell_" + new SpellRecord(spells, _binding.Row).Id + ".sql";
+        }
+
+        if (rows.Count == 0)
+        {
+            _window.SetStatus("No spell differs from the clean Spell.dbc.");
+            return;
+        }
+
+        string? path = await Ui.SaveFileAsync(_window, "Save SQL for spell_dbc", suggested, "SQL file", "sql");
         if (path == null)
             return;
-        SqlExport.Write(path, _spells, new[] { _binding.Row });
-        _window.SetStatus("Wrote " + path + ". Run it on acore_world and restart the worldserver.");
+        SqlExport.Write(path, spells, rows);
+        _window.SetStatus("Wrote " + rows.Count + (rows.Count == 1 ? " spell" : " spells") + " to " + path +
+                          ". Run it on acore_world and restart the worldserver.");
+    }
+
+    // Undoes or redoes the last spell change, and shows the spell it touched
+    public void Undo(bool redo)
+    {
+        if (_spells == null)
+            return;
+        int row = redo ? _spells.Redo() : _spells.Undo();
+        if (row < 0)
+        {
+            _window.SetStatus(redo ? "Nothing to redo." : "Nothing to undo.");
+            return;
+        }
+
+        Filter();
+        Select(_spells.Key(row));
+        _binding.Refresh();
+        UpdatePreview();
+        _visual.Show(_binding.Row);
+        _session.NotifyChanged();
+    }
+
+    private static MenuItem Item(string header, Func<Task> action)
+    {
+        MenuItem item = new MenuItem { Header = header };
+        item.Click += async (_, _) => await action();
+        return item;
     }
 
     private async Task SendToWorldAsync()

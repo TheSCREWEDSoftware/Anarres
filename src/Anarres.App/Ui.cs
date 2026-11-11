@@ -76,6 +76,13 @@ public static class Ui
         return new Border { Classes = { "group" }, Child = panel };
     }
 
+    // Follows a theme colour, so the control changes with the theme instead of keeping the colour it was made with
+    public static T Themed<T>(T control, AvaloniaProperty property, string key) where T : Control
+    {
+        control.Bind(property, control.GetResourceObservable(ThemeBrushes.RESOURCE_PREFIX + key));
+        return control;
+    }
+
     public static Border Card(Control child)
     {
         return new Border { Classes = { "card" }, Child = child };
