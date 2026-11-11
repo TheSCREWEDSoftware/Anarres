@@ -1,0 +1,6561 @@
+{
+  "Source": "Generated from AzerothCore src/server headers by tools/generate-definitions.py",
+  "Enums": {
+    "Effect": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_EFFECT_INSTAKILL",
+          "Label": "Instakill",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_EFFECT_SCHOOL_DAMAGE",
+          "Label": "School Damage",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "SPELL_EFFECT_DUMMY",
+          "Label": "Dummy",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_EFFECT_PORTAL_TELEPORT",
+          "Label": "Portal Teleport",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "SPELL_EFFECT_TELEPORT_UNITS",
+          "Label": "Teleport Units",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "SPELL_EFFECT_APPLY_AURA",
+          "Label": "Apply Aura",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "SPELL_EFFECT_ENVIRONMENTAL_DAMAGE",
+          "Label": "Environmental Damage",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_EFFECT_POWER_DRAIN",
+          "Label": "Power Drain",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "SPELL_EFFECT_HEALTH_LEECH",
+          "Label": "Health Leech",
+          "Description": ""
+        },
+        {
+          "Value": 10,
+          "Name": "SPELL_EFFECT_HEAL",
+          "Label": "Heal",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "SPELL_EFFECT_BIND",
+          "Label": "Bind",
+          "Description": ""
+        },
+        {
+          "Value": 12,
+          "Name": "SPELL_EFFECT_PORTAL",
+          "Label": "Portal",
+          "Description": ""
+        },
+        {
+          "Value": 13,
+          "Name": "SPELL_EFFECT_RITUAL_BASE",
+          "Label": "Ritual Base",
+          "Description": ""
+        },
+        {
+          "Value": 14,
+          "Name": "SPELL_EFFECT_RITUAL_SPECIALIZE",
+          "Label": "Ritual Specialize",
+          "Description": ""
+        },
+        {
+          "Value": 15,
+          "Name": "SPELL_EFFECT_RITUAL_ACTIVATE_PORTAL",
+          "Label": "Ritual Activate Portal",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_EFFECT_QUEST_COMPLETE",
+          "Label": "Quest Complete",
+          "Description": ""
+        },
+        {
+          "Value": 17,
+          "Name": "SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL",
+          "Label": "Weapon Damage Noschool",
+          "Description": ""
+        },
+        {
+          "Value": 18,
+          "Name": "SPELL_EFFECT_RESURRECT",
+          "Label": "Resurrect",
+          "Description": ""
+        },
+        {
+          "Value": 19,
+          "Name": "SPELL_EFFECT_ADD_EXTRA_ATTACKS",
+          "Label": "Add Extra Attacks",
+          "Description": ""
+        },
+        {
+          "Value": 20,
+          "Name": "SPELL_EFFECT_DODGE",
+          "Label": "Dodge",
+          "Description": ""
+        },
+        {
+          "Value": 21,
+          "Name": "SPELL_EFFECT_EVADE",
+          "Label": "Evade",
+          "Description": ""
+        },
+        {
+          "Value": 22,
+          "Name": "SPELL_EFFECT_PARRY",
+          "Label": "Parry",
+          "Description": ""
+        },
+        {
+          "Value": 23,
+          "Name": "SPELL_EFFECT_BLOCK",
+          "Label": "Block",
+          "Description": ""
+        },
+        {
+          "Value": 24,
+          "Name": "SPELL_EFFECT_CREATE_ITEM",
+          "Label": "Create Item",
+          "Description": ""
+        },
+        {
+          "Value": 25,
+          "Name": "SPELL_EFFECT_WEAPON",
+          "Label": "Weapon",
+          "Description": ""
+        },
+        {
+          "Value": 26,
+          "Name": "SPELL_EFFECT_DEFENSE",
+          "Label": "Defense",
+          "Description": ""
+        },
+        {
+          "Value": 27,
+          "Name": "SPELL_EFFECT_PERSISTENT_AREA_AURA",
+          "Label": "Persistent Area Aura",
+          "Description": ""
+        },
+        {
+          "Value": 28,
+          "Name": "SPELL_EFFECT_SUMMON",
+          "Label": "Summon",
+          "Description": ""
+        },
+        {
+          "Value": 29,
+          "Name": "SPELL_EFFECT_LEAP",
+          "Label": "Leap",
+          "Description": ""
+        },
+        {
+          "Value": 30,
+          "Name": "SPELL_EFFECT_ENERGIZE",
+          "Label": "Energize",
+          "Description": ""
+        },
+        {
+          "Value": 31,
+          "Name": "SPELL_EFFECT_WEAPON_PERCENT_DAMAGE",
+          "Label": "Weapon Percent Damage",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_EFFECT_TRIGGER_MISSILE",
+          "Label": "Trigger Missile",
+          "Description": ""
+        },
+        {
+          "Value": 33,
+          "Name": "SPELL_EFFECT_OPEN_LOCK",
+          "Label": "Open Lock",
+          "Description": ""
+        },
+        {
+          "Value": 34,
+          "Name": "SPELL_EFFECT_SUMMON_CHANGE_ITEM",
+          "Label": "Summon Change Item",
+          "Description": ""
+        },
+        {
+          "Value": 35,
+          "Name": "SPELL_EFFECT_APPLY_AREA_AURA_PARTY",
+          "Label": "Apply Area Aura Party",
+          "Description": ""
+        },
+        {
+          "Value": 36,
+          "Name": "SPELL_EFFECT_LEARN_SPELL",
+          "Label": "Learn Spell",
+          "Description": ""
+        },
+        {
+          "Value": 37,
+          "Name": "SPELL_EFFECT_SPELL_DEFENSE",
+          "Label": "Spell Defense",
+          "Description": ""
+        },
+        {
+          "Value": 38,
+          "Name": "SPELL_EFFECT_DISPEL",
+          "Label": "Dispel",
+          "Description": ""
+        },
+        {
+          "Value": 39,
+          "Name": "SPELL_EFFECT_LANGUAGE",
+          "Label": "Language",
+          "Description": ""
+        },
+        {
+          "Value": 40,
+          "Name": "SPELL_EFFECT_DUAL_WIELD",
+          "Label": "Dual Wield",
+          "Description": ""
+        },
+        {
+          "Value": 41,
+          "Name": "SPELL_EFFECT_JUMP",
+          "Label": "Jump",
+          "Description": ""
+        },
+        {
+          "Value": 42,
+          "Name": "SPELL_EFFECT_JUMP_DEST",
+          "Label": "Jump Dest",
+          "Description": ""
+        },
+        {
+          "Value": 43,
+          "Name": "SPELL_EFFECT_TELEPORT_UNITS_FACE_CASTER",
+          "Label": "Teleport Units Face Caster",
+          "Description": ""
+        },
+        {
+          "Value": 44,
+          "Name": "SPELL_EFFECT_SKILL_STEP",
+          "Label": "Skill Step",
+          "Description": ""
+        },
+        {
+          "Value": 45,
+          "Name": "SPELL_EFFECT_ADD_HONOR",
+          "Label": "Add Honor",
+          "Description": ""
+        },
+        {
+          "Value": 46,
+          "Name": "SPELL_EFFECT_SPAWN",
+          "Label": "Spawn",
+          "Description": ""
+        },
+        {
+          "Value": 47,
+          "Name": "SPELL_EFFECT_TRADE_SKILL",
+          "Label": "Trade Skill",
+          "Description": ""
+        },
+        {
+          "Value": 48,
+          "Name": "SPELL_EFFECT_STEALTH",
+          "Label": "Stealth",
+          "Description": ""
+        },
+        {
+          "Value": 49,
+          "Name": "SPELL_EFFECT_DETECT",
+          "Label": "Detect",
+          "Description": ""
+        },
+        {
+          "Value": 50,
+          "Name": "SPELL_EFFECT_TRANS_DOOR",
+          "Label": "Trans Door",
+          "Description": ""
+        },
+        {
+          "Value": 51,
+          "Name": "SPELL_EFFECT_FORCE_CRITICAL_HIT",
+          "Label": "Force Critical Hit",
+          "Description": ""
+        },
+        {
+          "Value": 52,
+          "Name": "SPELL_EFFECT_GUARANTEE_HIT",
+          "Label": "Guarantee Hit",
+          "Description": ""
+        },
+        {
+          "Value": 53,
+          "Name": "SPELL_EFFECT_ENCHANT_ITEM",
+          "Label": "Enchant Item",
+          "Description": ""
+        },
+        {
+          "Value": 54,
+          "Name": "SPELL_EFFECT_ENCHANT_ITEM_TEMPORARY",
+          "Label": "Enchant Item Temporary",
+          "Description": ""
+        },
+        {
+          "Value": 55,
+          "Name": "SPELL_EFFECT_TAMECREATURE",
+          "Label": "Tamecreature",
+          "Description": ""
+        },
+        {
+          "Value": 56,
+          "Name": "SPELL_EFFECT_SUMMON_PET",
+          "Label": "Summon Pet",
+          "Description": ""
+        },
+        {
+          "Value": 57,
+          "Name": "SPELL_EFFECT_LEARN_PET_SPELL",
+          "Label": "Learn Pet Spell",
+          "Description": ""
+        },
+        {
+          "Value": 58,
+          "Name": "SPELL_EFFECT_WEAPON_DAMAGE",
+          "Label": "Weapon Damage",
+          "Description": ""
+        },
+        {
+          "Value": 59,
+          "Name": "SPELL_EFFECT_CREATE_RANDOM_ITEM",
+          "Label": "Create Random Item",
+          "Description": ""
+        },
+        {
+          "Value": 60,
+          "Name": "SPELL_EFFECT_PROFICIENCY",
+          "Label": "Proficiency",
+          "Description": ""
+        },
+        {
+          "Value": 61,
+          "Name": "SPELL_EFFECT_SEND_EVENT",
+          "Label": "Send Event",
+          "Description": ""
+        },
+        {
+          "Value": 62,
+          "Name": "SPELL_EFFECT_POWER_BURN",
+          "Label": "Power Burn",
+          "Description": ""
+        },
+        {
+          "Value": 63,
+          "Name": "SPELL_EFFECT_THREAT",
+          "Label": "Threat",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_EFFECT_TRIGGER_SPELL",
+          "Label": "Trigger Spell",
+          "Description": ""
+        },
+        {
+          "Value": 65,
+          "Name": "SPELL_EFFECT_APPLY_AREA_AURA_RAID",
+          "Label": "Apply Area Aura Raid",
+          "Description": ""
+        },
+        {
+          "Value": 66,
+          "Name": "SPELL_EFFECT_CREATE_MANA_GEM",
+          "Label": "Create Mana Gem",
+          "Description": ""
+        },
+        {
+          "Value": 67,
+          "Name": "SPELL_EFFECT_HEAL_MAX_HEALTH",
+          "Label": "Heal Max Health",
+          "Description": ""
+        },
+        {
+          "Value": 68,
+          "Name": "SPELL_EFFECT_INTERRUPT_CAST",
+          "Label": "Interrupt Cast",
+          "Description": ""
+        },
+        {
+          "Value": 69,
+          "Name": "SPELL_EFFECT_DISTRACT",
+          "Label": "Distract",
+          "Description": ""
+        },
+        {
+          "Value": 70,
+          "Name": "SPELL_EFFECT_PULL",
+          "Label": "Pull",
+          "Description": ""
+        },
+        {
+          "Value": 71,
+          "Name": "SPELL_EFFECT_PICKPOCKET",
+          "Label": "Pickpocket",
+          "Description": ""
+        },
+        {
+          "Value": 72,
+          "Name": "SPELL_EFFECT_ADD_FARSIGHT",
+          "Label": "Add Farsight",
+          "Description": ""
+        },
+        {
+          "Value": 73,
+          "Name": "SPELL_EFFECT_UNTRAIN_TALENTS",
+          "Label": "Untrain Talents",
+          "Description": ""
+        },
+        {
+          "Value": 74,
+          "Name": "SPELL_EFFECT_APPLY_GLYPH",
+          "Label": "Apply Glyph",
+          "Description": ""
+        },
+        {
+          "Value": 75,
+          "Name": "SPELL_EFFECT_HEAL_MECHANICAL",
+          "Label": "Heal Mechanical",
+          "Description": ""
+        },
+        {
+          "Value": 76,
+          "Name": "SPELL_EFFECT_SUMMON_OBJECT_WILD",
+          "Label": "Summon Object Wild",
+          "Description": ""
+        },
+        {
+          "Value": 77,
+          "Name": "SPELL_EFFECT_SCRIPT_EFFECT",
+          "Label": "Script Effect",
+          "Description": ""
+        },
+        {
+          "Value": 78,
+          "Name": "SPELL_EFFECT_ATTACK",
+          "Label": "Attack",
+          "Description": ""
+        },
+        {
+          "Value": 79,
+          "Name": "SPELL_EFFECT_SANCTUARY",
+          "Label": "Sanctuary",
+          "Description": ""
+        },
+        {
+          "Value": 80,
+          "Name": "SPELL_EFFECT_ADD_COMBO_POINTS",
+          "Label": "Add Combo Points",
+          "Description": ""
+        },
+        {
+          "Value": 81,
+          "Name": "SPELL_EFFECT_CREATE_HOUSE",
+          "Label": "Create House",
+          "Description": ""
+        },
+        {
+          "Value": 82,
+          "Name": "SPELL_EFFECT_BIND_SIGHT",
+          "Label": "Bind Sight",
+          "Description": ""
+        },
+        {
+          "Value": 83,
+          "Name": "SPELL_EFFECT_DUEL",
+          "Label": "Duel",
+          "Description": ""
+        },
+        {
+          "Value": 84,
+          "Name": "SPELL_EFFECT_STUCK",
+          "Label": "Stuck",
+          "Description": ""
+        },
+        {
+          "Value": 85,
+          "Name": "SPELL_EFFECT_SUMMON_PLAYER",
+          "Label": "Summon Player",
+          "Description": ""
+        },
+        {
+          "Value": 86,
+          "Name": "SPELL_EFFECT_ACTIVATE_OBJECT",
+          "Label": "Activate Object",
+          "Description": ""
+        },
+        {
+          "Value": 87,
+          "Name": "SPELL_EFFECT_GAMEOBJECT_DAMAGE",
+          "Label": "Gameobject Damage",
+          "Description": ""
+        },
+        {
+          "Value": 88,
+          "Name": "SPELL_EFFECT_GAMEOBJECT_REPAIR",
+          "Label": "Gameobject Repair",
+          "Description": ""
+        },
+        {
+          "Value": 89,
+          "Name": "SPELL_EFFECT_GAMEOBJECT_SET_DESTRUCTION_STATE",
+          "Label": "Gameobject Set Destruction State",
+          "Description": ""
+        },
+        {
+          "Value": 90,
+          "Name": "SPELL_EFFECT_KILL_CREDIT",
+          "Label": "Kill Credit",
+          "Description": ""
+        },
+        {
+          "Value": 92,
+          "Name": "SPELL_EFFECT_ENCHANT_HELD_ITEM",
+          "Label": "Enchant Held Item",
+          "Description": ""
+        },
+        {
+          "Value": 93,
+          "Name": "SPELL_EFFECT_FORCE_DESELECT",
+          "Label": "Force Deselect",
+          "Description": ""
+        },
+        {
+          "Value": 94,
+          "Name": "SPELL_EFFECT_SELF_RESURRECT",
+          "Label": "Self Resurrect",
+          "Description": ""
+        },
+        {
+          "Value": 95,
+          "Name": "SPELL_EFFECT_SKINNING",
+          "Label": "Skinning",
+          "Description": ""
+        },
+        {
+          "Value": 96,
+          "Name": "SPELL_EFFECT_CHARGE",
+          "Label": "Charge",
+          "Description": ""
+        },
+        {
+          "Value": 97,
+          "Name": "SPELL_EFFECT_CAST_BUTTON",
+          "Label": "Cast Button",
+          "Description": ""
+        },
+        {
+          "Value": 98,
+          "Name": "SPELL_EFFECT_KNOCK_BACK",
+          "Label": "Knock Back",
+          "Description": ""
+        },
+        {
+          "Value": 99,
+          "Name": "SPELL_EFFECT_DISENCHANT",
+          "Label": "Disenchant",
+          "Description": ""
+        },
+        {
+          "Value": 100,
+          "Name": "SPELL_EFFECT_INEBRIATE",
+          "Label": "Inebriate",
+          "Description": ""
+        },
+        {
+          "Value": 101,
+          "Name": "SPELL_EFFECT_FEED_PET",
+          "Label": "Feed Pet",
+          "Description": ""
+        },
+        {
+          "Value": 102,
+          "Name": "SPELL_EFFECT_DISMISS_PET",
+          "Label": "Dismiss Pet",
+          "Description": ""
+        },
+        {
+          "Value": 103,
+          "Name": "SPELL_EFFECT_REPUTATION",
+          "Label": "Reputation",
+          "Description": ""
+        },
+        {
+          "Value": 104,
+          "Name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT1",
+          "Label": "Summon Object Slot1",
+          "Description": ""
+        },
+        {
+          "Value": 105,
+          "Name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT2",
+          "Label": "Summon Object Slot2",
+          "Description": ""
+        },
+        {
+          "Value": 106,
+          "Name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT3",
+          "Label": "Summon Object Slot3",
+          "Description": ""
+        },
+        {
+          "Value": 107,
+          "Name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT4",
+          "Label": "Summon Object Slot4",
+          "Description": ""
+        },
+        {
+          "Value": 108,
+          "Name": "SPELL_EFFECT_DISPEL_MECHANIC",
+          "Label": "Dispel Mechanic",
+          "Description": ""
+        },
+        {
+          "Value": 109,
+          "Name": "SPELL_EFFECT_RESURRECT_PET",
+          "Label": "Resurrect Pet",
+          "Description": ""
+        },
+        {
+          "Value": 110,
+          "Name": "SPELL_EFFECT_DESTROY_ALL_TOTEMS",
+          "Label": "Destroy All Totems",
+          "Description": ""
+        },
+        {
+          "Value": 111,
+          "Name": "SPELL_EFFECT_DURABILITY_DAMAGE",
+          "Label": "Durability Damage",
+          "Description": ""
+        },
+        {
+          "Value": 112,
+          "Name": "SPELL_EFFECT_112",
+          "Label": "112",
+          "Description": ""
+        },
+        {
+          "Value": 113,
+          "Name": "SPELL_EFFECT_RESURRECT_NEW",
+          "Label": "Resurrect New",
+          "Description": ""
+        },
+        {
+          "Value": 114,
+          "Name": "SPELL_EFFECT_ATTACK_ME",
+          "Label": "Attack Me",
+          "Description": ""
+        },
+        {
+          "Value": 115,
+          "Name": "SPELL_EFFECT_DURABILITY_DAMAGE_PCT",
+          "Label": "Durability Damage Pct",
+          "Description": ""
+        },
+        {
+          "Value": 116,
+          "Name": "SPELL_EFFECT_SKIN_PLAYER_CORPSE",
+          "Label": "Skin Player Corpse",
+          "Description": ""
+        },
+        {
+          "Value": 117,
+          "Name": "SPELL_EFFECT_SPIRIT_HEAL",
+          "Label": "Spirit Heal",
+          "Description": ""
+        },
+        {
+          "Value": 118,
+          "Name": "SPELL_EFFECT_SKILL",
+          "Label": "Skill",
+          "Description": ""
+        },
+        {
+          "Value": 119,
+          "Name": "SPELL_EFFECT_APPLY_AREA_AURA_PET",
+          "Label": "Apply Area Aura Pet",
+          "Description": ""
+        },
+        {
+          "Value": 120,
+          "Name": "SPELL_EFFECT_TELEPORT_GRAVEYARD",
+          "Label": "Teleport Graveyard",
+          "Description": ""
+        },
+        {
+          "Value": 121,
+          "Name": "SPELL_EFFECT_NORMALIZED_WEAPON_DMG",
+          "Label": "Normalized Weapon Dmg",
+          "Description": ""
+        },
+        {
+          "Value": 122,
+          "Name": "SPELL_EFFECT_122",
+          "Label": "122",
+          "Description": ""
+        },
+        {
+          "Value": 123,
+          "Name": "SPELL_EFFECT_SEND_TAXI",
+          "Label": "Send Taxi",
+          "Description": ""
+        },
+        {
+          "Value": 124,
+          "Name": "SPELL_EFFECT_PULL_TOWARDS",
+          "Label": "Pull Towards",
+          "Description": ""
+        },
+        {
+          "Value": 125,
+          "Name": "SPELL_EFFECT_MODIFY_THREAT_PERCENT",
+          "Label": "Modify Threat Percent",
+          "Description": ""
+        },
+        {
+          "Value": 126,
+          "Name": "SPELL_EFFECT_STEAL_BENEFICIAL_BUFF",
+          "Label": "Steal Beneficial Buff",
+          "Description": ""
+        },
+        {
+          "Value": 127,
+          "Name": "SPELL_EFFECT_PROSPECTING",
+          "Label": "Prospecting",
+          "Description": ""
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_EFFECT_APPLY_AREA_AURA_FRIEND",
+          "Label": "Apply Area Aura Friend",
+          "Description": ""
+        },
+        {
+          "Value": 129,
+          "Name": "SPELL_EFFECT_APPLY_AREA_AURA_ENEMY",
+          "Label": "Apply Area Aura Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 130,
+          "Name": "SPELL_EFFECT_REDIRECT_THREAT",
+          "Label": "Redirect Threat",
+          "Description": ""
+        },
+        {
+          "Value": 131,
+          "Name": "SPELL_EFFECT_PLAY_SOUND",
+          "Label": "Play Sound",
+          "Description": ""
+        },
+        {
+          "Value": 132,
+          "Name": "SPELL_EFFECT_PLAY_MUSIC",
+          "Label": "Play Music",
+          "Description": ""
+        },
+        {
+          "Value": 133,
+          "Name": "SPELL_EFFECT_UNLEARN_SPECIALIZATION",
+          "Label": "Unlearn Specialization",
+          "Description": ""
+        },
+        {
+          "Value": 134,
+          "Name": "SPELL_EFFECT_KILL_CREDIT2",
+          "Label": "Kill Credit2",
+          "Description": ""
+        },
+        {
+          "Value": 135,
+          "Name": "SPELL_EFFECT_CALL_PET",
+          "Label": "Call Pet",
+          "Description": ""
+        },
+        {
+          "Value": 136,
+          "Name": "SPELL_EFFECT_HEAL_PCT",
+          "Label": "Heal Pct",
+          "Description": ""
+        },
+        {
+          "Value": 137,
+          "Name": "SPELL_EFFECT_ENERGIZE_PCT",
+          "Label": "Energize Pct",
+          "Description": ""
+        },
+        {
+          "Value": 138,
+          "Name": "SPELL_EFFECT_LEAP_BACK",
+          "Label": "Leap Back",
+          "Description": ""
+        },
+        {
+          "Value": 139,
+          "Name": "SPELL_EFFECT_CLEAR_QUEST",
+          "Label": "Clear Quest",
+          "Description": ""
+        },
+        {
+          "Value": 140,
+          "Name": "SPELL_EFFECT_FORCE_CAST",
+          "Label": "Force Cast",
+          "Description": ""
+        },
+        {
+          "Value": 141,
+          "Name": "SPELL_EFFECT_FORCE_CAST_WITH_VALUE",
+          "Label": "Force Cast With Value",
+          "Description": ""
+        },
+        {
+          "Value": 142,
+          "Name": "SPELL_EFFECT_TRIGGER_SPELL_WITH_VALUE",
+          "Label": "Trigger Spell With Value",
+          "Description": ""
+        },
+        {
+          "Value": 143,
+          "Name": "SPELL_EFFECT_APPLY_AREA_AURA_OWNER",
+          "Label": "Apply Area Aura Owner",
+          "Description": ""
+        },
+        {
+          "Value": 144,
+          "Name": "SPELL_EFFECT_KNOCK_BACK_DEST",
+          "Label": "Knock Back Dest",
+          "Description": ""
+        },
+        {
+          "Value": 145,
+          "Name": "SPELL_EFFECT_PULL_TOWARDS_DEST",
+          "Label": "Pull Towards Dest",
+          "Description": ""
+        },
+        {
+          "Value": 146,
+          "Name": "SPELL_EFFECT_ACTIVATE_RUNE",
+          "Label": "Activate Rune",
+          "Description": ""
+        },
+        {
+          "Value": 147,
+          "Name": "SPELL_EFFECT_QUEST_FAIL",
+          "Label": "Quest Fail",
+          "Description": ""
+        },
+        {
+          "Value": 148,
+          "Name": "SPELL_EFFECT_TRIGGER_MISSILE_SPELL_WITH_VALUE",
+          "Label": "Trigger Missile Spell With Value",
+          "Description": ""
+        },
+        {
+          "Value": 149,
+          "Name": "SPELL_EFFECT_CHARGE_DEST",
+          "Label": "Charge Dest",
+          "Description": ""
+        },
+        {
+          "Value": 150,
+          "Name": "SPELL_EFFECT_QUEST_START",
+          "Label": "Quest Start",
+          "Description": ""
+        },
+        {
+          "Value": 151,
+          "Name": "SPELL_EFFECT_TRIGGER_SPELL_2",
+          "Label": "Trigger Spell 2",
+          "Description": ""
+        },
+        {
+          "Value": 152,
+          "Name": "SPELL_EFFECT_SUMMON_RAF_FRIEND",
+          "Label": "Summon Raf Friend",
+          "Description": ""
+        },
+        {
+          "Value": 153,
+          "Name": "SPELL_EFFECT_CREATE_TAMED_PET",
+          "Label": "Create Tamed Pet",
+          "Description": ""
+        },
+        {
+          "Value": 154,
+          "Name": "SPELL_EFFECT_DISCOVER_TAXI",
+          "Label": "Discover Taxi",
+          "Description": ""
+        },
+        {
+          "Value": 155,
+          "Name": "SPELL_EFFECT_TITAN_GRIP",
+          "Label": "Titan Grip",
+          "Description": ""
+        },
+        {
+          "Value": 156,
+          "Name": "SPELL_EFFECT_ENCHANT_ITEM_PRISMATIC",
+          "Label": "Enchant Item Prismatic",
+          "Description": ""
+        },
+        {
+          "Value": 157,
+          "Name": "SPELL_EFFECT_CREATE_ITEM_2",
+          "Label": "Create Item 2",
+          "Description": ""
+        },
+        {
+          "Value": 158,
+          "Name": "SPELL_EFFECT_MILLING",
+          "Label": "Milling",
+          "Description": ""
+        },
+        {
+          "Value": 159,
+          "Name": "SPELL_EFFECT_ALLOW_RENAME_PET",
+          "Label": "Allow Rename Pet",
+          "Description": ""
+        },
+        {
+          "Value": 160,
+          "Name": "SPELL_EFFECT_FORCE_CAST_2",
+          "Label": "Force Cast 2",
+          "Description": ""
+        },
+        {
+          "Value": 162,
+          "Name": "SPELL_EFFECT_TALENT_SPEC_SELECT",
+          "Label": "Talent Spec Select",
+          "Description": ""
+        },
+        {
+          "Value": 163,
+          "Name": "SPELL_EFFECT_163",
+          "Label": "163",
+          "Description": ""
+        },
+        {
+          "Value": 164,
+          "Name": "SPELL_EFFECT_REMOVE_AURA",
+          "Label": "Remove Aura",
+          "Description": ""
+        },
+        {
+          "Value": 165,
+          "Name": "TOTAL_SPELL_EFFECTS",
+          "Label": "Total Spell Effects",
+          "Description": ""
+        }
+      ]
+    },
+    "Aura": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "SPELL_AURA_NONE",
+          "Label": "None",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "SPELL_AURA_BIND_SIGHT",
+          "Label": "Bind Sight",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_AURA_MOD_POSSESS",
+          "Label": "Mod Possess",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "SPELL_AURA_PERIODIC_DAMAGE",
+          "Label": "Periodic Damage",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_AURA_DUMMY",
+          "Label": "Dummy",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "SPELL_AURA_MOD_CONFUSE",
+          "Label": "Mod Confuse",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "SPELL_AURA_MOD_CHARM",
+          "Label": "Mod Charm",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "SPELL_AURA_MOD_FEAR",
+          "Label": "Mod Fear",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_AURA_PERIODIC_HEAL",
+          "Label": "Periodic Heal",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "SPELL_AURA_MOD_ATTACKSPEED",
+          "Label": "Mod Attackspeed",
+          "Description": ""
+        },
+        {
+          "Value": 10,
+          "Name": "SPELL_AURA_MOD_THREAT",
+          "Label": "Mod Threat",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "SPELL_AURA_MOD_TAUNT",
+          "Label": "Mod Taunt",
+          "Description": ""
+        },
+        {
+          "Value": 12,
+          "Name": "SPELL_AURA_MOD_STUN",
+          "Label": "Mod Stun",
+          "Description": ""
+        },
+        {
+          "Value": 13,
+          "Name": "SPELL_AURA_MOD_DAMAGE_DONE",
+          "Label": "Mod Damage Done",
+          "Description": ""
+        },
+        {
+          "Value": 14,
+          "Name": "SPELL_AURA_MOD_DAMAGE_TAKEN",
+          "Label": "Mod Damage Taken",
+          "Description": ""
+        },
+        {
+          "Value": 15,
+          "Name": "SPELL_AURA_DAMAGE_SHIELD",
+          "Label": "Damage Shield",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_AURA_MOD_STEALTH",
+          "Label": "Mod Stealth",
+          "Description": ""
+        },
+        {
+          "Value": 17,
+          "Name": "SPELL_AURA_MOD_STEALTH_DETECT",
+          "Label": "Mod Stealth Detect",
+          "Description": ""
+        },
+        {
+          "Value": 18,
+          "Name": "SPELL_AURA_MOD_INVISIBILITY",
+          "Label": "Mod Invisibility",
+          "Description": ""
+        },
+        {
+          "Value": 19,
+          "Name": "SPELL_AURA_MOD_INVISIBILITY_DETECT",
+          "Label": "Mod Invisibility Detect",
+          "Description": ""
+        },
+        {
+          "Value": 20,
+          "Name": "SPELL_AURA_OBS_MOD_HEALTH",
+          "Label": "Obs Mod Health",
+          "Description": "unofficial"
+        },
+        {
+          "Value": 21,
+          "Name": "SPELL_AURA_OBS_MOD_POWER",
+          "Label": "Obs Mod Power",
+          "Description": "unofficial"
+        },
+        {
+          "Value": 22,
+          "Name": "SPELL_AURA_MOD_RESISTANCE",
+          "Label": "Mod Resistance",
+          "Description": ""
+        },
+        {
+          "Value": 23,
+          "Name": "SPELL_AURA_PERIODIC_TRIGGER_SPELL",
+          "Label": "Periodic Trigger Spell",
+          "Description": ""
+        },
+        {
+          "Value": 24,
+          "Name": "SPELL_AURA_PERIODIC_ENERGIZE",
+          "Label": "Periodic Energize",
+          "Description": ""
+        },
+        {
+          "Value": 25,
+          "Name": "SPELL_AURA_MOD_PACIFY",
+          "Label": "Mod Pacify",
+          "Description": ""
+        },
+        {
+          "Value": 26,
+          "Name": "SPELL_AURA_MOD_ROOT",
+          "Label": "Mod Root",
+          "Description": ""
+        },
+        {
+          "Value": 27,
+          "Name": "SPELL_AURA_MOD_SILENCE",
+          "Label": "Mod Silence",
+          "Description": ""
+        },
+        {
+          "Value": 28,
+          "Name": "SPELL_AURA_REFLECT_SPELLS",
+          "Label": "Reflect Spells",
+          "Description": ""
+        },
+        {
+          "Value": 29,
+          "Name": "SPELL_AURA_MOD_STAT",
+          "Label": "Mod Stat",
+          "Description": ""
+        },
+        {
+          "Value": 30,
+          "Name": "SPELL_AURA_MOD_SKILL",
+          "Label": "Mod Skill",
+          "Description": ""
+        },
+        {
+          "Value": 31,
+          "Name": "SPELL_AURA_MOD_INCREASE_SPEED",
+          "Label": "Mod Increase Speed",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED",
+          "Label": "Mod Increase Mounted Speed",
+          "Description": ""
+        },
+        {
+          "Value": 33,
+          "Name": "SPELL_AURA_MOD_DECREASE_SPEED",
+          "Label": "Mod Decrease Speed",
+          "Description": ""
+        },
+        {
+          "Value": 34,
+          "Name": "SPELL_AURA_MOD_INCREASE_HEALTH",
+          "Label": "Mod Increase Health",
+          "Description": ""
+        },
+        {
+          "Value": 35,
+          "Name": "SPELL_AURA_MOD_INCREASE_ENERGY",
+          "Label": "Mod Increase Energy",
+          "Description": ""
+        },
+        {
+          "Value": 36,
+          "Name": "SPELL_AURA_MOD_SHAPESHIFT",
+          "Label": "Mod Shapeshift",
+          "Description": ""
+        },
+        {
+          "Value": 37,
+          "Name": "SPELL_AURA_EFFECT_IMMUNITY",
+          "Label": "Effect Immunity",
+          "Description": ""
+        },
+        {
+          "Value": 38,
+          "Name": "SPELL_AURA_STATE_IMMUNITY",
+          "Label": "State Immunity",
+          "Description": ""
+        },
+        {
+          "Value": 39,
+          "Name": "SPELL_AURA_SCHOOL_IMMUNITY",
+          "Label": "School Immunity",
+          "Description": ""
+        },
+        {
+          "Value": 40,
+          "Name": "SPELL_AURA_DAMAGE_IMMUNITY",
+          "Label": "Damage Immunity",
+          "Description": ""
+        },
+        {
+          "Value": 41,
+          "Name": "SPELL_AURA_DISPEL_IMMUNITY",
+          "Label": "Dispel Immunity",
+          "Description": ""
+        },
+        {
+          "Value": 42,
+          "Name": "SPELL_AURA_PROC_TRIGGER_SPELL",
+          "Label": "Proc Trigger Spell",
+          "Description": ""
+        },
+        {
+          "Value": 43,
+          "Name": "SPELL_AURA_PROC_TRIGGER_DAMAGE",
+          "Label": "Proc Trigger Damage",
+          "Description": ""
+        },
+        {
+          "Value": 44,
+          "Name": "SPELL_AURA_TRACK_CREATURES",
+          "Label": "Track Creatures",
+          "Description": ""
+        },
+        {
+          "Value": 45,
+          "Name": "SPELL_AURA_TRACK_RESOURCES",
+          "Label": "Track Resources",
+          "Description": ""
+        },
+        {
+          "Value": 46,
+          "Name": "SPELL_AURA_46",
+          "Label": "46",
+          "Description": "Ignore all Gear test spells"
+        },
+        {
+          "Value": 47,
+          "Name": "SPELL_AURA_MOD_PARRY_PERCENT",
+          "Label": "Mod Parry Percent",
+          "Description": ""
+        },
+        {
+          "Value": 48,
+          "Name": "SPELL_AURA_PERIODIC_TRIGGER_SPELL_FROM_CLIENT",
+          "Label": "Periodic Trigger Spell From Client",
+          "Description": "One periodic spell"
+        },
+        {
+          "Value": 49,
+          "Name": "SPELL_AURA_MOD_DODGE_PERCENT",
+          "Label": "Mod Dodge Percent",
+          "Description": ""
+        },
+        {
+          "Value": 50,
+          "Name": "SPELL_AURA_MOD_CRITICAL_HEALING_AMOUNT",
+          "Label": "Mod Critical Healing Amount",
+          "Description": ""
+        },
+        {
+          "Value": 51,
+          "Name": "SPELL_AURA_MOD_BLOCK_PERCENT",
+          "Label": "Mod Block Percent",
+          "Description": ""
+        },
+        {
+          "Value": 52,
+          "Name": "SPELL_AURA_MOD_WEAPON_CRIT_PERCENT",
+          "Label": "Mod Weapon Crit Percent",
+          "Description": ""
+        },
+        {
+          "Value": 53,
+          "Name": "SPELL_AURA_PERIODIC_LEECH",
+          "Label": "Periodic Leech",
+          "Description": ""
+        },
+        {
+          "Value": 54,
+          "Name": "SPELL_AURA_MOD_HIT_CHANCE",
+          "Label": "Mod Hit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 55,
+          "Name": "SPELL_AURA_MOD_SPELL_HIT_CHANCE",
+          "Label": "Mod Spell Hit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 56,
+          "Name": "SPELL_AURA_TRANSFORM",
+          "Label": "Transform",
+          "Description": ""
+        },
+        {
+          "Value": 57,
+          "Name": "SPELL_AURA_MOD_SPELL_CRIT_CHANCE",
+          "Label": "Mod Spell Crit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 58,
+          "Name": "SPELL_AURA_MOD_INCREASE_SWIM_SPEED",
+          "Label": "Mod Increase Swim Speed",
+          "Description": ""
+        },
+        {
+          "Value": 59,
+          "Name": "SPELL_AURA_MOD_DAMAGE_DONE_CREATURE",
+          "Label": "Mod Damage Done Creature",
+          "Description": ""
+        },
+        {
+          "Value": 60,
+          "Name": "SPELL_AURA_MOD_PACIFY_SILENCE",
+          "Label": "Mod Pacify Silence",
+          "Description": ""
+        },
+        {
+          "Value": 61,
+          "Name": "SPELL_AURA_MOD_SCALE",
+          "Label": "Mod Scale",
+          "Description": ""
+        },
+        {
+          "Value": 62,
+          "Name": "SPELL_AURA_PERIODIC_HEALTH_FUNNEL",
+          "Label": "Periodic Health Funnel",
+          "Description": ""
+        },
+        {
+          "Value": 63,
+          "Name": "SPELL_AURA_63",
+          "Label": "63",
+          "Description": "old SPELL_AURA_PERIODIC_MANA_FUNNEL"
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_AURA_PERIODIC_MANA_LEECH",
+          "Label": "Periodic Mana Leech",
+          "Description": ""
+        },
+        {
+          "Value": 65,
+          "Name": "SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK",
+          "Label": "Mod Casting Speed Not Stack",
+          "Description": ""
+        },
+        {
+          "Value": 66,
+          "Name": "SPELL_AURA_FEIGN_DEATH",
+          "Label": "Feign Death",
+          "Description": ""
+        },
+        {
+          "Value": 67,
+          "Name": "SPELL_AURA_MOD_DISARM",
+          "Label": "Mod Disarm",
+          "Description": ""
+        },
+        {
+          "Value": 68,
+          "Name": "SPELL_AURA_MOD_STALKED",
+          "Label": "Mod Stalked",
+          "Description": ""
+        },
+        {
+          "Value": 69,
+          "Name": "SPELL_AURA_SCHOOL_ABSORB",
+          "Label": "School Absorb",
+          "Description": ""
+        },
+        {
+          "Value": 70,
+          "Name": "SPELL_AURA_EXTRA_ATTACKS",
+          "Label": "Extra Attacks",
+          "Description": ""
+        },
+        {
+          "Value": 71,
+          "Name": "SPELL_AURA_MOD_SPELL_CRIT_CHANCE_SCHOOL",
+          "Label": "Mod Spell Crit Chance School",
+          "Description": ""
+        },
+        {
+          "Value": 72,
+          "Name": "SPELL_AURA_MOD_POWER_COST_SCHOOL_PCT",
+          "Label": "Mod Power Cost School Pct",
+          "Description": ""
+        },
+        {
+          "Value": 73,
+          "Name": "SPELL_AURA_MOD_POWER_COST_SCHOOL",
+          "Label": "Mod Power Cost School",
+          "Description": ""
+        },
+        {
+          "Value": 74,
+          "Name": "SPELL_AURA_REFLECT_SPELLS_SCHOOL",
+          "Label": "Reflect Spells School",
+          "Description": ""
+        },
+        {
+          "Value": 75,
+          "Name": "SPELL_AURA_MOD_LANGUAGE",
+          "Label": "Mod Language",
+          "Description": ""
+        },
+        {
+          "Value": 76,
+          "Name": "SPELL_AURA_FAR_SIGHT",
+          "Label": "Far Sight",
+          "Description": ""
+        },
+        {
+          "Value": 77,
+          "Name": "SPELL_AURA_MECHANIC_IMMUNITY",
+          "Label": "Mechanic Immunity",
+          "Description": ""
+        },
+        {
+          "Value": 78,
+          "Name": "SPELL_AURA_MOUNTED",
+          "Label": "Mounted",
+          "Description": ""
+        },
+        {
+          "Value": 79,
+          "Name": "SPELL_AURA_MOD_DAMAGE_PERCENT_DONE",
+          "Label": "Mod Damage Percent Done",
+          "Description": ""
+        },
+        {
+          "Value": 80,
+          "Name": "SPELL_AURA_MOD_PERCENT_STAT",
+          "Label": "Mod Percent Stat",
+          "Description": ""
+        },
+        {
+          "Value": 81,
+          "Name": "SPELL_AURA_SPLIT_DAMAGE_PCT",
+          "Label": "Split Damage Pct",
+          "Description": ""
+        },
+        {
+          "Value": 82,
+          "Name": "SPELL_AURA_WATER_BREATHING",
+          "Label": "Water Breathing",
+          "Description": ""
+        },
+        {
+          "Value": 83,
+          "Name": "SPELL_AURA_MOD_BASE_RESISTANCE",
+          "Label": "Mod Base Resistance",
+          "Description": ""
+        },
+        {
+          "Value": 84,
+          "Name": "SPELL_AURA_MOD_REGEN",
+          "Label": "Mod Regen",
+          "Description": ""
+        },
+        {
+          "Value": 85,
+          "Name": "SPELL_AURA_MOD_POWER_REGEN",
+          "Label": "Mod Power Regen",
+          "Description": ""
+        },
+        {
+          "Value": 86,
+          "Name": "SPELL_AURA_CHANNEL_DEATH_ITEM",
+          "Label": "Channel Death Item",
+          "Description": ""
+        },
+        {
+          "Value": 87,
+          "Name": "SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN",
+          "Label": "Mod Damage Percent Taken",
+          "Description": ""
+        },
+        {
+          "Value": 88,
+          "Name": "SPELL_AURA_MOD_HEALTH_REGEN_PERCENT",
+          "Label": "Mod Health Regen Percent",
+          "Description": ""
+        },
+        {
+          "Value": 89,
+          "Name": "SPELL_AURA_PERIODIC_DAMAGE_PERCENT",
+          "Label": "Periodic Damage Percent",
+          "Description": ""
+        },
+        {
+          "Value": 90,
+          "Name": "SPELL_AURA_90",
+          "Label": "90",
+          "Description": "old SPELL_AURA_MOD_RESIST_CHANCE"
+        },
+        {
+          "Value": 91,
+          "Name": "SPELL_AURA_MOD_DETECT_RANGE",
+          "Label": "Mod Detect Range",
+          "Description": ""
+        },
+        {
+          "Value": 92,
+          "Name": "SPELL_AURA_PREVENTS_FLEEING",
+          "Label": "Prevents Fleeing",
+          "Description": ""
+        },
+        {
+          "Value": 93,
+          "Name": "SPELL_AURA_MOD_UNATTACKABLE",
+          "Label": "Mod Unattackable",
+          "Description": ""
+        },
+        {
+          "Value": 94,
+          "Name": "SPELL_AURA_INTERRUPT_REGEN",
+          "Label": "Interrupt Regen",
+          "Description": ""
+        },
+        {
+          "Value": 95,
+          "Name": "SPELL_AURA_GHOST",
+          "Label": "Ghost",
+          "Description": ""
+        },
+        {
+          "Value": 96,
+          "Name": "SPELL_AURA_SPELL_MAGNET",
+          "Label": "Spell Magnet",
+          "Description": ""
+        },
+        {
+          "Value": 97,
+          "Name": "SPELL_AURA_MANA_SHIELD",
+          "Label": "Mana Shield",
+          "Description": ""
+        },
+        {
+          "Value": 98,
+          "Name": "SPELL_AURA_MOD_SKILL_TALENT",
+          "Label": "Mod Skill Talent",
+          "Description": ""
+        },
+        {
+          "Value": 99,
+          "Name": "SPELL_AURA_MOD_ATTACK_POWER",
+          "Label": "Mod Attack Power",
+          "Description": ""
+        },
+        {
+          "Value": 100,
+          "Name": "SPELL_AURA_AURAS_VISIBLE",
+          "Label": "Auras Visible",
+          "Description": ""
+        },
+        {
+          "Value": 101,
+          "Name": "SPELL_AURA_MOD_RESISTANCE_PCT",
+          "Label": "Mod Resistance Pct",
+          "Description": ""
+        },
+        {
+          "Value": 102,
+          "Name": "SPELL_AURA_MOD_MELEE_ATTACK_POWER_VERSUS",
+          "Label": "Mod Melee Attack Power Versus",
+          "Description": ""
+        },
+        {
+          "Value": 103,
+          "Name": "SPELL_AURA_MOD_TOTAL_THREAT",
+          "Label": "Mod Total Threat",
+          "Description": ""
+        },
+        {
+          "Value": 104,
+          "Name": "SPELL_AURA_WATER_WALK",
+          "Label": "Water Walk",
+          "Description": ""
+        },
+        {
+          "Value": 105,
+          "Name": "SPELL_AURA_FEATHER_FALL",
+          "Label": "Feather Fall",
+          "Description": ""
+        },
+        {
+          "Value": 106,
+          "Name": "SPELL_AURA_HOVER",
+          "Label": "Hover",
+          "Description": ""
+        },
+        {
+          "Value": 107,
+          "Name": "SPELL_AURA_ADD_FLAT_MODIFIER",
+          "Label": "Add Flat Modifier",
+          "Description": ""
+        },
+        {
+          "Value": 108,
+          "Name": "SPELL_AURA_ADD_PCT_MODIFIER",
+          "Label": "Add Pct Modifier",
+          "Description": ""
+        },
+        {
+          "Value": 109,
+          "Name": "SPELL_AURA_ADD_TARGET_TRIGGER",
+          "Label": "Add Target Trigger",
+          "Description": ""
+        },
+        {
+          "Value": 110,
+          "Name": "SPELL_AURA_MOD_POWER_REGEN_PERCENT",
+          "Label": "Mod Power Regen Percent",
+          "Description": ""
+        },
+        {
+          "Value": 111,
+          "Name": "SPELL_AURA_ADD_CASTER_HIT_TRIGGER",
+          "Label": "Add Caster Hit Trigger",
+          "Description": ""
+        },
+        {
+          "Value": 112,
+          "Name": "SPELL_AURA_OVERRIDE_CLASS_SCRIPTS",
+          "Label": "Override Class Scripts",
+          "Description": ""
+        },
+        {
+          "Value": 113,
+          "Name": "SPELL_AURA_MOD_RANGED_DAMAGE_TAKEN",
+          "Label": "Mod Ranged Damage Taken",
+          "Description": ""
+        },
+        {
+          "Value": 114,
+          "Name": "SPELL_AURA_MOD_RANGED_DAMAGE_TAKEN_PCT",
+          "Label": "Mod Ranged Damage Taken Pct",
+          "Description": ""
+        },
+        {
+          "Value": 115,
+          "Name": "SPELL_AURA_MOD_HEALING",
+          "Label": "Mod Healing",
+          "Description": ""
+        },
+        {
+          "Value": 116,
+          "Name": "SPELL_AURA_MOD_REGEN_DURING_COMBAT",
+          "Label": "Mod Regen During Combat",
+          "Description": ""
+        },
+        {
+          "Value": 117,
+          "Name": "SPELL_AURA_MOD_MECHANIC_RESISTANCE",
+          "Label": "Mod Mechanic Resistance",
+          "Description": ""
+        },
+        {
+          "Value": 118,
+          "Name": "SPELL_AURA_MOD_HEALING_PCT",
+          "Label": "Mod Healing Pct",
+          "Description": ""
+        },
+        {
+          "Value": 119,
+          "Name": "SPELL_AURA_119",
+          "Label": "119",
+          "Description": "old SPELL_AURA_SHARE_PET_TRACKING"
+        },
+        {
+          "Value": 120,
+          "Name": "SPELL_AURA_UNTRACKABLE",
+          "Label": "Untrackable",
+          "Description": ""
+        },
+        {
+          "Value": 121,
+          "Name": "SPELL_AURA_EMPATHY",
+          "Label": "Empathy",
+          "Description": ""
+        },
+        {
+          "Value": 122,
+          "Name": "SPELL_AURA_MOD_OFFHAND_DAMAGE_PCT",
+          "Label": "Mod Offhand Damage Pct",
+          "Description": ""
+        },
+        {
+          "Value": 123,
+          "Name": "SPELL_AURA_MOD_TARGET_RESISTANCE",
+          "Label": "Mod Target Resistance",
+          "Description": ""
+        },
+        {
+          "Value": 124,
+          "Name": "SPELL_AURA_MOD_RANGED_ATTACK_POWER",
+          "Label": "Mod Ranged Attack Power",
+          "Description": ""
+        },
+        {
+          "Value": 125,
+          "Name": "SPELL_AURA_MOD_MELEE_DAMAGE_TAKEN",
+          "Label": "Mod Melee Damage Taken",
+          "Description": ""
+        },
+        {
+          "Value": 126,
+          "Name": "SPELL_AURA_MOD_MELEE_DAMAGE_TAKEN_PCT",
+          "Label": "Mod Melee Damage Taken Pct",
+          "Description": ""
+        },
+        {
+          "Value": 127,
+          "Name": "SPELL_AURA_RANGED_ATTACK_POWER_ATTACKER_BONUS",
+          "Label": "Ranged Attack Power Attacker Bonus",
+          "Description": ""
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_AURA_MOD_POSSESS_PET",
+          "Label": "Mod Possess Pet",
+          "Description": ""
+        },
+        {
+          "Value": 129,
+          "Name": "SPELL_AURA_MOD_SPEED_ALWAYS",
+          "Label": "Mod Speed Always",
+          "Description": ""
+        },
+        {
+          "Value": 130,
+          "Name": "SPELL_AURA_MOD_MOUNTED_SPEED_ALWAYS",
+          "Label": "Mod Mounted Speed Always",
+          "Description": ""
+        },
+        {
+          "Value": 131,
+          "Name": "SPELL_AURA_MOD_RANGED_ATTACK_POWER_VERSUS",
+          "Label": "Mod Ranged Attack Power Versus",
+          "Description": ""
+        },
+        {
+          "Value": 132,
+          "Name": "SPELL_AURA_MOD_INCREASE_ENERGY_PERCENT",
+          "Label": "Mod Increase Energy Percent",
+          "Description": ""
+        },
+        {
+          "Value": 133,
+          "Name": "SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT",
+          "Label": "Mod Increase Health Percent",
+          "Description": ""
+        },
+        {
+          "Value": 134,
+          "Name": "SPELL_AURA_MOD_MANA_REGEN_INTERRUPT",
+          "Label": "Mod Mana Regen Interrupt",
+          "Description": ""
+        },
+        {
+          "Value": 135,
+          "Name": "SPELL_AURA_MOD_HEALING_DONE",
+          "Label": "Mod Healing Done",
+          "Description": ""
+        },
+        {
+          "Value": 136,
+          "Name": "SPELL_AURA_MOD_HEALING_DONE_PERCENT",
+          "Label": "Mod Healing Done Percent",
+          "Description": ""
+        },
+        {
+          "Value": 137,
+          "Name": "SPELL_AURA_MOD_TOTAL_STAT_PERCENTAGE",
+          "Label": "Mod Total Stat Percentage",
+          "Description": ""
+        },
+        {
+          "Value": 138,
+          "Name": "SPELL_AURA_MOD_MELEE_HASTE",
+          "Label": "Mod Melee Haste",
+          "Description": ""
+        },
+        {
+          "Value": 139,
+          "Name": "SPELL_AURA_FORCE_REACTION",
+          "Label": "Force Reaction",
+          "Description": ""
+        },
+        {
+          "Value": 140,
+          "Name": "SPELL_AURA_MOD_RANGED_HASTE",
+          "Label": "Mod Ranged Haste",
+          "Description": ""
+        },
+        {
+          "Value": 141,
+          "Name": "SPELL_AURA_MOD_RANGED_AMMO_HASTE",
+          "Label": "Mod Ranged Ammo Haste",
+          "Description": ""
+        },
+        {
+          "Value": 142,
+          "Name": "SPELL_AURA_MOD_BASE_RESISTANCE_PCT",
+          "Label": "Mod Base Resistance Pct",
+          "Description": ""
+        },
+        {
+          "Value": 143,
+          "Name": "SPELL_AURA_MOD_RESISTANCE_EXCLUSIVE",
+          "Label": "Mod Resistance Exclusive",
+          "Description": ""
+        },
+        {
+          "Value": 144,
+          "Name": "SPELL_AURA_SAFE_FALL",
+          "Label": "Safe Fall",
+          "Description": ""
+        },
+        {
+          "Value": 145,
+          "Name": "SPELL_AURA_MOD_PET_TALENT_POINTS",
+          "Label": "Mod Pet Talent Points",
+          "Description": ""
+        },
+        {
+          "Value": 146,
+          "Name": "SPELL_AURA_ALLOW_TAME_PET_TYPE",
+          "Label": "Allow Tame Pet Type",
+          "Description": ""
+        },
+        {
+          "Value": 147,
+          "Name": "SPELL_AURA_MECHANIC_IMMUNITY_MASK",
+          "Label": "Mechanic Immunity Mask",
+          "Description": ""
+        },
+        {
+          "Value": 148,
+          "Name": "SPELL_AURA_RETAIN_COMBO_POINTS",
+          "Label": "Retain Combo Points",
+          "Description": ""
+        },
+        {
+          "Value": 149,
+          "Name": "SPELL_AURA_REDUCE_PUSHBACK",
+          "Label": "Reduce Pushback",
+          "Description": "Reduce Pushback"
+        },
+        {
+          "Value": 150,
+          "Name": "SPELL_AURA_MOD_SHIELD_BLOCKVALUE_PCT",
+          "Label": "Mod Shield Blockvalue Pct",
+          "Description": ""
+        },
+        {
+          "Value": 151,
+          "Name": "SPELL_AURA_TRACK_STEALTHED",
+          "Label": "Track Stealthed",
+          "Description": "Track Stealthed"
+        },
+        {
+          "Value": 152,
+          "Name": "SPELL_AURA_MOD_DETECTED_RANGE",
+          "Label": "Mod Detected Range",
+          "Description": "Mod Detected Range"
+        },
+        {
+          "Value": 153,
+          "Name": "SPELL_AURA_SPLIT_DAMAGE_FLAT",
+          "Label": "Split Damage Flat",
+          "Description": "Split Damage Flat"
+        },
+        {
+          "Value": 154,
+          "Name": "SPELL_AURA_MOD_STEALTH_LEVEL",
+          "Label": "Mod Stealth Level",
+          "Description": "Stealth Level Modifier"
+        },
+        {
+          "Value": 155,
+          "Name": "SPELL_AURA_MOD_WATER_BREATHING",
+          "Label": "Mod Water Breathing",
+          "Description": "Mod Water Breathing"
+        },
+        {
+          "Value": 156,
+          "Name": "SPELL_AURA_MOD_REPUTATION_GAIN",
+          "Label": "Mod Reputation Gain",
+          "Description": "Mod Reputation Gain"
+        },
+        {
+          "Value": 157,
+          "Name": "SPELL_AURA_PET_DAMAGE_MULTI",
+          "Label": "Pet Damage Multi",
+          "Description": "Mod Pet Damage"
+        },
+        {
+          "Value": 158,
+          "Name": "SPELL_AURA_MOD_SHIELD_BLOCKVALUE",
+          "Label": "Mod Shield Blockvalue",
+          "Description": ""
+        },
+        {
+          "Value": 159,
+          "Name": "SPELL_AURA_NO_PVP_CREDIT",
+          "Label": "No Pvp Credit",
+          "Description": ""
+        },
+        {
+          "Value": 160,
+          "Name": "SPELL_AURA_MOD_AOE_AVOIDANCE",
+          "Label": "Mod Aoe Avoidance",
+          "Description": ""
+        },
+        {
+          "Value": 161,
+          "Name": "SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT",
+          "Label": "Mod Health Regen In Combat",
+          "Description": ""
+        },
+        {
+          "Value": 162,
+          "Name": "SPELL_AURA_POWER_BURN",
+          "Label": "Power Burn",
+          "Description": ""
+        },
+        {
+          "Value": 163,
+          "Name": "SPELL_AURA_MOD_CRIT_DAMAGE_BONUS",
+          "Label": "Mod Crit Damage Bonus",
+          "Description": ""
+        },
+        {
+          "Value": 164,
+          "Name": "SPELL_AURA_164",
+          "Label": "164",
+          "Description": ""
+        },
+        {
+          "Value": 165,
+          "Name": "SPELL_AURA_MELEE_ATTACK_POWER_ATTACKER_BONUS",
+          "Label": "Melee Attack Power Attacker Bonus",
+          "Description": ""
+        },
+        {
+          "Value": 166,
+          "Name": "SPELL_AURA_MOD_ATTACK_POWER_PCT",
+          "Label": "Mod Attack Power Pct",
+          "Description": ""
+        },
+        {
+          "Value": 167,
+          "Name": "SPELL_AURA_MOD_RANGED_ATTACK_POWER_PCT",
+          "Label": "Mod Ranged Attack Power Pct",
+          "Description": ""
+        },
+        {
+          "Value": 168,
+          "Name": "SPELL_AURA_MOD_DAMAGE_DONE_VERSUS",
+          "Label": "Mod Damage Done Versus",
+          "Description": ""
+        },
+        {
+          "Value": 169,
+          "Name": "SPELL_AURA_MOD_CRIT_PERCENT_VERSUS",
+          "Label": "Mod Crit Percent Versus",
+          "Description": ""
+        },
+        {
+          "Value": 170,
+          "Name": "SPELL_AURA_DETECT_AMORE",
+          "Label": "Detect Amore",
+          "Description": ""
+        },
+        {
+          "Value": 171,
+          "Name": "SPELL_AURA_MOD_SPEED_NOT_STACK",
+          "Label": "Mod Speed Not Stack",
+          "Description": ""
+        },
+        {
+          "Value": 172,
+          "Name": "SPELL_AURA_MOD_MOUNTED_SPEED_NOT_STACK",
+          "Label": "Mod Mounted Speed Not Stack",
+          "Description": ""
+        },
+        {
+          "Value": 173,
+          "Name": "SPELL_AURA_173",
+          "Label": "173",
+          "Description": "old SPELL_AURA_ALLOW_CHAMPION_SPELLS"
+        },
+        {
+          "Value": 174,
+          "Name": "SPELL_AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT",
+          "Label": "Mod Spell Damage Of Stat Percent",
+          "Description": "by defeult intelect, dependent from SPELL_AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT"
+        },
+        {
+          "Value": 175,
+          "Name": "SPELL_AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT",
+          "Label": "Mod Spell Healing Of Stat Percent",
+          "Description": ""
+        },
+        {
+          "Value": 176,
+          "Name": "SPELL_AURA_SPIRIT_OF_REDEMPTION",
+          "Label": "Spirit Of Redemption",
+          "Description": ""
+        },
+        {
+          "Value": 177,
+          "Name": "SPELL_AURA_AOE_CHARM",
+          "Label": "Aoe Charm",
+          "Description": ""
+        },
+        {
+          "Value": 178,
+          "Name": "SPELL_AURA_MOD_DEBUFF_RESISTANCE",
+          "Label": "Mod Debuff Resistance",
+          "Description": ""
+        },
+        {
+          "Value": 179,
+          "Name": "SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE",
+          "Label": "Mod Attacker Spell Crit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 180,
+          "Name": "SPELL_AURA_MOD_FLAT_SPELL_DAMAGE_VERSUS",
+          "Label": "Mod Flat Spell Damage Versus",
+          "Description": ""
+        },
+        {
+          "Value": 181,
+          "Name": "SPELL_AURA_181",
+          "Label": "181",
+          "Description": "old SPELL_AURA_MOD_FLAT_SPELL_CRIT_DAMAGE_VERSUS - possible flat spell crit damage versus"
+        },
+        {
+          "Value": 182,
+          "Name": "SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT",
+          "Label": "Mod Resistance Of Stat Percent",
+          "Description": ""
+        },
+        {
+          "Value": 183,
+          "Name": "SPELL_AURA_MOD_CRITICAL_THREAT",
+          "Label": "Mod Critical Threat",
+          "Description": ""
+        },
+        {
+          "Value": 184,
+          "Name": "SPELL_AURA_MOD_ATTACKER_MELEE_HIT_CHANCE",
+          "Label": "Mod Attacker Melee Hit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 185,
+          "Name": "SPELL_AURA_MOD_ATTACKER_RANGED_HIT_CHANCE",
+          "Label": "Mod Attacker Ranged Hit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 186,
+          "Name": "SPELL_AURA_MOD_ATTACKER_SPELL_HIT_CHANCE",
+          "Label": "Mod Attacker Spell Hit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 187,
+          "Name": "SPELL_AURA_MOD_ATTACKER_MELEE_CRIT_CHANCE",
+          "Label": "Mod Attacker Melee Crit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 188,
+          "Name": "SPELL_AURA_MOD_ATTACKER_RANGED_CRIT_CHANCE",
+          "Label": "Mod Attacker Ranged Crit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 189,
+          "Name": "SPELL_AURA_MOD_RATING",
+          "Label": "Mod Rating",
+          "Description": ""
+        },
+        {
+          "Value": 190,
+          "Name": "SPELL_AURA_MOD_FACTION_REPUTATION_GAIN",
+          "Label": "Mod Faction Reputation Gain",
+          "Description": ""
+        },
+        {
+          "Value": 191,
+          "Name": "SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED",
+          "Label": "Use Normal Movement Speed",
+          "Description": ""
+        },
+        {
+          "Value": 192,
+          "Name": "SPELL_AURA_MOD_MELEE_RANGED_HASTE",
+          "Label": "Mod Melee Ranged Haste",
+          "Description": ""
+        },
+        {
+          "Value": 193,
+          "Name": "SPELL_AURA_MELEE_SLOW",
+          "Label": "Melee Slow",
+          "Description": ""
+        },
+        {
+          "Value": 194,
+          "Name": "SPELL_AURA_MOD_TARGET_ABSORB_SCHOOL",
+          "Label": "Mod Target Absorb School",
+          "Description": ""
+        },
+        {
+          "Value": 195,
+          "Name": "SPELL_AURA_MOD_TARGET_ABILITY_ABSORB_SCHOOL",
+          "Label": "Mod Target Ability Absorb School",
+          "Description": ""
+        },
+        {
+          "Value": 196,
+          "Name": "SPELL_AURA_MOD_COOLDOWN",
+          "Label": "Mod Cooldown",
+          "Description": "only 24818 Noxious Breath"
+        },
+        {
+          "Value": 197,
+          "Name": "SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE",
+          "Label": "Mod Attacker Spell And Weapon Crit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 198,
+          "Name": "SPELL_AURA_198",
+          "Label": "198",
+          "Description": "old SPELL_AURA_MOD_ALL_WEAPON_SKILLS"
+        },
+        {
+          "Value": 199,
+          "Name": "SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT",
+          "Label": "Mod Increases Spell Pct To Hit",
+          "Description": ""
+        },
+        {
+          "Value": 200,
+          "Name": "SPELL_AURA_MOD_XP_PCT",
+          "Label": "Mod Xp Pct",
+          "Description": ""
+        },
+        {
+          "Value": 201,
+          "Name": "SPELL_AURA_FLY",
+          "Label": "Fly",
+          "Description": ""
+        },
+        {
+          "Value": 202,
+          "Name": "SPELL_AURA_IGNORE_COMBAT_RESULT",
+          "Label": "Ignore Combat Result",
+          "Description": ""
+        },
+        {
+          "Value": 203,
+          "Name": "SPELL_AURA_MOD_ATTACKER_MELEE_CRIT_DAMAGE",
+          "Label": "Mod Attacker Melee Crit Damage",
+          "Description": ""
+        },
+        {
+          "Value": 204,
+          "Name": "SPELL_AURA_MOD_ATTACKER_RANGED_CRIT_DAMAGE",
+          "Label": "Mod Attacker Ranged Crit Damage",
+          "Description": ""
+        },
+        {
+          "Value": 205,
+          "Name": "SPELL_AURA_MOD_SCHOOL_CRIT_DMG_TAKEN",
+          "Label": "Mod School Crit Dmg Taken",
+          "Description": ""
+        },
+        {
+          "Value": 206,
+          "Name": "SPELL_AURA_MOD_INCREASE_FLIGHT_SPEED",
+          "Label": "Mod Increase Flight Speed",
+          "Description": ""
+        },
+        {
+          "Value": 207,
+          "Name": "SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED",
+          "Label": "Mod Increase Mounted Flight Speed",
+          "Description": ""
+        },
+        {
+          "Value": 208,
+          "Name": "SPELL_AURA_MOD_FLIGHT_SPEED_ALWAYS",
+          "Label": "Mod Flight Speed Always",
+          "Description": ""
+        },
+        {
+          "Value": 209,
+          "Name": "SPELL_AURA_MOD_MOUNTED_FLIGHT_SPEED_ALWAYS",
+          "Label": "Mod Mounted Flight Speed Always",
+          "Description": ""
+        },
+        {
+          "Value": 210,
+          "Name": "SPELL_AURA_MOD_FLIGHT_SPEED_NOT_STACKING",
+          "Label": "Mod Flight Speed Not Stacking",
+          "Description": ""
+        },
+        {
+          "Value": 211,
+          "Name": "SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED_NOT_STACKING",
+          "Label": "Mod Flight Speed Mounted Not Stacking",
+          "Description": ""
+        },
+        {
+          "Value": 212,
+          "Name": "SPELL_AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT",
+          "Label": "Mod Ranged Attack Power Of Stat Percent",
+          "Description": ""
+        },
+        {
+          "Value": 213,
+          "Name": "SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT",
+          "Label": "Mod Rage From Damage Dealt",
+          "Description": ""
+        },
+        {
+          "Value": 214,
+          "Name": "SPELL_AURA_214",
+          "Label": "214",
+          "Description": ""
+        },
+        {
+          "Value": 215,
+          "Name": "SPELL_AURA_ARENA_PREPARATION",
+          "Label": "Arena Preparation",
+          "Description": ""
+        },
+        {
+          "Value": 216,
+          "Name": "SPELL_AURA_HASTE_SPELLS",
+          "Label": "Haste Spells",
+          "Description": ""
+        },
+        {
+          "Value": 217,
+          "Name": "SPELL_AURA_MOD_MELEE_HASTE_2",
+          "Label": "Mod Melee Haste 2",
+          "Description": "NYI"
+        },
+        {
+          "Value": 218,
+          "Name": "SPELL_AURA_HASTE_RANGED",
+          "Label": "Haste Ranged",
+          "Description": ""
+        },
+        {
+          "Value": 219,
+          "Name": "SPELL_AURA_MOD_MANA_REGEN_FROM_STAT",
+          "Label": "Mod Mana Regen From Stat",
+          "Description": ""
+        },
+        {
+          "Value": 220,
+          "Name": "SPELL_AURA_MOD_RATING_FROM_STAT",
+          "Label": "Mod Rating From Stat",
+          "Description": ""
+        },
+        {
+          "Value": 221,
+          "Name": "SPELL_AURA_MOD_DETAUNT",
+          "Label": "Mod Detaunt",
+          "Description": ""
+        },
+        {
+          "Value": 222,
+          "Name": "SPELL_AURA_222",
+          "Label": "222",
+          "Description": ""
+        },
+        {
+          "Value": 223,
+          "Name": "SPELL_AURA_RAID_PROC_FROM_CHARGE",
+          "Label": "Raid Proc From Charge",
+          "Description": ""
+        },
+        {
+          "Value": 224,
+          "Name": "SPELL_AURA_224",
+          "Label": "224",
+          "Description": ""
+        },
+        {
+          "Value": 225,
+          "Name": "SPELL_AURA_RAID_PROC_FROM_CHARGE_WITH_VALUE",
+          "Label": "Raid Proc From Charge With Value",
+          "Description": ""
+        },
+        {
+          "Value": 226,
+          "Name": "SPELL_AURA_PERIODIC_DUMMY",
+          "Label": "Periodic Dummy",
+          "Description": ""
+        },
+        {
+          "Value": 227,
+          "Name": "SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE",
+          "Label": "Periodic Trigger Spell With Value",
+          "Description": ""
+        },
+        {
+          "Value": 228,
+          "Name": "SPELL_AURA_DETECT_STEALTH",
+          "Label": "Detect Stealth",
+          "Description": ""
+        },
+        {
+          "Value": 229,
+          "Name": "SPELL_AURA_MOD_AOE_DAMAGE_AVOIDANCE",
+          "Label": "Mod Aoe Damage Avoidance",
+          "Description": ""
+        },
+        {
+          "Value": 230,
+          "Name": "SPELL_AURA_230",
+          "Label": "230",
+          "Description": ""
+        },
+        {
+          "Value": 231,
+          "Name": "SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE",
+          "Label": "Proc Trigger Spell With Value",
+          "Description": ""
+        },
+        {
+          "Value": 232,
+          "Name": "SPELL_AURA_MECHANIC_DURATION_MOD",
+          "Label": "Mechanic Duration Mod",
+          "Description": ""
+        },
+        {
+          "Value": 233,
+          "Name": "SPELL_AURA_CHANGE_MODEL_FOR_ALL_HUMANOIDS",
+          "Label": "Change Model For All Humanoids",
+          "Description": "client-side only"
+        },
+        {
+          "Value": 234,
+          "Name": "SPELL_AURA_MECHANIC_DURATION_MOD_NOT_STACK",
+          "Label": "Mechanic Duration Mod Not Stack",
+          "Description": ""
+        },
+        {
+          "Value": 235,
+          "Name": "SPELL_AURA_MOD_DISPEL_RESIST",
+          "Label": "Mod Dispel Resist",
+          "Description": ""
+        },
+        {
+          "Value": 236,
+          "Name": "SPELL_AURA_CONTROL_VEHICLE",
+          "Label": "Control Vehicle",
+          "Description": ""
+        },
+        {
+          "Value": 237,
+          "Name": "SPELL_AURA_MOD_SPELL_DAMAGE_OF_ATTACK_POWER",
+          "Label": "Mod Spell Damage Of Attack Power",
+          "Description": ""
+        },
+        {
+          "Value": 238,
+          "Name": "SPELL_AURA_MOD_SPELL_HEALING_OF_ATTACK_POWER",
+          "Label": "Mod Spell Healing Of Attack Power",
+          "Description": ""
+        },
+        {
+          "Value": 239,
+          "Name": "SPELL_AURA_MOD_SCALE_2",
+          "Label": "Mod Scale 2",
+          "Description": ""
+        },
+        {
+          "Value": 240,
+          "Name": "SPELL_AURA_MOD_EXPERTISE",
+          "Label": "Mod Expertise",
+          "Description": ""
+        },
+        {
+          "Value": 241,
+          "Name": "SPELL_AURA_FORCE_MOVE_FORWARD",
+          "Label": "Force Move Forward",
+          "Description": ""
+        },
+        {
+          "Value": 242,
+          "Name": "SPELL_AURA_MOD_SPELL_DAMAGE_FROM_HEALING",
+          "Label": "Mod Spell Damage From Healing",
+          "Description": ""
+        },
+        {
+          "Value": 243,
+          "Name": "SPELL_AURA_MOD_FACTION",
+          "Label": "Mod Faction",
+          "Description": ""
+        },
+        {
+          "Value": 244,
+          "Name": "SPELL_AURA_COMPREHEND_LANGUAGE",
+          "Label": "Comprehend Language",
+          "Description": ""
+        },
+        {
+          "Value": 245,
+          "Name": "SPELL_AURA_MOD_AURA_DURATION_BY_DISPEL",
+          "Label": "Mod Aura Duration By Dispel",
+          "Description": ""
+        },
+        {
+          "Value": 246,
+          "Name": "SPELL_AURA_MOD_AURA_DURATION_BY_DISPEL_NOT_STACK",
+          "Label": "Mod Aura Duration By Dispel Not Stack",
+          "Description": ""
+        },
+        {
+          "Value": 247,
+          "Name": "SPELL_AURA_CLONE_CASTER",
+          "Label": "Clone Caster",
+          "Description": ""
+        },
+        {
+          "Value": 248,
+          "Name": "SPELL_AURA_MOD_COMBAT_RESULT_CHANCE",
+          "Label": "Mod Combat Result Chance",
+          "Description": ""
+        },
+        {
+          "Value": 249,
+          "Name": "SPELL_AURA_CONVERT_RUNE",
+          "Label": "Convert Rune",
+          "Description": ""
+        },
+        {
+          "Value": 250,
+          "Name": "SPELL_AURA_MOD_INCREASE_HEALTH_2",
+          "Label": "Mod Increase Health 2",
+          "Description": ""
+        },
+        {
+          "Value": 251,
+          "Name": "SPELL_AURA_MOD_ENEMY_DODGE",
+          "Label": "Mod Enemy Dodge",
+          "Description": ""
+        },
+        {
+          "Value": 253,
+          "Name": "SPELL_AURA_MOD_BLOCK_CRIT_CHANCE",
+          "Label": "Mod Block Crit Chance",
+          "Description": ""
+        },
+        {
+          "Value": 254,
+          "Name": "SPELL_AURA_MOD_DISARM_OFFHAND",
+          "Label": "Mod Disarm Offhand",
+          "Description": ""
+        },
+        {
+          "Value": 255,
+          "Name": "SPELL_AURA_MOD_MECHANIC_DAMAGE_TAKEN_PERCENT",
+          "Label": "Mod Mechanic Damage Taken Percent",
+          "Description": ""
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_AURA_NO_REAGENT_USE",
+          "Label": "No Reagent Use",
+          "Description": ""
+        },
+        {
+          "Value": 257,
+          "Name": "SPELL_AURA_MOD_TARGET_RESIST_BY_SPELL_CLASS",
+          "Label": "Mod Target Resist By Spell Class",
+          "Description": ""
+        },
+        {
+          "Value": 258,
+          "Name": "SPELL_AURA_258",
+          "Label": "258",
+          "Description": ""
+        },
+        {
+          "Value": 259,
+          "Name": "SPELL_AURA_MOD_HOT_PCT",
+          "Label": "Mod Hot Pct",
+          "Description": ""
+        },
+        {
+          "Value": 260,
+          "Name": "SPELL_AURA_SCREEN_EFFECT",
+          "Label": "Screen Effect",
+          "Description": ""
+        },
+        {
+          "Value": 261,
+          "Name": "SPELL_AURA_PHASE",
+          "Label": "Phase",
+          "Description": ""
+        },
+        {
+          "Value": 262,
+          "Name": "SPELL_AURA_ABILITY_IGNORE_AURASTATE",
+          "Label": "Ability Ignore Aurastate",
+          "Description": ""
+        },
+        {
+          "Value": 263,
+          "Name": "SPELL_AURA_ALLOW_ONLY_ABILITY",
+          "Label": "Allow Only Ability",
+          "Description": ""
+        },
+        {
+          "Value": 264,
+          "Name": "SPELL_AURA_264",
+          "Label": "264",
+          "Description": ""
+        },
+        {
+          "Value": 265,
+          "Name": "SPELL_AURA_265",
+          "Label": "265",
+          "Description": ""
+        },
+        {
+          "Value": 266,
+          "Name": "SPELL_AURA_266",
+          "Label": "266",
+          "Description": ""
+        },
+        {
+          "Value": 267,
+          "Name": "SPELL_AURA_MOD_IMMUNE_AURA_APPLY_SCHOOL",
+          "Label": "Mod Immune Aura Apply School",
+          "Description": ""
+        },
+        {
+          "Value": 268,
+          "Name": "SPELL_AURA_MOD_ATTACK_POWER_OF_STAT_PERCENT",
+          "Label": "Mod Attack Power Of Stat Percent",
+          "Description": ""
+        },
+        {
+          "Value": 269,
+          "Name": "SPELL_AURA_MOD_IGNORE_TARGET_RESIST_MODIFIERS",
+          "Label": "Mod Ignore Target Resist Modifiers",
+          "Description": "Sanctified Wrath, reduces effectiveness of a target's damage reduction effects like Shield Wall"
+        },
+        {
+          "Value": 270,
+          "Name": "SPELL_AURA_MOD_ABILITY_IGNORE_TARGET_RESIST",
+          "Label": "Mod Ability Ignore Target Resist",
+          "Description": "Possibly need swap vs 195 aura used only in 1 spell Chaos Bolt Passive"
+        },
+        {
+          "Value": 271,
+          "Name": "SPELL_AURA_MOD_DAMAGE_FROM_CASTER",
+          "Label": "Mod Damage From Caster",
+          "Description": ""
+        },
+        {
+          "Value": 272,
+          "Name": "SPELL_AURA_IGNORE_MELEE_RESET",
+          "Label": "Ignore Melee Reset",
+          "Description": ""
+        },
+        {
+          "Value": 273,
+          "Name": "SPELL_AURA_X_RAY",
+          "Label": "X Ray",
+          "Description": ""
+        },
+        {
+          "Value": 274,
+          "Name": "SPELL_AURA_ABILITY_CONSUME_NO_AMMO",
+          "Label": "Ability Consume No Ammo",
+          "Description": ""
+        },
+        {
+          "Value": 275,
+          "Name": "SPELL_AURA_MOD_IGNORE_SHAPESHIFT",
+          "Label": "Mod Ignore Shapeshift",
+          "Description": ""
+        },
+        {
+          "Value": 276,
+          "Name": "SPELL_AURA_MOD_DAMAGE_DONE_FOR_MECHANIC",
+          "Label": "Mod Damage Done For Mechanic",
+          "Description": "NYI"
+        },
+        {
+          "Value": 277,
+          "Name": "SPELL_AURA_MOD_MAX_AFFECTED_TARGETS",
+          "Label": "Mod Max Affected Targets",
+          "Description": ""
+        },
+        {
+          "Value": 278,
+          "Name": "SPELL_AURA_MOD_DISARM_RANGED",
+          "Label": "Mod Disarm Ranged",
+          "Description": ""
+        },
+        {
+          "Value": 279,
+          "Name": "SPELL_AURA_INITIALIZE_IMAGES",
+          "Label": "Initialize Images",
+          "Description": ""
+        },
+        {
+          "Value": 280,
+          "Name": "SPELL_AURA_MOD_ARMOR_PENETRATION_PCT",
+          "Label": "Mod Armor Penetration Pct",
+          "Description": ""
+        },
+        {
+          "Value": 281,
+          "Name": "SPELL_AURA_MOD_HONOR_GAIN_PCT",
+          "Label": "Mod Honor Gain Pct",
+          "Description": ""
+        },
+        {
+          "Value": 282,
+          "Name": "SPELL_AURA_MOD_BASE_HEALTH_PCT",
+          "Label": "Mod Base Health Pct",
+          "Description": ""
+        },
+        {
+          "Value": 283,
+          "Name": "SPELL_AURA_MOD_HEALING_RECEIVED",
+          "Label": "Mod Healing Received",
+          "Description": "Possibly only for some spell family class spells"
+        },
+        {
+          "Value": 284,
+          "Name": "SPELL_AURA_LINKED",
+          "Label": "Linked",
+          "Description": ""
+        },
+        {
+          "Value": 285,
+          "Name": "SPELL_AURA_MOD_ATTACK_POWER_OF_ARMOR",
+          "Label": "Mod Attack Power Of Armor",
+          "Description": ""
+        },
+        {
+          "Value": 286,
+          "Name": "SPELL_AURA_ABILITY_PERIODIC_CRIT",
+          "Label": "Ability Periodic Crit",
+          "Description": ""
+        },
+        {
+          "Value": 287,
+          "Name": "SPELL_AURA_DEFLECT_SPELLS",
+          "Label": "Deflect Spells",
+          "Description": ""
+        },
+        {
+          "Value": 288,
+          "Name": "SPELL_AURA_IGNORE_HIT_DIRECTION",
+          "Label": "Ignore Hit Direction",
+          "Description": ""
+        },
+        {
+          "Value": 289,
+          "Name": "SPELL_AURA_PREVENT_DURABILITY_LOSS",
+          "Label": "Prevent Durability Loss",
+          "Description": ""
+        },
+        {
+          "Value": 290,
+          "Name": "SPELL_AURA_MOD_CRIT_PCT",
+          "Label": "Mod Crit Pct",
+          "Description": ""
+        },
+        {
+          "Value": 291,
+          "Name": "SPELL_AURA_MOD_XP_QUEST_PCT",
+          "Label": "Mod Xp Quest Pct",
+          "Description": ""
+        },
+        {
+          "Value": 292,
+          "Name": "SPELL_AURA_OPEN_STABLE",
+          "Label": "Open Stable",
+          "Description": ""
+        },
+        {
+          "Value": 293,
+          "Name": "SPELL_AURA_OVERRIDE_SPELLS",
+          "Label": "Override Spells",
+          "Description": ""
+        },
+        {
+          "Value": 294,
+          "Name": "SPELL_AURA_PREVENT_REGENERATE_POWER",
+          "Label": "Prevent Regenerate Power",
+          "Description": ""
+        },
+        {
+          "Value": 295,
+          "Name": "SPELL_AURA_295",
+          "Label": "295",
+          "Description": ""
+        },
+        {
+          "Value": 296,
+          "Name": "SPELL_AURA_SET_VEHICLE_ID",
+          "Label": "Set Vehicle Id",
+          "Description": ""
+        },
+        {
+          "Value": 297,
+          "Name": "SPELL_AURA_BLOCK_SPELL_FAMILY",
+          "Label": "Block Spell Family",
+          "Description": ""
+        },
+        {
+          "Value": 298,
+          "Name": "SPELL_AURA_STRANGULATE",
+          "Label": "Strangulate",
+          "Description": ""
+        },
+        {
+          "Value": 299,
+          "Name": "SPELL_AURA_299",
+          "Label": "299",
+          "Description": ""
+        },
+        {
+          "Value": 300,
+          "Name": "SPELL_AURA_SHARE_DAMAGE_PCT",
+          "Label": "Share Damage Pct",
+          "Description": ""
+        },
+        {
+          "Value": 301,
+          "Name": "SPELL_AURA_SCHOOL_HEAL_ABSORB",
+          "Label": "School Heal Absorb",
+          "Description": ""
+        },
+        {
+          "Value": 302,
+          "Name": "SPELL_AURA_302",
+          "Label": "302",
+          "Description": ""
+        },
+        {
+          "Value": 303,
+          "Name": "SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE",
+          "Label": "Mod Damage Done Versus Aurastate",
+          "Description": ""
+        },
+        {
+          "Value": 304,
+          "Name": "SPELL_AURA_MOD_FAKE_INEBRIATE",
+          "Label": "Mod Fake Inebriate",
+          "Description": ""
+        },
+        {
+          "Value": 305,
+          "Name": "SPELL_AURA_MOD_MINIMUM_SPEED",
+          "Label": "Mod Minimum Speed",
+          "Description": ""
+        },
+        {
+          "Value": 306,
+          "Name": "SPELL_AURA_306",
+          "Label": "306",
+          "Description": ""
+        },
+        {
+          "Value": 307,
+          "Name": "SPELL_AURA_HEAL_ABSORB_TEST",
+          "Label": "Heal Absorb Test",
+          "Description": ""
+        },
+        {
+          "Value": 308,
+          "Name": "SPELL_AURA_MOD_CRIT_CHANCE_FOR_CASTER",
+          "Label": "Mod Crit Chance For Caster",
+          "Description": ""
+        },
+        {
+          "Value": 309,
+          "Name": "SPELL_AURA_309",
+          "Label": "309",
+          "Description": ""
+        },
+        {
+          "Value": 310,
+          "Name": "SPELL_AURA_MOD_CREATURE_AOE_DAMAGE_AVOIDANCE",
+          "Label": "Mod Creature Aoe Damage Avoidance",
+          "Description": ""
+        },
+        {
+          "Value": 311,
+          "Name": "SPELL_AURA_311",
+          "Label": "311",
+          "Description": ""
+        },
+        {
+          "Value": 312,
+          "Name": "SPELL_AURA_312",
+          "Label": "312",
+          "Description": ""
+        },
+        {
+          "Value": 313,
+          "Name": "SPELL_AURA_313",
+          "Label": "313",
+          "Description": ""
+        },
+        {
+          "Value": 314,
+          "Name": "SPELL_AURA_PREVENT_RESURRECTION",
+          "Label": "Prevent Resurrection",
+          "Description": ""
+        },
+        {
+          "Value": 315,
+          "Name": "SPELL_AURA_UNDERWATER_WALKING",
+          "Label": "Underwater Walking",
+          "Description": ""
+        },
+        {
+          "Value": 316,
+          "Name": "SPELL_AURA_PERIODIC_HASTE",
+          "Label": "Periodic Haste",
+          "Description": ""
+        },
+        {
+          "Value": 317,
+          "Name": "TOTAL_AURAS",
+          "Label": "Total Auras",
+          "Description": ""
+        }
+      ]
+    },
+    "Target": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "TARGET_UNIT_CASTER",
+          "Label": "Unit Caster",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "TARGET_UNIT_NEARBY_ENEMY",
+          "Label": "Unit Nearby Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "TARGET_UNIT_NEARBY_ALLY",
+          "Label": "Unit Nearby Ally",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "TARGET_UNIT_NEARBY_PARTY",
+          "Label": "Unit Nearby Party",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "TARGET_UNIT_PET",
+          "Label": "Unit Pet",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "TARGET_UNIT_TARGET_ENEMY",
+          "Label": "Unit Target Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "TARGET_UNIT_SRC_AREA_ENTRY",
+          "Label": "Unit Src Area Entry",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "TARGET_UNIT_DEST_AREA_ENTRY",
+          "Label": "Unit Dest Area Entry",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "TARGET_DEST_HOME",
+          "Label": "Dest Home",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "TARGET_UNIT_SRC_AREA_UNK_11",
+          "Label": "Unit Src Area Unk 11",
+          "Description": ""
+        },
+        {
+          "Value": 15,
+          "Name": "TARGET_UNIT_SRC_AREA_ENEMY",
+          "Label": "Unit Src Area Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "TARGET_UNIT_DEST_AREA_ENEMY",
+          "Label": "Unit Dest Area Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 17,
+          "Name": "TARGET_DEST_DB",
+          "Label": "Dest Db",
+          "Description": ""
+        },
+        {
+          "Value": 18,
+          "Name": "TARGET_DEST_CASTER",
+          "Label": "Dest Caster",
+          "Description": ""
+        },
+        {
+          "Value": 20,
+          "Name": "TARGET_UNIT_CASTER_AREA_PARTY",
+          "Label": "Unit Caster Area Party",
+          "Description": ""
+        },
+        {
+          "Value": 21,
+          "Name": "TARGET_UNIT_TARGET_ALLY",
+          "Label": "Unit Target Ally",
+          "Description": ""
+        },
+        {
+          "Value": 22,
+          "Name": "TARGET_SRC_CASTER",
+          "Label": "Src Caster",
+          "Description": ""
+        },
+        {
+          "Value": 23,
+          "Name": "TARGET_GAMEOBJECT_TARGET",
+          "Label": "Gameobject Target",
+          "Description": ""
+        },
+        {
+          "Value": 24,
+          "Name": "TARGET_UNIT_CONE_ENEMY_24",
+          "Label": "Unit Cone Enemy 24",
+          "Description": ""
+        },
+        {
+          "Value": 25,
+          "Name": "TARGET_UNIT_TARGET_ANY",
+          "Label": "Unit Target Any",
+          "Description": ""
+        },
+        {
+          "Value": 26,
+          "Name": "TARGET_GAMEOBJECT_ITEM_TARGET",
+          "Label": "Gameobject Item Target",
+          "Description": ""
+        },
+        {
+          "Value": 27,
+          "Name": "TARGET_UNIT_MASTER",
+          "Label": "Unit Master",
+          "Description": ""
+        },
+        {
+          "Value": 28,
+          "Name": "TARGET_DEST_DYNOBJ_ENEMY",
+          "Label": "Dest Dynobj Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 29,
+          "Name": "TARGET_DEST_DYNOBJ_ALLY",
+          "Label": "Dest Dynobj Ally",
+          "Description": ""
+        },
+        {
+          "Value": 30,
+          "Name": "TARGET_UNIT_SRC_AREA_ALLY",
+          "Label": "Unit Src Area Ally",
+          "Description": ""
+        },
+        {
+          "Value": 31,
+          "Name": "TARGET_UNIT_DEST_AREA_ALLY",
+          "Label": "Unit Dest Area Ally",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "TARGET_DEST_CASTER_SUMMON",
+          "Label": "Dest Caster Summon",
+          "Description": "front left, doesn't use radius"
+        },
+        {
+          "Value": 33,
+          "Name": "TARGET_UNIT_SRC_AREA_PARTY",
+          "Label": "Unit Src Area Party",
+          "Description": ""
+        },
+        {
+          "Value": 34,
+          "Name": "TARGET_UNIT_DEST_AREA_PARTY",
+          "Label": "Unit Dest Area Party",
+          "Description": ""
+        },
+        {
+          "Value": 35,
+          "Name": "TARGET_UNIT_TARGET_PARTY",
+          "Label": "Unit Target Party",
+          "Description": ""
+        },
+        {
+          "Value": 36,
+          "Name": "TARGET_DEST_CASTER_36",
+          "Label": "Dest Caster 36",
+          "Description": ""
+        },
+        {
+          "Value": 37,
+          "Name": "TARGET_UNIT_LASTTARGET_AREA_PARTY",
+          "Label": "Unit Lasttarget Area Party",
+          "Description": ""
+        },
+        {
+          "Value": 38,
+          "Name": "TARGET_UNIT_NEARBY_ENTRY",
+          "Label": "Unit Nearby Entry",
+          "Description": ""
+        },
+        {
+          "Value": 39,
+          "Name": "TARGET_DEST_CASTER_FISHING",
+          "Label": "Dest Caster Fishing",
+          "Description": ""
+        },
+        {
+          "Value": 40,
+          "Name": "TARGET_GAMEOBJECT_NEARBY_ENTRY",
+          "Label": "Gameobject Nearby Entry",
+          "Description": ""
+        },
+        {
+          "Value": 41,
+          "Name": "TARGET_DEST_CASTER_FRONT_RIGHT",
+          "Label": "Dest Caster Front Right",
+          "Description": ""
+        },
+        {
+          "Value": 42,
+          "Name": "TARGET_DEST_CASTER_BACK_RIGHT",
+          "Label": "Dest Caster Back Right",
+          "Description": ""
+        },
+        {
+          "Value": 43,
+          "Name": "TARGET_DEST_CASTER_BACK_LEFT",
+          "Label": "Dest Caster Back Left",
+          "Description": ""
+        },
+        {
+          "Value": 44,
+          "Name": "TARGET_DEST_CASTER_FRONT_LEFT",
+          "Label": "Dest Caster Front Left",
+          "Description": ""
+        },
+        {
+          "Value": 45,
+          "Name": "TARGET_UNIT_TARGET_CHAINHEAL_ALLY",
+          "Label": "Unit Target Chainheal Ally",
+          "Description": ""
+        },
+        {
+          "Value": 46,
+          "Name": "TARGET_DEST_NEARBY_ENTRY",
+          "Label": "Dest Nearby Entry",
+          "Description": ""
+        },
+        {
+          "Value": 47,
+          "Name": "TARGET_DEST_CASTER_FRONT",
+          "Label": "Dest Caster Front",
+          "Description": ""
+        },
+        {
+          "Value": 48,
+          "Name": "TARGET_DEST_CASTER_BACK",
+          "Label": "Dest Caster Back",
+          "Description": ""
+        },
+        {
+          "Value": 49,
+          "Name": "TARGET_DEST_CASTER_RIGHT",
+          "Label": "Dest Caster Right",
+          "Description": ""
+        },
+        {
+          "Value": 50,
+          "Name": "TARGET_DEST_CASTER_LEFT",
+          "Label": "Dest Caster Left",
+          "Description": ""
+        },
+        {
+          "Value": 51,
+          "Name": "TARGET_GAMEOBJECT_SRC_AREA",
+          "Label": "Gameobject Src Area",
+          "Description": ""
+        },
+        {
+          "Value": 52,
+          "Name": "TARGET_GAMEOBJECT_DEST_AREA",
+          "Label": "Gameobject Dest Area",
+          "Description": ""
+        },
+        {
+          "Value": 53,
+          "Name": "TARGET_DEST_TARGET_ENEMY",
+          "Label": "Dest Target Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 54,
+          "Name": "TARGET_UNIT_CONE_ENEMY_54",
+          "Label": "Unit Cone Enemy 54",
+          "Description": ""
+        },
+        {
+          "Value": 55,
+          "Name": "TARGET_DEST_CASTER_FRONT_LEAP",
+          "Label": "Dest Caster Front Leap",
+          "Description": "for a leap spell"
+        },
+        {
+          "Value": 56,
+          "Name": "TARGET_UNIT_CASTER_AREA_RAID",
+          "Label": "Unit Caster Area Raid",
+          "Description": ""
+        },
+        {
+          "Value": 57,
+          "Name": "TARGET_UNIT_TARGET_RAID",
+          "Label": "Unit Target Raid",
+          "Description": ""
+        },
+        {
+          "Value": 58,
+          "Name": "TARGET_UNIT_NEARBY_RAID",
+          "Label": "Unit Nearby Raid",
+          "Description": ""
+        },
+        {
+          "Value": 59,
+          "Name": "TARGET_UNIT_CONE_ALLY",
+          "Label": "Unit Cone Ally",
+          "Description": ""
+        },
+        {
+          "Value": 60,
+          "Name": "TARGET_UNIT_CONE_ENTRY",
+          "Label": "Unit Cone Entry",
+          "Description": ""
+        },
+        {
+          "Value": 61,
+          "Name": "TARGET_UNIT_TARGET_AREA_RAID_CLASS",
+          "Label": "Unit Target Area Raid Class",
+          "Description": ""
+        },
+        {
+          "Value": 62,
+          "Name": "TARGET_UNK_62",
+          "Label": "Unk 62",
+          "Description": ""
+        },
+        {
+          "Value": 63,
+          "Name": "TARGET_DEST_TARGET_ANY",
+          "Label": "Dest Target Any",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "TARGET_DEST_TARGET_FRONT",
+          "Label": "Dest Target Front",
+          "Description": ""
+        },
+        {
+          "Value": 65,
+          "Name": "TARGET_DEST_TARGET_BACK",
+          "Label": "Dest Target Back",
+          "Description": ""
+        },
+        {
+          "Value": 66,
+          "Name": "TARGET_DEST_TARGET_RIGHT",
+          "Label": "Dest Target Right",
+          "Description": ""
+        },
+        {
+          "Value": 67,
+          "Name": "TARGET_DEST_TARGET_LEFT",
+          "Label": "Dest Target Left",
+          "Description": ""
+        },
+        {
+          "Value": 68,
+          "Name": "TARGET_DEST_TARGET_FRONT_RIGHT",
+          "Label": "Dest Target Front Right",
+          "Description": ""
+        },
+        {
+          "Value": 69,
+          "Name": "TARGET_DEST_TARGET_BACK_RIGHT",
+          "Label": "Dest Target Back Right",
+          "Description": ""
+        },
+        {
+          "Value": 70,
+          "Name": "TARGET_DEST_TARGET_BACK_LEFT",
+          "Label": "Dest Target Back Left",
+          "Description": ""
+        },
+        {
+          "Value": 71,
+          "Name": "TARGET_DEST_TARGET_FRONT_LEFT",
+          "Label": "Dest Target Front Left",
+          "Description": ""
+        },
+        {
+          "Value": 72,
+          "Name": "TARGET_DEST_CASTER_RANDOM",
+          "Label": "Dest Caster Random",
+          "Description": ""
+        },
+        {
+          "Value": 73,
+          "Name": "TARGET_DEST_CASTER_RADIUS",
+          "Label": "Dest Caster Radius",
+          "Description": ""
+        },
+        {
+          "Value": 74,
+          "Name": "TARGET_DEST_TARGET_RANDOM",
+          "Label": "Dest Target Random",
+          "Description": ""
+        },
+        {
+          "Value": 75,
+          "Name": "TARGET_DEST_TARGET_RADIUS",
+          "Label": "Dest Target Radius",
+          "Description": ""
+        },
+        {
+          "Value": 76,
+          "Name": "TARGET_DEST_CHANNEL_TARGET",
+          "Label": "Dest Channel Target",
+          "Description": ""
+        },
+        {
+          "Value": 77,
+          "Name": "TARGET_UNIT_CHANNEL_TARGET",
+          "Label": "Unit Channel Target",
+          "Description": ""
+        },
+        {
+          "Value": 78,
+          "Name": "TARGET_DEST_DEST_FRONT",
+          "Label": "Dest Dest Front",
+          "Description": ""
+        },
+        {
+          "Value": 79,
+          "Name": "TARGET_DEST_DEST_BACK",
+          "Label": "Dest Dest Back",
+          "Description": ""
+        },
+        {
+          "Value": 80,
+          "Name": "TARGET_DEST_DEST_RIGHT",
+          "Label": "Dest Dest Right",
+          "Description": ""
+        },
+        {
+          "Value": 81,
+          "Name": "TARGET_DEST_DEST_LEFT",
+          "Label": "Dest Dest Left",
+          "Description": ""
+        },
+        {
+          "Value": 82,
+          "Name": "TARGET_DEST_DEST_FRONT_RIGHT",
+          "Label": "Dest Dest Front Right",
+          "Description": ""
+        },
+        {
+          "Value": 83,
+          "Name": "TARGET_DEST_DEST_BACK_RIGHT",
+          "Label": "Dest Dest Back Right",
+          "Description": ""
+        },
+        {
+          "Value": 84,
+          "Name": "TARGET_DEST_DEST_BACK_LEFT",
+          "Label": "Dest Dest Back Left",
+          "Description": ""
+        },
+        {
+          "Value": 85,
+          "Name": "TARGET_DEST_DEST_FRONT_LEFT",
+          "Label": "Dest Dest Front Left",
+          "Description": ""
+        },
+        {
+          "Value": 86,
+          "Name": "TARGET_DEST_DEST_RANDOM",
+          "Label": "Dest Dest Random",
+          "Description": ""
+        },
+        {
+          "Value": 87,
+          "Name": "TARGET_DEST_DEST",
+          "Label": "Dest Dest",
+          "Description": ""
+        },
+        {
+          "Value": 88,
+          "Name": "TARGET_DEST_DYNOBJ_NONE",
+          "Label": "Dest Dynobj None",
+          "Description": ""
+        },
+        {
+          "Value": 89,
+          "Name": "TARGET_DEST_TRAJ",
+          "Label": "Dest Traj",
+          "Description": ""
+        },
+        {
+          "Value": 90,
+          "Name": "TARGET_UNIT_TARGET_MINIPET",
+          "Label": "Unit Target Minipet",
+          "Description": ""
+        },
+        {
+          "Value": 91,
+          "Name": "TARGET_DEST_DEST_RADIUS",
+          "Label": "Dest Dest Radius",
+          "Description": ""
+        },
+        {
+          "Value": 92,
+          "Name": "TARGET_UNIT_SUMMONER",
+          "Label": "Unit Summoner",
+          "Description": ""
+        },
+        {
+          "Value": 93,
+          "Name": "TARGET_CORPSE_SRC_AREA_ENEMY",
+          "Label": "Corpse Src Area Enemy",
+          "Description": ""
+        },
+        {
+          "Value": 94,
+          "Name": "TARGET_UNIT_VEHICLE",
+          "Label": "Unit Vehicle",
+          "Description": ""
+        },
+        {
+          "Value": 95,
+          "Name": "TARGET_UNIT_TARGET_PASSENGER",
+          "Label": "Unit Target Passenger",
+          "Description": ""
+        },
+        {
+          "Value": 96,
+          "Name": "TARGET_UNIT_PASSENGER_0",
+          "Label": "Unit Passenger 0",
+          "Description": ""
+        },
+        {
+          "Value": 97,
+          "Name": "TARGET_UNIT_PASSENGER_1",
+          "Label": "Unit Passenger 1",
+          "Description": ""
+        },
+        {
+          "Value": 98,
+          "Name": "TARGET_UNIT_PASSENGER_2",
+          "Label": "Unit Passenger 2",
+          "Description": ""
+        },
+        {
+          "Value": 99,
+          "Name": "TARGET_UNIT_PASSENGER_3",
+          "Label": "Unit Passenger 3",
+          "Description": ""
+        },
+        {
+          "Value": 100,
+          "Name": "TARGET_UNIT_PASSENGER_4",
+          "Label": "Unit Passenger 4",
+          "Description": ""
+        },
+        {
+          "Value": 101,
+          "Name": "TARGET_UNIT_PASSENGER_5",
+          "Label": "Unit Passenger 5",
+          "Description": ""
+        },
+        {
+          "Value": 102,
+          "Name": "TARGET_UNIT_PASSENGER_6",
+          "Label": "Unit Passenger 6",
+          "Description": ""
+        },
+        {
+          "Value": 103,
+          "Name": "TARGET_UNIT_PASSENGER_7",
+          "Label": "Unit Passenger 7",
+          "Description": ""
+        },
+        {
+          "Value": 104,
+          "Name": "TARGET_UNIT_CONE_ENEMY_104",
+          "Label": "Unit Cone Enemy 104",
+          "Description": ""
+        },
+        {
+          "Value": 105,
+          "Name": "TARGET_UNIT_UNK_105",
+          "Label": "Unit Unk 105",
+          "Description": "spell"
+        },
+        {
+          "Value": 106,
+          "Name": "TARGET_DEST_CHANNEL_CASTER",
+          "Label": "Dest Channel Caster",
+          "Description": ""
+        },
+        {
+          "Value": 107,
+          "Name": "TARGET_UNK_DEST_AREA_UNK_107",
+          "Label": "Unk Dest Area Unk 107",
+          "Description": "not enough info - only generic spells avalible"
+        },
+        {
+          "Value": 108,
+          "Name": "TARGET_GAMEOBJECT_CONE",
+          "Label": "Gameobject Cone",
+          "Description": ""
+        },
+        {
+          "Value": 110,
+          "Name": "TARGET_DEST_UNK_110",
+          "Label": "Dest Unk 110",
+          "Description": "spell"
+        },
+        {
+          "Value": 111,
+          "Name": "TOTAL_SPELL_TARGETS",
+          "Label": "Total Spell Targets",
+          "Description": ""
+        }
+      ]
+    },
+    "Attributes": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR0_PROC_FAILURE_BURNS_CHARGE",
+          "Label": "Proc Failure Burns Charge",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR0_USES_RANGED_SLOT",
+          "Label": "Treat as ranged attack",
+          "Description": "Use ammo, ranged attack range modifiers, ranged haste, etc."
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR0_ON_NEXT_SWING_NO_DAMAGE",
+          "Label": "On next melee (type 1)",
+          "Description": "Both \"on next swing\" attributes have identical handling in server & client"
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR0_DO_NOT_LOG_IMMUNE_MISSES",
+          "Label": "Replenishment (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR0_IS_ABILITY",
+          "Label": "Treat as ability",
+          "Description": "Cannot be reflected, not affected by cast speed modifiers, etc."
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR0_IS_TRADESKILL",
+          "Label": "Trade skill recipe",
+          "Description": "Displayed in recipe list, not affected by cast speed modifiers"
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR0_PASSIVE",
+          "Label": "Passive spell",
+          "Description": "Spell is automatically cast on self by core"
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_ATTR0_DO_NOT_DISPLAY",
+          "Label": "Hidden in UI (client only)",
+          "Description": "Not visible in spellbook or aura bar (Spellbook, Aura Icon, Combat Log)"
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR0_DO_NOT_LOG",
+          "Label": "Hidden in combat log (client only)",
+          "Description": "Spell will not appear in combat logs"
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR0_HELD_ITEM_ONLY",
+          "Label": "Auto-target mainhand item (client only)",
+          "Description": "Client will automatically select main-hand item as cast target"
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR0_ON_NEXT_SWING",
+          "Label": "On next melee (type 2)",
+          "Description": "Both \"on next swing\" attributes have identical handling in server & client"
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR0_WEARER_CASTS_PROC_TRIGGER",
+          "Label": "Unknown attribute 11",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR0_SERVER_ONLY",
+          "Label": "Unused attribute 12",
+          "Description": "not set in 3.3.5a"
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR0_ALLOW_ITEM_SPELL_IN_PVP",
+          "Label": "Only usable during nighttime",
+          "Description": ""
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR0_ONLY_INDOORS",
+          "Label": "Only usable indoors",
+          "Description": ""
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR0_ONLY_OUTDOORS",
+          "Label": "Only usable outdoors",
+          "Description": ""
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR0_NOT_SHAPESHIFTED",
+          "Label": "Not usable while shapeshifted",
+          "Description": ""
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR0_ONLY_STEALTHED",
+          "Label": "Only usable in stealth",
+          "Description": ""
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR0_DO_NOT_SHEATH",
+          "Label": "Don't shealthe weapons (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR0_SCALES_WITH_CREATURE_LEVEL",
+          "Label": "Scale with caster level",
+          "Description": "For non-player casts, scale impact and power cost with caster's level"
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT",
+          "Label": "Stop attacking after cast",
+          "Description": "After casting this, the current auto-attack will be interrupted"
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR0_NO_ACTIVE_DEFENSE",
+          "Label": "Prevent physical avoidance",
+          "Description": "Spell cannot be dodged, parried or blocked"
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR0_TRACK_TARGET_IN_CAST_PLAYER_ONLY",
+          "Label": "Automatically face target during cast (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD",
+          "Label": "Can be cast while dead",
+          "Description": "Spells without this flag cannot be cast by dead units in non-triggered contexts"
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR0_ALLOW_WHILE_MOUNTED",
+          "Label": "Can be cast while mounted",
+          "Description": ""
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR0_COOLDOWN_ON_EVENT",
+          "Label": "Cooldown starts on expiry",
+          "Description": "Spell is unusable while already active, and cooldown does not begin until the effects have worn off"
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR0_AURA_IS_DEBUFF",
+          "Label": "Is negative spell",
+          "Description": "Forces the spell to be treated as a negative spell"
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR0_ALLOW_WHILE_SITTING",
+          "Label": "Can be cast while sitting",
+          "Description": ""
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR0_NOT_IN_COMBAT_ONLY_PEACEFUL",
+          "Label": "Cannot be used in combat",
+          "Description": ""
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR0_NO_IMMUNITIES",
+          "Label": "Pierce invulnerability",
+          "Description": "Allows spell to pierce invulnerability, unless the invulnerability spell also has this attribute"
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR0_HEARTBEAT_RESIST",
+          "Label": "Periodic resistance checks",
+          "Description": "Periodically re-rolls against resistance to potentially expire aura early"
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR0_NO_AURA_CANCEL",
+          "Label": "Aura cannot be cancelled",
+          "Description": "Prevents the player from voluntarily canceling a positive aura"
+        }
+      ]
+    },
+    "AttributesEx": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR1_DISMISS_PET_FIRST",
+          "Label": "Dismiss Pet on cast",
+          "Description": "Without this attribute, summoning spells will fail if caster already has a pet"
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR1_USE_ALL_MANA",
+          "Label": "Drain all power",
+          "Description": "Ignores listed power cost and drains entire pool instead"
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR1_IS_CHANNELED",
+          "Label": "Channeled (type 1)",
+          "Description": "Both \"channeled\" attributes have identical handling in server & client"
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR1_NO_REDIRECTION",
+          "Label": "Ignore redirection effects",
+          "Description": "Spell will not be attracted by SPELL_MAGNET auras (Grounding Totem)"
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR1_NO_SKILL_INCREASE",
+          "Label": "Unknown attribute 4",
+          "Description": "stealth and whirlwind"
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR1_ALLOW_WHILE_STEALTHED",
+          "Label": "Does not break stealth",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR1_IS_SELF_CHANNELED",
+          "Label": "Channeled (type 2)",
+          "Description": "Both \"channeled\" attributes have identical handling in server & client"
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_ATTR1_NO_REFLECTION",
+          "Label": "Ignore reflection effects",
+          "Description": "Spell will pierce through Spell Reflection and similar"
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR1_ONLY_PEACEFUL_TARGETS",
+          "Label": "Target cannot be in combat",
+          "Description": ""
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR1_INITIATE_COMBAT",
+          "Label": "Enables Auto-Attack (client only)",
+          "Description": "Caster will begin auto-attacking the target on cast"
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR1_NO_THREAT",
+          "Label": "Does not generate threat",
+          "Description": "Also does not cause target to engage"
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR1_AURA_UNIQUE",
+          "Label": "Aura will not refresh its duration when recast",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR1_FAILURE_BREAKS_STEALTH",
+          "Label": "Pickpocket (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR1_TOGGLE_FAR_SIGHT",
+          "Label": "Farsight aura (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR1_TRACK_TARGET_IN_CHANNEL",
+          "Label": "Track target while channeling",
+          "Description": "While channeling, adjust facing to face target"
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR1_IMMUNITY_PURGES_EFFECT",
+          "Label": "Immunity cancels preapplied auras",
+          "Description": "For immunity spells, cancel all auras that this spell would make you immune to when the spell is applied"
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR1_IMMUNITY_TO_HOSTILE_AND_FRIENDLY_EFFECTS",
+          "Label": "Immunity to Hostile & Friendly Effects",
+          "Description": "Immunity applied by this aura will also be checked for friendly spells (school immunity only) - used by Cyclone for example to cause friendly spells and healing over time to be immune"
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR1_NO_AUTOCAST_AI",
+          "Label": "Cannot be autocast by pet",
+          "Description": "(AI)"
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR1_PREVENTS_ANIM",
+          "Label": "NYI, auras apply UNIT_FLAG_PREVENT_EMOTES_FROM_CHAT_TEXT",
+          "Description": ""
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR1_EXCLUDE_CASTER",
+          "Label": "Cannot be self-cast",
+          "Description": ""
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR1_FINISHING_MOVE_DAMAGE",
+          "Label": "Requires combo points (type 1)",
+          "Description": ""
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR1_THREAT_ONLY_ON_MISS",
+          "Label": "Unknown attribute 21",
+          "Description": ""
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR1_FINISHING_MOVE_DURATION",
+          "Label": "Requires combo points (type 2)",
+          "Description": ""
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR1_IGNORE_OWNERS_DEATH",
+          "Label": "Unknwon attribute 23",
+          "Description": ""
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR1_SPECIAL_SKILLUP",
+          "Label": "Fishing (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR1_AURA_STAYS_AFTER_COMBAT",
+          "Label": "Aura stays after combat",
+          "Description": "Aura will not be removed when the unit leaves combat"
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR1_REQUIRE_ALL_TARGETS",
+          "Label": "Unknown attribute 26",
+          "Description": "Related to [target=focus] and [target=mouseover] macros?"
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR1_DISCOUNT_POWER_ON_MISS",
+          "Label": "Unknown attribute 27",
+          "Description": "Melee spell?"
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR1_NO_AURA_ICON",
+          "Label": "Hide in aura bar (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR1_NAME_IN_CHANNEL_BAR",
+          "Label": "Show spell name during channel (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR1_COMBO_ON_BLOCK",
+          "Label": "Enable at dodge",
+          "Description": "(Mainline: Dispel All Stacks)"
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR1_CAST_WHEN_LEARNED",
+          "Label": "Unknown attribute 31",
+          "Description": ""
+        }
+      ]
+    },
+    "AttributesEx2": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR2_ALLOW_DEAD_TARGET",
+          "Label": "Can target dead players or corpses",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR2_NO_SHAPESHIFT_UI",
+          "Label": "Unknown attribute 1",
+          "Description": "vanish, shadowform, Ghost Wolf and other"
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR2_IGNORE_LINE_OF_SIGHT",
+          "Label": "Ignore Line of Sight",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR2_ALLOW_LOW_LEVEL_BUFF",
+          "Label": "Ignore aura scaling",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR2_USE_SHAPESHIFT_BAR",
+          "Label": "Show in stance bar (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR2_AUTO_REPEAT",
+          "Label": "Ranged auto-attack spell",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR2_CANNOT_CAST_ON_TAPPED",
+          "Label": "Cannot target others' tapped units",
+          "Description": "Can only target untapped units, or those tapped by caster"
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_ATTR2_DO_NOT_REPORT_SPELL_FAILURE",
+          "Label": "Unknown attribute 7",
+          "Description": ""
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR2_INCLUDE_IN_ADVANCED_COMBAT_LOG",
+          "Label": "Unused attribute 8",
+          "Description": "not set in 3.3.5a"
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR2_ALWAYS_CAST_AS_UNIT",
+          "Label": "Unknown attribute 9",
+          "Description": ""
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR2_SPECIAL_TAMING_FLAG",
+          "Label": "Unknown attribute 10",
+          "Description": "Related to taming?"
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR2_NO_TARGET_PER_SECOND_COST",
+          "Label": "Health Funnel",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR2_CHAIN_FROM_CASTER",
+          "Label": "Chain from caster",
+          "Description": "Cleave, Heart Strike, Maul, Sunder Armor, Swipe"
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR2_ENCHANT_OWN_ITEM_ONLY",
+          "Label": "Enchant persists when entering arena",
+          "Description": ""
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR2_ALLOW_WHILE_INVISIBLE",
+          "Label": "Unknown attribute 14",
+          "Description": ""
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR2_DO_NOT_CONSUME_IF_GAINED_DURING_CAST",
+          "Label": "Unused attribute 15",
+          "Description": "not set in 3.3.5a"
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR2_NO_ACTIVE_PETS",
+          "Label": "Tame Beast",
+          "Description": ""
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR2_DO_NOT_RESET_COMBAT_TIMERS",
+          "Label": "Don't reset swing timer",
+          "Description": "Does not reset melee/ranged autoattack timer on cast"
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR2_NO_JUMP_WHILE_CAST_PENDING",
+          "Label": "Requires dead pet",
+          "Description": ""
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED",
+          "Label": "Also allow outside shapeshift (caster form)",
+          "Description": "Even if Stances are nonzero, allow spell to be cast outside of shapeshift (though not in a different shapeshift)"
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR2_INITIATE_COMBAT_POST_CAST",
+          "Label": "(Enables Auto-Attack)",
+          "Description": ""
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR2_FAIL_ON_ALL_TARGETS_IMMUNE",
+          "Label": "Damage reduction ability",
+          "Description": "Causes BG flags to be dropped if combined with ATTR1_DISPEL_AURAS_ON_IMMUNITY"
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR2_NO_INITIAL_THREAD",
+          "Label": "Unknown attribute 22",
+          "Description": "Ambush, Backstab, Cheap Shot, Death Grip, Garrote, Judgements, Mutilate, Pounce, Ravage, Shiv, Shred"
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR2_PROC_COOLDOWN_ON_FAILURE",
+          "Label": "Proc Cooldown On Failure",
+          "Description": ""
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR2_ITEM_CAST_WITH_OWNER_SKILL",
+          "Label": "Unknown attribute 24",
+          "Description": ""
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR2_DONT_BLOCK_MANA_REGEN",
+          "Label": "Unknown attribute 25",
+          "Description": ""
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR2_NO_SCHOOL_IMMUNITIES",
+          "Label": "Pierce aura application immunities",
+          "Description": "Allow aura to be applied despite target being immune to new aura applications"
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR2_IGNORE_WEAPONSKILL",
+          "Label": "Unknown attribute 27",
+          "Description": ""
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR2_NOT_AN_ACTION",
+          "Label": "Unknown attribute 28",
+          "Description": ""
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR2_CANT_CRIT",
+          "Label": "Cannot critically strike",
+          "Description": ""
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR2_ACTIVE_THREAT",
+          "Label": "Allow triggered spell to trigger (type 1)",
+          "Description": "Without this attribute, any triggered spell will be unable to trigger other auras' procs"
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR2_RETAIN_ITEM_CAST",
+          "Label": "Food buff (client only)",
+          "Description": ""
+        }
+      ]
+    },
+    "AttributesEx3": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR3_PVP_ENABLING",
+          "Label": "Unknown attribute 0",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR3_NO_PROC_EQUIP_REQUIREMENT",
+          "Label": "Ignores subclass mask check when checking proc",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR3_NO_CASTING_BAR_TEXT",
+          "Label": "Unknown attribute 2",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR3_COMPLETELY_BLOCKED",
+          "Label": "Blockable spell",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR3_NO_RES_TIMER",
+          "Label": "Ignore resurrection timer",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR3_NO_DURABILITY_LOSS",
+          "Label": "Unknown attribute 5",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR3_NO_AVOIDANCE",
+          "Label": "Unknown attribute 6",
+          "Description": ""
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_ATTR3_DOT_STACKING_RULE",
+          "Label": "Stack separately for each caster",
+          "Description": ""
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR3_ONLY_ON_PLAYER",
+          "Label": "Can only target players",
+          "Description": ""
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR3_NOT_A_PROC",
+          "Label": "Allow triggered spell to trigger (type 2)",
+          "Description": "Without this attribute, any triggered spell will be unable to trigger other auras' procs"
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON",
+          "Label": "Require main hand weapon",
+          "Description": ""
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR3_ONLY_BATTLEGROUNDS",
+          "Label": "Can only be cast in battleground",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR3_ONLY_ON_GHOSTS",
+          "Label": "Can only target ghost players",
+          "Description": ""
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR3_HIDE_CHANNEL_BAR",
+          "Label": "Do not display channel bar (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR3_HIDE_IN_RAID_FILTER",
+          "Label": "Honorless Target",
+          "Description": ""
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR3_NORMAL_RANGED_ATTACK",
+          "Label": "Unknown attribute 15",
+          "Description": "Auto Shoot, Shoot, Throw - ranged normal attack attribute?"
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR3_SUPPRESS_CASTER_PROCS",
+          "Label": "Cannot trigger procs",
+          "Description": ""
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR3_SUPPRESS_TARGET_PROCS",
+          "Label": "No initial aggro",
+          "Description": ""
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR3_ALWAYS_HIT",
+          "Label": "Ignore hit result",
+          "Description": "Spell cannot miss, or be dodged/parried/blocked"
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR3_INSTANT_TARGET_PROCS",
+          "Label": "Cannot trigger spells during aura proc",
+          "Description": ""
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD",
+          "Label": "Persists through death",
+          "Description": ""
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR3_ONLY_PROC_OUTDOORS",
+          "Label": "Unused attribute 21",
+          "Description": "Not set in 3.3.5a"
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR3_CASTING_CANCELS_AUTOREPEAT",
+          "Label": "Unused attribute 22",
+          "Description": "Not set in 3.3.5a"
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR3_NO_DAMAGE_HISTORY",
+          "Label": "Unknown attribute 23",
+          "Description": ""
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR3_REQUIRES_OFF_HAND_WEAPON",
+          "Label": "Requires offhand weapon",
+          "Description": ""
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR3_TREAT_AS_PERIODIC",
+          "Label": "Treat as periodic effect",
+          "Description": ""
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR3_CAN_PROC_FROM_PROCS",
+          "Label": "Can trigger from triggered spells",
+          "Description": ""
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR3_ONLY_PROC_ON_CASTER",
+          "Label": "Drain Soul",
+          "Description": ""
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR3_IGNORE_CASTER_AND_TARGET_RESTRICTIONS",
+          "Label": "Unknown attribute 28",
+          "Description": ""
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR3_IGNORE_CASTER_MODIFIERS",
+          "Label": "Damage dealt is unaffected by modifiers",
+          "Description": ""
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR3_DO_NOT_DISPLAY_RANGE",
+          "Label": "Do not show range in tooltip (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR3_NOT_ON_AOE_IMMUNE",
+          "Label": "Unknown attribute 31",
+          "Description": ""
+        }
+      ]
+    },
+    "AttributesEx4": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR4_NO_CAST_LOG",
+          "Label": "Cannot be resisted",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR4_CLASS_TRIGGER_ONLY_ON_TARGET",
+          "Label": "Only proc on self-cast",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR4_AURA_EXPIRES_OFFLINE",
+          "Label": "Buff expires while offline",
+          "Description": "Debuffs (except Resurrection Sickness) will automatically do this"
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR4_NO_HELPFUL_THREAT",
+          "Label": "Unknown attribute 3",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR4_NO_HARMFUL_THREAT",
+          "Label": "Treat as delayed spell",
+          "Description": "This will no longer cause guards to attack on use??"
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR4_ALLOW_CLIENT_TARGETING",
+          "Label": "Unknown attribute 5",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR4_CANNOT_BE_STOLEN",
+          "Label": "Aura cannot be stolen",
+          "Description": ""
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_ATTR4_ALLOW_CAST_WHILE_CASTING",
+          "Label": "Can be cast while casting",
+          "Description": "Ignores already in-progress cast and still casts"
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR4_IGNORE_DAMAGE_TAKEN_MODIFIERS",
+          "Label": "Deals fixed damage",
+          "Description": ""
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR4_COMBAT_FEEDBACK_WHEN_USABLE",
+          "Label": "Spell is initially disabled (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR4_WEAPON_SPEED_COST_SCALING",
+          "Label": "Attack speed modifies cost",
+          "Description": "Adds 10 to power cost for each 1s of weapon speed"
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR4_NO_PARTIAL_IMMUNITY",
+          "Label": "Unknown attribute 11",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR4_AURA_IS_BUFF",
+          "Label": "Unknown attribute 12",
+          "Description": ""
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR4_DO_NOT_LOG_CASTER",
+          "Label": "Unknown attribute 13",
+          "Description": ""
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR4_DAMAGE_DOESNT_BREAK_AURAS",
+          "Label": "Damage does not break auras",
+          "Description": ""
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR4_NOT_IN_SPELLBOOK",
+          "Label": "Unknown attribute 15",
+          "Description": ""
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR4_NOT_IN_ARENA_OR_RATED_BATTLEGROUND",
+          "Label": "Not usable in arena",
+          "Description": "Makes spell unusable despite CD <= 10min"
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR4_IGNORE_DEFAULT_ARENA_RESTRICTIONS",
+          "Label": "Usable in arena",
+          "Description": "Makes spell usable despite CD > 10min"
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR4_BOUNCY_CHAIN_MISSILES",
+          "Label": "Chain area targets",
+          "Description": "[NYI] Hits area targets over time instead of all at once"
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR4_ALLOW_PROC_WHILE_SITTING",
+          "Label": "Unknown attribute 19",
+          "Description": "proc dalayed, after damage or don't proc on absorb?"
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR4_AURA_NEVER_BOUNCES",
+          "Label": "Allow self-cast to override stronger aura (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR4_ALLOW_ENETRING_ARENA",
+          "Label": "Keep when entering arena",
+          "Description": ""
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR4_PROC_SUPPRESS_SWING_ANIM",
+          "Label": "Unknown attribute 22",
+          "Description": "Seal of Command (42058,57770) and Gymer's Smash 55426"
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR4_SUPPRESS_WEAPON_PROCS",
+          "Label": "Cannot trigger item spells",
+          "Description": ""
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR4_AUTO_RANGED_COMBAT",
+          "Label": "Unknown attribute 24",
+          "Description": "Shoot-type spell?"
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR4_OWNER_POWER_SCALING",
+          "Label": "Pet Scaling aura",
+          "Description": ""
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR4_ONLY_FLYING_AREAS",
+          "Label": "Only in Outland/Northrend",
+          "Description": ""
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR4_FORCE_DISPLAY_CASTBAR",
+          "Label": "Inherit critical chance from triggering aura",
+          "Description": ""
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR4_IGNORE_COMBAT_TIMERS",
+          "Label": "Unknown attribute 28",
+          "Description": "Aimed Shot"
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR4_AURA_BOUNCE_FAILS_SPELL",
+          "Label": "Unknown attribute 29",
+          "Description": ""
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR4_OBSOLETE",
+          "Label": "Unknown attribute 30",
+          "Description": ""
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR4_USE_FACING_FROM_SPELL",
+          "Label": "Unknown attribute 31",
+          "Description": "Polymorph (chicken) 228 and Sonic Boom (38052,38488)"
+        }
+      ]
+    },
+    "AttributesEx5": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL",
+          "Label": "Can be channeled while moving/casting",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR5_NO_REAGENT_COST_WITH_AURA",
+          "Label": "No reagents during arena preparation",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR5_REMOVE_ENTERING_ARENA",
+          "Label": "Remove when entering arena",
+          "Description": "Force this aura to be removed on entering arena, regardless of other properties"
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR5_ALLOW_WHILE_STUNNED",
+          "Label": "Usable while stunned",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR5_TRIGGERS_CHANNELING",
+          "Label": "Unknown attribute 4",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR5_LIMIT_N",
+          "Label": "Single-target aura",
+          "Description": "Remove previous application to another unit if applied"
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR5_IGNORE_AREA_EFFECT_PVP_CHECK",
+          "Label": "Unknown attribute 6",
+          "Description": ""
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_ATTR5_NOT_ON_PLAYER",
+          "Label": "Cannot target players",
+          "Description": ""
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR5_NOT_ON_PLAYER_CONTROLLED_NPC",
+          "Label": "Cannot target player controlled units but can target players",
+          "Description": ""
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR5_EXTRA_INITIAL_PERIOD",
+          "Label": "Immediately do periodic tick on apply",
+          "Description": ""
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR5_DO_NOT_DISPLAY_DURATION",
+          "Label": "Do not send aura duration to client",
+          "Description": ""
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR5_IMPLIED_TARGETING",
+          "Label": "Auto-target target of target (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR5_MELEE_CHAIN_TARGETING",
+          "Label": "Unknown attribute 12",
+          "Description": "Cleave related?"
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR5_SPELL_HASTE_AFFECTS_PERIODIC",
+          "Label": "Duration scales with Haste Rating",
+          "Description": ""
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR5_NOT_AVALIABLE_WHILE_CHARMED",
+          "Label": "Charmed units cannot cast this spell",
+          "Description": ""
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR5_TREAT_AS_AREA_EFFECT",
+          "Label": "Unknown attribute 15",
+          "Description": "Related to multi-target spells?"
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR5_AURA_AFFECTS_NOT_JUST_REQ_EQUIPPED_ITEM",
+          "Label": "DESCRIPTION this allows spells with EquippedItemClass to affect spells from other items if the required item is equipped",
+          "Description": ""
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR5_ALLOW_WHILE_FLEEING",
+          "Label": "Usable while feared",
+          "Description": ""
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR5_ALLOW_WHILE_CONFUSED",
+          "Label": "Usable while confused",
+          "Description": ""
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR5_AI_DOESNT_FACE_TARGET",
+          "Label": "Do not auto-turn while casting",
+          "Description": ""
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR5_DO_NOT_ATTEMPT_A_PET_RESUMMON_WHEN_DISMOUNTING",
+          "Label": "Unknown attribute 20",
+          "Description": ""
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR5_IGNORE_TARGET_REQUIREMENTS",
+          "Label": "Unknown attribute 21",
+          "Description": ""
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR5_NOT_ON_TRIVIAL",
+          "Label": "Unknown attribute 22",
+          "Description": ""
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR5_NO_PARTIAL_RESISTS",
+          "Label": "Unknown attribute 23",
+          "Description": ""
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR5_IGNORE_CASTER_REQUIREMENETS",
+          "Label": "Unknown attribute 24",
+          "Description": ""
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR5_ALWAYS_LINE_OF_SIGHT",
+          "Label": "Unknown attribute 25",
+          "Description": ""
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR5_ALWAYS_AOE_LINE_OF_SIGHT",
+          "Label": "Ignore line of sight checks",
+          "Description": ""
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR5_NO_CASTER_AURA_ICON",
+          "Label": "Don't show aura if self-cast (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR5_NO_TARGET_AURA_ICON",
+          "Label": "Don't show aura unless self-cast (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR5_AURA_UNIQUE_PER_CASTER",
+          "Label": "Unknown attribute 29",
+          "Description": ""
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR5_ALWAYS_SHOW_GROUND_TEXTURE",
+          "Label": "Unknown attribute 30",
+          "Description": ""
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR5_ADD_MELEE_HIT_RATING",
+          "Label": "Unknown attribute 31",
+          "Description": "Forces nearby enemies to attack caster?"
+        }
+      ]
+    },
+    "AttributesEx6": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR6_NO_COOLDOWN_ON_TOOLTIP",
+          "Label": "Don't display cooldown (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR6_DO_NOT_RESET_COOLDOWN_IN_ARENA",
+          "Label": "Only usable in arena",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR6_NOT_AN_ATTACK",
+          "Label": "Ignore all preventing caster auras",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR6_CAN_ASSIST_IMMUNE_PC",
+          "Label": "Ignore immunity flags when assisting",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR6_IGNORE_FOR_MOD_TIME_RATE",
+          "Label": "Unknown attribute 4",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR6_DO_NOT_CONSUME_RESOURCES",
+          "Label": "Don't consume proc charges",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR6_FLOATING_COMBAT_TEXT_ON_CAST",
+          "Label": "Generate spell_cast event instead of aura_start (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 128,
+          "Name": "SPELL_ATTR6_AURA_IS_WEAPON_PROC",
+          "Label": "Unknown attribute 7",
+          "Description": ""
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR6_DO_NOT_CHAIN_TO_CROWD_CONTROLLED_TARGETS",
+          "Label": "Do not implicitly target in CC",
+          "Description": "Implicit targeting (chaining and area targeting) will not impact crowd controlled targets"
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR6_ALLOW_ON_CHARMED_TARGETS",
+          "Label": "Unknown attribute 9",
+          "Description": ""
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR6_NO_AURA_LOG",
+          "Label": "Can target possessed friends",
+          "Description": "[NYI]"
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR6_NOT_IN_RAID_INSTANCES",
+          "Label": "Unusable in raid instances",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR6_ALLOW_WHILE_RIDING_VEHICLE",
+          "Label": "Castable while caster is on vehicle",
+          "Description": ""
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR6_IGNORE_PHASE_SHIFT",
+          "Label": "Can target invisible units",
+          "Description": ""
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR6_AI_PRIMARY_RANGED_ATTACK",
+          "Label": "Unknown attribute 14",
+          "Description": ""
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR6_NO_PUSHBACK",
+          "Label": "Not affected by pushback",
+          "Description": "Casts/Channels will not affected by pushback"
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR6_NO_JUMP_PATHING",
+          "Label": "Unknown attribute 16",
+          "Description": ""
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR6_ALLOW_EQUIP_WHILE_CASTING",
+          "Label": "Unknown attribute 17",
+          "Description": "Mount related?"
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR6_ORIGINATE_FROM_CONTROLLER",
+          "Label": "Spell is cast by charmer",
+          "Description": "Client will prevent casting if not possessed, charmer will be caster for all intents and purposes"
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR6_DELAY_COMBAT_TIMER_DURING_CAST",
+          "Label": "Unknown attribute 19",
+          "Description": "only 47488, 50782"
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR6_AURA_ICON_ONLY_FOR_CASTER",
+          "Label": "Only visible to caster (client only) (LIMIT 10)",
+          "Description": ""
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR6_SHOW_MECHANIC_AS_COMBAT_TEXT",
+          "Label": "Client UI target effects (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR6_ABSORB_CANNOT_BE_IGNORED",
+          "Label": "Unknown attribute 22",
+          "Description": "only 72054"
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR6_TAPS_IMMEDIATELY",
+          "Label": "Unknown attribute 23",
+          "Description": ""
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR6_CAN_TARGET_UNTARGETABLE",
+          "Label": "Can target untargetable units",
+          "Description": ""
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR6_DOESNT_RESET_SWING_TIMER_IF_INSTANT",
+          "Label": "Do not reset swing timer if cast time is instant",
+          "Description": ""
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR6_VEHICLE_IMMUNITY_CATEGORY",
+          "Label": "Unknown attribute 26",
+          "Description": "Player castable buff?"
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR6_IGNORE_HEALTH_MODIFIERS",
+          "Label": "Limit applicable %healing modifiers",
+          "Description": "This prevents certain healing modifiers from applying - see implementation if you really care about details"
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR6_DO_NOT_SELECT_TARGET_WITH_INITIATES_COMBAT",
+          "Label": "Unknown attribute 28",
+          "Description": "Death grip?"
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR6_IGNORE_CASTER_DAMAGE_MODIFIERS",
+          "Label": "Limit applicable %damage modifiers",
+          "Description": "This prevents certain damage modifiers from applying - see implementation if you really care about details"
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR6_DISABLE_TIED_EFFECT_POINTS",
+          "Label": "Unknown attribute 30",
+          "Description": ""
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR6_NO_CATEGORY_COOLDOWN_MODS",
+          "Label": "Ignore cooldown modifiers for category cooldown",
+          "Description": ""
+        }
+      ]
+    },
+    "AttributesEx7": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_ATTR7_ALLOW_SPELL_REFLECTION",
+          "Label": "Unknown attribute 0",
+          "Description": "Shaman's new spells (Call of the ...), Feign Death."
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_ATTR7_NO_TARGET_DURATION_MOD",
+          "Label": "Ignore duration modifiers",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_ATTR7_DISABLE_AURA_WHILE_DEAD",
+          "Label": "Reactivate at resurrect (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_ATTR7_DEBUG_SPELL",
+          "Label": "Is cheat spell",
+          "Description": "Cannot cast if caster doesn't have UnitFlag2 & UNIT_FLAG2_ALLOW_CHEAT_SPELLS"
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_ATTR7_TREAT_AS_RAID_BUFF",
+          "Label": "Unknown attribute 4",
+          "Description": "Soulstone related?"
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_ATTR7_CAN_BE_MULTI_CAST",
+          "Label": "Summons player-owned totem",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_ATTR7_DONT_CAUSE_SPELL_PUSHBACK",
+          "Label": "Damage dealt by this does not cause spell pushback",
+          "Description": ""
+        },
+        {
+          "Value": 256,
+          "Name": "SPELL_ATTR7_HORDE_SPECIFIC_SPELL",
+          "Label": "Horde only",
+          "Description": ""
+        },
+        {
+          "Value": 512,
+          "Name": "SPELL_ATTR7_ALLIANCE_SPECIFIC_SPELL",
+          "Label": "Alliance only",
+          "Description": ""
+        },
+        {
+          "Value": 1024,
+          "Name": "SPELL_ATTR7_DISPEL_REMOVES_CHARGES",
+          "Label": "Dispel/Spellsteal remove individual charges",
+          "Description": ""
+        },
+        {
+          "Value": 2048,
+          "Name": "SPELL_ATTR7_CAN_CAUSE_INTERRUPT",
+          "Label": "Only interrupt non-player casting",
+          "Description": ""
+        },
+        {
+          "Value": 4096,
+          "Name": "SPELL_ATTR7_CAN_CAUSE_SILENCE",
+          "Label": "Unused attribute 12",
+          "Description": "Not set in 3.3.5a."
+        },
+        {
+          "Value": 8192,
+          "Name": "SPELL_ATTR7_NO_UI_NOT_INTERRUPTIBLE",
+          "Label": "Unused attribute 13",
+          "Description": "Not set in 3.3.5a."
+        },
+        {
+          "Value": 16384,
+          "Name": "SPELL_ATTR7_RECAST_ON_RESUMMON",
+          "Label": "Unknown attribute 14",
+          "Description": "Only 52150 (Raise Dead - Pet) spell."
+        },
+        {
+          "Value": 32768,
+          "Name": "SPELL_ATTR7_RESET_SWING_TIMER_AT_SPELL_START",
+          "Label": "Unknown attribute 15",
+          "Description": "Exorcism - guaranteed crit vs families?"
+        },
+        {
+          "Value": 65536,
+          "Name": "SPELL_ATTR7_ONLY_IN_SPELLBOOK_UNTIL_LEARNED",
+          "Label": "Can restore secondary power",
+          "Description": "Only spells with this attribute can replenish a non-active power type"
+        },
+        {
+          "Value": 131072,
+          "Name": "SPELL_ATTR7_DO_NOT_LOG_PVP_KILL",
+          "Label": "Unknown attribute 17",
+          "Description": "Only 27965 (Suicide) spell."
+        },
+        {
+          "Value": 262144,
+          "Name": "SPELL_ATTR7_ATTACK_ON_CHARGE_TO_UNIT",
+          "Label": "Has charge effect",
+          "Description": ""
+        },
+        {
+          "Value": 524288,
+          "Name": "SPELL_ATTR7_REPORT_SPELL_FAILURE_TO_UNIT_TARGET",
+          "Label": "Is zone teleport",
+          "Description": ""
+        },
+        {
+          "Value": 1048576,
+          "Name": "SPELL_ATTR7_NO_CLIENT_FAIL_WHILE_STUNNED_FLEEING_CONFUSED",
+          "Label": "Unknown attribute 20",
+          "Description": "Invulnerability related?"
+        },
+        {
+          "Value": 2097152,
+          "Name": "SPELL_ATTR7_RETAIN_COOLDOWN_THROUGH_LOAD",
+          "Label": "Unused attribute 21@Attr7 DESCRPIPTION Not set in 3.3.5a",
+          "Description": ""
+        },
+        {
+          "Value": 4194304,
+          "Name": "SPELL_ATTR7_IGNORES_COLD_WEATHER_FLYING_REQUIREMENT",
+          "Label": "Ignore cold weather flying restriction",
+          "Description": "Set for loaner mounts, allows them to be used despite lacking required flight skill"
+        },
+        {
+          "Value": 8388608,
+          "Name": "SPELL_ATTR7_NO_ATTACK_DODGE",
+          "Label": "Spell cannot be dodged 23",
+          "Description": "Motivate, Mutilate, Shattering Throw"
+        },
+        {
+          "Value": 16777216,
+          "Name": "SPELL_ATTR7_NO_ATTACK_PARRY",
+          "Label": "Spell cannot be parried 24",
+          "Description": "Motivate, Mutilate, Perform Speech, Shattering Throw"
+        },
+        {
+          "Value": 33554432,
+          "Name": "SPELL_ATTR7_NO_ATTACK_MISS",
+          "Label": "Spell cannot be missed 25",
+          "Description": ""
+        },
+        {
+          "Value": 67108864,
+          "Name": "SPELL_ATTR7_TREAT_AS_NPC_AOE",
+          "Label": "Treat as NPC AoE",
+          "Description": ""
+        },
+        {
+          "Value": 134217728,
+          "Name": "SPELL_ATTR7_BYPASS_NO_RESURRECTION_AURA",
+          "Label": "Bypasses the prevent resurrection aura",
+          "Description": ""
+        },
+        {
+          "Value": 268435456,
+          "Name": "SPELL_ATTR7_DO_NOT_COUNT_FOR_PVP_SCOREBOARD",
+          "Label": "Consolidate in raid buff frame (client only)",
+          "Description": ""
+        },
+        {
+          "Value": 536870912,
+          "Name": "SPELL_ATTR7_REFLECTION_ONLY_DEFENDS",
+          "Label": "Unknown attribute 29",
+          "Description": "only 69028, 71237"
+        },
+        {
+          "Value": 1073741824,
+          "Name": "SPELL_ATTR7_CAN_PROC_FROM_SUPPRESSED_TARGET_PROCS",
+          "Label": "Unknown attribute 30",
+          "Description": "Burning Determination, Divine Sacrifice, Earth Shield, Prayer of Mending"
+        },
+        {
+          "Value": 2147483648,
+          "Name": "SPELL_ATTR7_ALWAYS_CAST_LOG",
+          "Label": "Client indicator (client only)",
+          "Description": ""
+        }
+      ]
+    },
+    "Mechanic": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "MECHANIC_NONE",
+          "Label": "None",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "MECHANIC_CHARM",
+          "Label": "Charm",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "MECHANIC_DISORIENTED",
+          "Label": "Disoriented",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "MECHANIC_DISARM",
+          "Label": "Disarm",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "MECHANIC_DISTRACT",
+          "Label": "Distract",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "MECHANIC_FEAR",
+          "Label": "Fear",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "MECHANIC_GRIP",
+          "Label": "Grip",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "MECHANIC_ROOT",
+          "Label": "Root",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "MECHANIC_SLOW_ATTACK",
+          "Label": "Slow Attack",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "MECHANIC_SILENCE",
+          "Label": "Silence",
+          "Description": ""
+        },
+        {
+          "Value": 10,
+          "Name": "MECHANIC_SLEEP",
+          "Label": "Sleep",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "MECHANIC_SNARE",
+          "Label": "Snare",
+          "Description": ""
+        },
+        {
+          "Value": 12,
+          "Name": "MECHANIC_STUN",
+          "Label": "Stun",
+          "Description": ""
+        },
+        {
+          "Value": 13,
+          "Name": "MECHANIC_FREEZE",
+          "Label": "Freeze",
+          "Description": ""
+        },
+        {
+          "Value": 14,
+          "Name": "MECHANIC_KNOCKOUT",
+          "Label": "Knockout",
+          "Description": ""
+        },
+        {
+          "Value": 15,
+          "Name": "MECHANIC_BLEED",
+          "Label": "Bleed",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "MECHANIC_BANDAGE",
+          "Label": "Bandage",
+          "Description": ""
+        },
+        {
+          "Value": 17,
+          "Name": "MECHANIC_POLYMORPH",
+          "Label": "Polymorph",
+          "Description": ""
+        },
+        {
+          "Value": 18,
+          "Name": "MECHANIC_BANISH",
+          "Label": "Banish",
+          "Description": ""
+        },
+        {
+          "Value": 19,
+          "Name": "MECHANIC_SHIELD",
+          "Label": "Shield",
+          "Description": ""
+        },
+        {
+          "Value": 20,
+          "Name": "MECHANIC_SHACKLE",
+          "Label": "Shackle",
+          "Description": ""
+        },
+        {
+          "Value": 21,
+          "Name": "MECHANIC_MOUNT",
+          "Label": "Mount",
+          "Description": ""
+        },
+        {
+          "Value": 22,
+          "Name": "MECHANIC_INFECTED",
+          "Label": "Infected",
+          "Description": ""
+        },
+        {
+          "Value": 23,
+          "Name": "MECHANIC_TURN",
+          "Label": "Turn",
+          "Description": ""
+        },
+        {
+          "Value": 24,
+          "Name": "MECHANIC_HORROR",
+          "Label": "Horror",
+          "Description": ""
+        },
+        {
+          "Value": 25,
+          "Name": "MECHANIC_INVULNERABILITY",
+          "Label": "Invulnerability",
+          "Description": ""
+        },
+        {
+          "Value": 26,
+          "Name": "MECHANIC_INTERRUPT",
+          "Label": "Interrupt",
+          "Description": ""
+        },
+        {
+          "Value": 27,
+          "Name": "MECHANIC_DAZE",
+          "Label": "Daze",
+          "Description": ""
+        },
+        {
+          "Value": 28,
+          "Name": "MECHANIC_DISCOVERY",
+          "Label": "Discovery",
+          "Description": ""
+        },
+        {
+          "Value": 29,
+          "Name": "MECHANIC_IMMUNE_SHIELD",
+          "Label": "Immune Shield",
+          "Description": "Divine (Blessing) Shield/Protection and Ice Block"
+        },
+        {
+          "Value": 30,
+          "Name": "MECHANIC_SAPPED",
+          "Label": "Sapped",
+          "Description": ""
+        },
+        {
+          "Value": 31,
+          "Name": "MECHANIC_ENRAGED",
+          "Label": "Enraged",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "MECHANIC_WOUNDED",
+          "Label": "Wounded",
+          "Description": ""
+        },
+        {
+          "Value": 33,
+          "Name": "MECHANIC_INFECTED_2",
+          "Label": "Infected 2",
+          "Description": ""
+        },
+        {
+          "Value": 34,
+          "Name": "MECHANIC_INFECTED_3",
+          "Label": "Infected 3",
+          "Description": ""
+        },
+        {
+          "Value": 35,
+          "Name": "MECHANIC_INFECTED_4",
+          "Label": "Infected 4",
+          "Description": ""
+        },
+        {
+          "Value": 36,
+          "Name": "MECHANIC_TAUNTED",
+          "Label": "Taunted",
+          "Description": ""
+        },
+        {
+          "Value": 37,
+          "Name": "MAX_MECHANIC",
+          "Label": "Max Mechanic",
+          "Description": "SKIP"
+        }
+      ]
+    },
+    "Dispel": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "DISPEL_NONE",
+          "Label": "None",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "DISPEL_MAGIC",
+          "Label": "Magic",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "DISPEL_CURSE",
+          "Label": "Curse",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "DISPEL_DISEASE",
+          "Label": "Disease",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "DISPEL_POISON",
+          "Label": "Poison",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "DISPEL_STEALTH",
+          "Label": "Stealth",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "DISPEL_INVISIBILITY",
+          "Label": "Invisibility",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "DISPEL_SPE_NPC_ONLY",
+          "Label": "Spe Npc Only",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "DISPEL_ENRAGE",
+          "Label": "Enrage",
+          "Description": ""
+        },
+        {
+          "Value": 10,
+          "Name": "DISPEL_ZG_TICKET",
+          "Label": "Zg Ticket",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "DESPEL_OLD_UNUSED",
+          "Label": "Despel Old Unused",
+          "Description": ""
+        }
+      ]
+    },
+    "Power": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "POWER_MANA",
+          "Label": "Mana",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "POWER_RAGE",
+          "Label": "Rage",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "POWER_FOCUS",
+          "Label": "Focus",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "POWER_ENERGY",
+          "Label": "Energy",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "POWER_HAPPINESS",
+          "Label": "Happiness",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "POWER_RUNE",
+          "Label": "Rune",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "POWER_RUNIC_POWER",
+          "Label": "Runic Power",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "MAX_POWERS",
+          "Label": "Max Powers",
+          "Description": ""
+        },
+        {
+          "Value": 4294967294,
+          "Name": "POWER_HEALTH",
+          "Label": "Health",
+          "Description": "(-2 as signed value)"
+        }
+      ]
+    },
+    "School": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_SCHOOL_MASK_PHYSICAL",
+          "Label": "Physical",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_SCHOOL_MASK_HOLY",
+          "Label": "Holy",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_SCHOOL_MASK_FIRE",
+          "Label": "Fire",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_SCHOOL_MASK_NATURE",
+          "Label": "Nature",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_SCHOOL_MASK_FROST",
+          "Label": "Frost",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_SCHOOL_MASK_SHADOW",
+          "Label": "Shadow",
+          "Description": ""
+        },
+        {
+          "Value": 64,
+          "Name": "SPELL_SCHOOL_MASK_ARCANE",
+          "Label": "Arcane",
+          "Description": ""
+        }
+      ]
+    },
+    "AuraState": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "AURA_STATE_NONE",
+          "Label": "None",
+          "Description": "C   |"
+        },
+        {
+          "Value": 1,
+          "Name": "AURA_STATE_DEFENSE",
+          "Label": "Defense",
+          "Description": "C   |"
+        },
+        {
+          "Value": 2,
+          "Name": "AURA_STATE_HEALTHLESS_20_PERCENT",
+          "Label": "Healthless 20 Percent",
+          "Description": "CcT |"
+        },
+        {
+          "Value": 3,
+          "Name": "AURA_STATE_BERSERKING",
+          "Label": "Berserking",
+          "Description": "C T |"
+        },
+        {
+          "Value": 4,
+          "Name": "AURA_STATE_FROZEN",
+          "Label": "Frozen",
+          "Description": "c t| frozen target"
+        },
+        {
+          "Value": 5,
+          "Name": "AURA_STATE_JUDGEMENT",
+          "Label": "Judgement",
+          "Description": "C   |"
+        },
+        {
+          "Value": 7,
+          "Name": "AURA_STATE_HUNTER_PARRY",
+          "Label": "Hunter Parry",
+          "Description": "C   |"
+        },
+        {
+          "Value": 8,
+          "Name": "AURA_STATE_BANISHED",
+          "Label": "Banished",
+          "Description": "c t| banished"
+        },
+        {
+          "Value": 10,
+          "Name": "AURA_STATE_WARRIOR_VICTORY_RUSH",
+          "Label": "Warrior Victory Rush",
+          "Description": "C   | warrior victory rush"
+        },
+        {
+          "Value": 12,
+          "Name": "AURA_STATE_FAERIE_FIRE",
+          "Label": "Faerie Fire",
+          "Description": "c t|"
+        },
+        {
+          "Value": 13,
+          "Name": "AURA_STATE_HEALTHLESS_35_PERCENT",
+          "Label": "Healthless 35 Percent",
+          "Description": "C T |"
+        },
+        {
+          "Value": 14,
+          "Name": "AURA_STATE_CONFLAGRATE",
+          "Label": "Conflagrate",
+          "Description": "T |"
+        },
+        {
+          "Value": 15,
+          "Name": "AURA_STATE_SWIFTMEND",
+          "Label": "Swiftmend",
+          "Description": "T |"
+        },
+        {
+          "Value": 16,
+          "Name": "AURA_STATE_DEADLY_POISON",
+          "Label": "Deadly Poison",
+          "Description": "T |"
+        },
+        {
+          "Value": 17,
+          "Name": "AURA_STATE_ENRAGE",
+          "Label": "Enrage",
+          "Description": "C   |"
+        },
+        {
+          "Value": 18,
+          "Name": "AURA_STATE_BLEEDING",
+          "Label": "Bleeding",
+          "Description": "T|"
+        },
+        {
+          "Value": 19,
+          "Name": "AURA_STATE_UNKNOWN19",
+          "Label": "Unknown19",
+          "Description": "|"
+        },
+        {
+          "Value": 22,
+          "Name": "AURA_STATE_UNKNOWN22",
+          "Label": "Unknown22",
+          "Description": "C  t| varius spells (63884, 50240)"
+        },
+        {
+          "Value": 23,
+          "Name": "AURA_STATE_HEALTH_ABOVE_75_PERCENT",
+          "Label": "Health Above 75 Percent",
+          "Description": "C   |"
+        }
+      ]
+    },
+    "DamageClass": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "SPELL_DAMAGE_CLASS_NONE",
+          "Label": "None",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "SPELL_DAMAGE_CLASS_MAGIC",
+          "Label": "Magic",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_DAMAGE_CLASS_MELEE",
+          "Label": "Melee",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "SPELL_DAMAGE_CLASS_RANGED",
+          "Label": "Ranged",
+          "Description": ""
+        }
+      ]
+    },
+    "PreventionType": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "SPELL_PREVENTION_TYPE_NONE",
+          "Label": "None",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "SPELL_PREVENTION_TYPE_SILENCE",
+          "Label": "Silence",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_PREVENTION_TYPE_PACIFY",
+          "Label": "Pacify",
+          "Description": ""
+        }
+      ]
+    },
+    "SpellFamily": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "SPELLFAMILY_GENERIC",
+          "Label": "Generic",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "SPELLFAMILY_UNK1",
+          "Label": "Unk1",
+          "Description": "events, holidays"
+        },
+        {
+          "Value": 3,
+          "Name": "SPELLFAMILY_MAGE",
+          "Label": "Mage",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "SPELLFAMILY_WARRIOR",
+          "Label": "Warrior",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "SPELLFAMILY_WARLOCK",
+          "Label": "Warlock",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "SPELLFAMILY_PRIEST",
+          "Label": "Priest",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "SPELLFAMILY_DRUID",
+          "Label": "Druid",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "SPELLFAMILY_ROGUE",
+          "Label": "Rogue",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "SPELLFAMILY_HUNTER",
+          "Label": "Hunter",
+          "Description": ""
+        },
+        {
+          "Value": 10,
+          "Name": "SPELLFAMILY_PALADIN",
+          "Label": "Paladin",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "SPELLFAMILY_SHAMAN",
+          "Label": "Shaman",
+          "Description": ""
+        },
+        {
+          "Value": 12,
+          "Name": "SPELLFAMILY_UNK2",
+          "Label": "Unk2",
+          "Description": "spells (silence resistance)"
+        },
+        {
+          "Value": 13,
+          "Name": "SPELLFAMILY_POTION",
+          "Label": "Potion",
+          "Description": ""
+        },
+        {
+          "Value": 15,
+          "Name": "SPELLFAMILY_DEATHKNIGHT",
+          "Label": "Deathknight",
+          "Description": ""
+        },
+        {
+          "Value": 17,
+          "Name": "SPELLFAMILY_PET",
+          "Label": "Pet",
+          "Description": ""
+        }
+      ]
+    },
+    "CastTargetFlags": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "TARGET_FLAG_UNUSED_1",
+          "Label": "Unused 1",
+          "Description": "not used"
+        },
+        {
+          "Value": 2,
+          "Name": "TARGET_FLAG_UNIT",
+          "Label": "Unit",
+          "Description": "pguid"
+        },
+        {
+          "Value": 4,
+          "Name": "TARGET_FLAG_UNIT_RAID",
+          "Label": "Unit Raid",
+          "Description": "not sent, used to validate target (if raid member)"
+        },
+        {
+          "Value": 8,
+          "Name": "TARGET_FLAG_UNIT_PARTY",
+          "Label": "Unit Party",
+          "Description": "not sent, used to validate target (if party member)"
+        },
+        {
+          "Value": 16,
+          "Name": "TARGET_FLAG_ITEM",
+          "Label": "Item",
+          "Description": "pguid"
+        },
+        {
+          "Value": 32,
+          "Name": "TARGET_FLAG_SOURCE_LOCATION",
+          "Label": "Source Location",
+          "Description": "pguid, 3 float"
+        },
+        {
+          "Value": 64,
+          "Name": "TARGET_FLAG_DEST_LOCATION",
+          "Label": "Dest Location",
+          "Description": "pguid, 3 float"
+        },
+        {
+          "Value": 128,
+          "Name": "TARGET_FLAG_UNIT_ENEMY",
+          "Label": "Unit Enemy",
+          "Description": "not sent, used to validate target (if enemy)"
+        },
+        {
+          "Value": 256,
+          "Name": "TARGET_FLAG_UNIT_ALLY",
+          "Label": "Unit Ally",
+          "Description": "not sent, used to validate target (if ally)"
+        },
+        {
+          "Value": 512,
+          "Name": "TARGET_FLAG_CORPSE_ENEMY",
+          "Label": "Corpse Enemy",
+          "Description": "pguid"
+        },
+        {
+          "Value": 1024,
+          "Name": "TARGET_FLAG_UNIT_DEAD",
+          "Label": "Unit Dead",
+          "Description": "not sent, used to validate target (if dead creature)"
+        },
+        {
+          "Value": 2048,
+          "Name": "TARGET_FLAG_GAMEOBJECT",
+          "Label": "Gameobject",
+          "Description": "pguid, used with TARGET_GAMEOBJECT_TARGET"
+        },
+        {
+          "Value": 4096,
+          "Name": "TARGET_FLAG_TRADE_ITEM",
+          "Label": "Trade Item",
+          "Description": "pguid"
+        },
+        {
+          "Value": 8192,
+          "Name": "TARGET_FLAG_STRING",
+          "Label": "String",
+          "Description": "string"
+        },
+        {
+          "Value": 16384,
+          "Name": "TARGET_FLAG_GAMEOBJECT_ITEM",
+          "Label": "Gameobject Item",
+          "Description": "not sent, used with TARGET_GAMEOBJECT_ITEM_TARGET"
+        },
+        {
+          "Value": 32768,
+          "Name": "TARGET_FLAG_CORPSE_ALLY",
+          "Label": "Corpse Ally",
+          "Description": "pguid"
+        },
+        {
+          "Value": 65536,
+          "Name": "TARGET_FLAG_UNIT_MINIPET",
+          "Label": "Unit Minipet",
+          "Description": "pguid, used to validate target (if non combat pet)"
+        },
+        {
+          "Value": 131072,
+          "Name": "TARGET_FLAG_GLYPH_SLOT",
+          "Label": "Glyph Slot",
+          "Description": "used in glyph spells"
+        },
+        {
+          "Value": 262144,
+          "Name": "TARGET_FLAG_DEST_TARGET",
+          "Label": "Dest Target",
+          "Description": "sometimes appears with DEST_TARGET spells (may appear or not for a given spell)"
+        },
+        {
+          "Value": 524288,
+          "Name": "TARGET_FLAG_UNUSED20",
+          "Label": "Unused20",
+          "Description": "uint32 counter, loop { vec3 - screen position (?), guid }, not used so far"
+        },
+        {
+          "Value": 1048576,
+          "Name": "TARGET_FLAG_UNIT_PASSENGER",
+          "Label": "Unit Passenger",
+          "Description": "guessed, used to validate target (if vehicle passenger)"
+        }
+      ]
+    },
+    "InterruptFlags": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "SPELL_INTERRUPT_FLAG_MOVEMENT",
+          "Label": "Movement",
+          "Description": "why need this for instant?"
+        },
+        {
+          "Value": 2,
+          "Name": "SPELL_INTERRUPT_FLAG_PUSH_BACK",
+          "Label": "Push Back",
+          "Description": "push back"
+        },
+        {
+          "Value": 4,
+          "Name": "SPELL_INTERRUPT_FLAG_UNK3",
+          "Label": "Unk3",
+          "Description": "any info?"
+        },
+        {
+          "Value": 8,
+          "Name": "SPELL_INTERRUPT_FLAG_INTERRUPT",
+          "Label": "Interrupt",
+          "Description": "interrupt"
+        },
+        {
+          "Value": 16,
+          "Name": "SPELL_INTERRUPT_FLAG_ABORT_ON_DMG",
+          "Label": "Abort On Dmg",
+          "Description": "_complete_ interrupt on direct damage"
+        },
+        {
+          "Value": 32,
+          "Name": "SPELL_INTERRUPT_UNK",
+          "Label": "Spell Interrupt Unk",
+          "Description": "unk, 564 of 727 spells having this spell start with \"Glyph\""
+        }
+      ]
+    },
+    "AuraInterruptFlags": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "AURA_INTERRUPT_FLAG_HITBYSPELL",
+          "Label": "Hitbyspell",
+          "Description": "removed when getting hit by a negative spell?"
+        },
+        {
+          "Value": 2,
+          "Name": "AURA_INTERRUPT_FLAG_TAKE_DAMAGE",
+          "Label": "Take Damage",
+          "Description": "removed by any damage"
+        },
+        {
+          "Value": 4,
+          "Name": "AURA_INTERRUPT_FLAG_CAST",
+          "Label": "Cast",
+          "Description": "cast any spells"
+        },
+        {
+          "Value": 8,
+          "Name": "AURA_INTERRUPT_FLAG_MOVE",
+          "Label": "Move",
+          "Description": "removed by any movement"
+        },
+        {
+          "Value": 16,
+          "Name": "AURA_INTERRUPT_FLAG_TURNING",
+          "Label": "Turning",
+          "Description": "removed by any turning"
+        },
+        {
+          "Value": 32,
+          "Name": "AURA_INTERRUPT_FLAG_JUMP",
+          "Label": "Jump",
+          "Description": "removed by entering combat"
+        },
+        {
+          "Value": 64,
+          "Name": "AURA_INTERRUPT_FLAG_NOT_MOUNTED",
+          "Label": "Not Mounted",
+          "Description": "removed by dismounting"
+        },
+        {
+          "Value": 128,
+          "Name": "AURA_INTERRUPT_FLAG_NOT_ABOVEWATER",
+          "Label": "Not Abovewater",
+          "Description": "removed by entering water"
+        },
+        {
+          "Value": 256,
+          "Name": "AURA_INTERRUPT_FLAG_NOT_UNDERWATER",
+          "Label": "Not Underwater",
+          "Description": "removed by leaving water"
+        },
+        {
+          "Value": 512,
+          "Name": "AURA_INTERRUPT_FLAG_NOT_SHEATHED",
+          "Label": "Not Sheathed",
+          "Description": "removed by unsheathing"
+        },
+        {
+          "Value": 1024,
+          "Name": "AURA_INTERRUPT_FLAG_TALK",
+          "Label": "Talk",
+          "Description": "talk to npc / loot? action on creature"
+        },
+        {
+          "Value": 2048,
+          "Name": "AURA_INTERRUPT_FLAG_USE",
+          "Label": "Use",
+          "Description": "mine/use/open action on gameobject"
+        },
+        {
+          "Value": 4096,
+          "Name": "AURA_INTERRUPT_FLAG_MELEE_ATTACK",
+          "Label": "Melee Attack",
+          "Description": "removed by attacking"
+        },
+        {
+          "Value": 8192,
+          "Name": "AURA_INTERRUPT_FLAG_SPELL_ATTACK",
+          "Label": "Spell Attack",
+          "Description": "???"
+        },
+        {
+          "Value": 16384,
+          "Name": "AURA_INTERRUPT_FLAG_UNK14",
+          "Label": "Unk14",
+          "Description": "14"
+        },
+        {
+          "Value": 32768,
+          "Name": "AURA_INTERRUPT_FLAG_TRANSFORM",
+          "Label": "Transform",
+          "Description": "removed by transform?"
+        },
+        {
+          "Value": 65536,
+          "Name": "AURA_INTERRUPT_FLAG_UNK16",
+          "Label": "Unk16",
+          "Description": "16"
+        },
+        {
+          "Value": 131072,
+          "Name": "AURA_INTERRUPT_FLAG_MOUNT",
+          "Label": "Mount",
+          "Description": "misdirect, aspect, swim speed"
+        },
+        {
+          "Value": 262144,
+          "Name": "AURA_INTERRUPT_FLAG_NOT_SEATED",
+          "Label": "Not Seated",
+          "Description": "removed by standing up (used by food and drink mostly and sleep/Fake Death like)"
+        },
+        {
+          "Value": 524288,
+          "Name": "AURA_INTERRUPT_FLAG_CHANGE_MAP",
+          "Label": "Change Map",
+          "Description": "leaving map/getting teleported"
+        },
+        {
+          "Value": 1048576,
+          "Name": "AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION",
+          "Label": "Immune Or Lost Selection",
+          "Description": "removed by auras that make you invulnerable, or make other to lose selection on you"
+        },
+        {
+          "Value": 2097152,
+          "Name": "AURA_INTERRUPT_FLAG_UNK21",
+          "Label": "Unk21",
+          "Description": "21"
+        },
+        {
+          "Value": 4194304,
+          "Name": "AURA_INTERRUPT_FLAG_TELEPORTED",
+          "Label": "Teleported",
+          "Description": "22"
+        },
+        {
+          "Value": 8388608,
+          "Name": "AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT",
+          "Label": "Enter Pvp Combat",
+          "Description": "removed by entering pvp combat"
+        },
+        {
+          "Value": 16777216,
+          "Name": "AURA_INTERRUPT_FLAG_DIRECT_DAMAGE",
+          "Label": "Direct Damage",
+          "Description": "removed by any direct damage"
+        },
+        {
+          "Value": 33554432,
+          "Name": "AURA_INTERRUPT_FLAG_LANDING",
+          "Label": "Landing",
+          "Description": "removed by hitting the ground"
+        },
+        {
+          "Value": 2147483648,
+          "Name": "AURA_INTERRUPT_FLAG_LEAVE_COMBAT",
+          "Label": "Leave Combat",
+          "Description": "removed by leaving combat"
+        }
+      ]
+    },
+    "ChannelInterruptFlags": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 8,
+          "Name": "CHANNEL_INTERRUPT_FLAG_INTERRUPT",
+          "Label": "Channel Interrupt Flag Interrupt",
+          "Description": "interrupt"
+        },
+        {
+          "Value": 16384,
+          "Name": "CHANNEL_FLAG_DELAY",
+          "Label": "Channel Flag Delay",
+          "Description": ""
+        }
+      ]
+    },
+    "ProcFlags": {
+      "Flags": true,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "PROC_FLAG_KILLED",
+          "Label": "Killed",
+          "Description": "Killed by agressor - not sure about this flag"
+        },
+        {
+          "Value": 2,
+          "Name": "PROC_FLAG_KILL",
+          "Label": "Kill",
+          "Description": "Kill target (in most cases need XP/Honor reward)"
+        },
+        {
+          "Value": 4,
+          "Name": "PROC_FLAG_DONE_MELEE_AUTO_ATTACK",
+          "Label": "Done Melee Auto Attack",
+          "Description": "Done melee auto attack"
+        },
+        {
+          "Value": 8,
+          "Name": "PROC_FLAG_TAKEN_MELEE_AUTO_ATTACK",
+          "Label": "Taken Melee Auto Attack",
+          "Description": "Taken melee auto attack"
+        },
+        {
+          "Value": 16,
+          "Name": "PROC_FLAG_DONE_SPELL_MELEE_DMG_CLASS",
+          "Label": "Done Spell Melee Dmg Class",
+          "Description": "Done attack by Spell that has dmg class melee"
+        },
+        {
+          "Value": 32,
+          "Name": "PROC_FLAG_TAKEN_SPELL_MELEE_DMG_CLASS",
+          "Label": "Taken Spell Melee Dmg Class",
+          "Description": "Taken attack by Spell that has dmg class melee"
+        },
+        {
+          "Value": 64,
+          "Name": "PROC_FLAG_DONE_RANGED_AUTO_ATTACK",
+          "Label": "Done Ranged Auto Attack",
+          "Description": "Done ranged auto attack"
+        },
+        {
+          "Value": 128,
+          "Name": "PROC_FLAG_TAKEN_RANGED_AUTO_ATTACK",
+          "Label": "Taken Ranged Auto Attack",
+          "Description": "Taken ranged auto attack"
+        },
+        {
+          "Value": 256,
+          "Name": "PROC_FLAG_DONE_SPELL_RANGED_DMG_CLASS",
+          "Label": "Done Spell Ranged Dmg Class",
+          "Description": "Done attack by Spell that has dmg class ranged"
+        },
+        {
+          "Value": 512,
+          "Name": "PROC_FLAG_TAKEN_SPELL_RANGED_DMG_CLASS",
+          "Label": "Taken Spell Ranged Dmg Class",
+          "Description": "Taken attack by Spell that has dmg class ranged"
+        },
+        {
+          "Value": 1024,
+          "Name": "PROC_FLAG_DONE_SPELL_NONE_DMG_CLASS_POS",
+          "Label": "Done Spell None Dmg Class Pos",
+          "Description": "Done positive spell that has dmg class none"
+        },
+        {
+          "Value": 2048,
+          "Name": "PROC_FLAG_TAKEN_SPELL_NONE_DMG_CLASS_POS",
+          "Label": "Taken Spell None Dmg Class Pos",
+          "Description": "Taken positive spell that has dmg class none"
+        },
+        {
+          "Value": 4096,
+          "Name": "PROC_FLAG_DONE_SPELL_NONE_DMG_CLASS_NEG",
+          "Label": "Done Spell None Dmg Class Neg",
+          "Description": "Done negative spell that has dmg class none"
+        },
+        {
+          "Value": 8192,
+          "Name": "PROC_FLAG_TAKEN_SPELL_NONE_DMG_CLASS_NEG",
+          "Label": "Taken Spell None Dmg Class Neg",
+          "Description": "Taken negative spell that has dmg class none"
+        },
+        {
+          "Value": 16384,
+          "Name": "PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_POS",
+          "Label": "Done Spell Magic Dmg Class Pos",
+          "Description": "Done positive spell that has dmg class magic"
+        },
+        {
+          "Value": 32768,
+          "Name": "PROC_FLAG_TAKEN_SPELL_MAGIC_DMG_CLASS_POS",
+          "Label": "Taken Spell Magic Dmg Class Pos",
+          "Description": "Taken positive spell that has dmg class magic"
+        },
+        {
+          "Value": 65536,
+          "Name": "PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG",
+          "Label": "Done Spell Magic Dmg Class Neg",
+          "Description": "Done negative spell that has dmg class magic"
+        },
+        {
+          "Value": 131072,
+          "Name": "PROC_FLAG_TAKEN_SPELL_MAGIC_DMG_CLASS_NEG",
+          "Label": "Taken Spell Magic Dmg Class Neg",
+          "Description": "Taken negative spell that has dmg class magic"
+        },
+        {
+          "Value": 262144,
+          "Name": "PROC_FLAG_DONE_PERIODIC",
+          "Label": "Done Periodic",
+          "Description": "Successful do periodic (damage / healing)"
+        },
+        {
+          "Value": 524288,
+          "Name": "PROC_FLAG_TAKEN_PERIODIC",
+          "Label": "Taken Periodic",
+          "Description": "Taken spell periodic (damage / healing)"
+        },
+        {
+          "Value": 1048576,
+          "Name": "PROC_FLAG_TAKEN_DAMAGE",
+          "Label": "Taken Damage",
+          "Description": "Taken any damage"
+        },
+        {
+          "Value": 2097152,
+          "Name": "PROC_FLAG_DONE_TRAP_ACTIVATION",
+          "Label": "Done Trap Activation",
+          "Description": "On trap activation (possibly needs name change to ON_GAMEOBJECT_CAST or USE)"
+        },
+        {
+          "Value": 4194304,
+          "Name": "PROC_FLAG_DONE_MAINHAND_ATTACK",
+          "Label": "Done Mainhand Attack",
+          "Description": "Done main-hand melee attacks (spell and autoattack)"
+        },
+        {
+          "Value": 8388608,
+          "Name": "PROC_FLAG_DONE_OFFHAND_ATTACK",
+          "Label": "Done Offhand Attack",
+          "Description": "Done off-hand melee attacks (spell and autoattack)"
+        },
+        {
+          "Value": 16777216,
+          "Name": "PROC_FLAG_DEATH",
+          "Label": "Death",
+          "Description": "Died in any way"
+        }
+      ]
+    },
+    "ShapeshiftForm": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 0,
+          "Name": "FORM_NONE",
+          "Label": "None",
+          "Description": ""
+        },
+        {
+          "Value": 1,
+          "Name": "FORM_CAT",
+          "Label": "Cat",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "FORM_TREE",
+          "Label": "Tree",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "FORM_TRAVEL",
+          "Label": "Travel",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "FORM_AQUA",
+          "Label": "Aqua",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "FORM_BEAR",
+          "Label": "Bear",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "FORM_AMBIENT",
+          "Label": "Ambient",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "FORM_GHOUL",
+          "Label": "Ghoul",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "FORM_DIREBEAR",
+          "Label": "Direbear",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "FORM_STEVES_GHOUL",
+          "Label": "Steves Ghoul",
+          "Description": ""
+        },
+        {
+          "Value": 10,
+          "Name": "FORM_THARONJA_SKELETON",
+          "Label": "Tharonja Skeleton",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "FORM_TEST_OF_STRENGTH",
+          "Label": "Test Of Strength",
+          "Description": ""
+        },
+        {
+          "Value": 12,
+          "Name": "FORM_BLB_PLAYER",
+          "Label": "Blb Player",
+          "Description": ""
+        },
+        {
+          "Value": 13,
+          "Name": "FORM_SHADOW_DANCE",
+          "Label": "Shadow Dance",
+          "Description": ""
+        },
+        {
+          "Value": 14,
+          "Name": "FORM_CREATUREBEAR",
+          "Label": "Creaturebear",
+          "Description": ""
+        },
+        {
+          "Value": 15,
+          "Name": "FORM_CREATURECAT",
+          "Label": "Creaturecat",
+          "Description": ""
+        },
+        {
+          "Value": 16,
+          "Name": "FORM_GHOSTWOLF",
+          "Label": "Ghostwolf",
+          "Description": ""
+        },
+        {
+          "Value": 17,
+          "Name": "FORM_BATTLESTANCE",
+          "Label": "Battlestance",
+          "Description": ""
+        },
+        {
+          "Value": 18,
+          "Name": "FORM_DEFENSIVESTANCE",
+          "Label": "Defensivestance",
+          "Description": ""
+        },
+        {
+          "Value": 19,
+          "Name": "FORM_BERSERKERSTANCE",
+          "Label": "Berserkerstance",
+          "Description": ""
+        },
+        {
+          "Value": 20,
+          "Name": "FORM_TEST",
+          "Label": "Test",
+          "Description": ""
+        },
+        {
+          "Value": 21,
+          "Name": "FORM_ZOMBIE",
+          "Label": "Zombie",
+          "Description": ""
+        },
+        {
+          "Value": 22,
+          "Name": "FORM_METAMORPHOSIS",
+          "Label": "Metamorphosis",
+          "Description": ""
+        },
+        {
+          "Value": 25,
+          "Name": "FORM_UNDEAD",
+          "Label": "Undead",
+          "Description": ""
+        },
+        {
+          "Value": 26,
+          "Name": "FORM_MASTER_ANGLER",
+          "Label": "Master Angler",
+          "Description": ""
+        },
+        {
+          "Value": 27,
+          "Name": "FORM_FLIGHT_EPIC",
+          "Label": "Flight Epic",
+          "Description": ""
+        },
+        {
+          "Value": 28,
+          "Name": "FORM_SHADOW",
+          "Label": "Shadow",
+          "Description": ""
+        },
+        {
+          "Value": 29,
+          "Name": "FORM_FLIGHT",
+          "Label": "Flight",
+          "Description": ""
+        },
+        {
+          "Value": 30,
+          "Name": "FORM_STEALTH",
+          "Label": "Stealth",
+          "Description": ""
+        },
+        {
+          "Value": 31,
+          "Name": "FORM_MOONKIN",
+          "Label": "Moonkin",
+          "Description": ""
+        },
+        {
+          "Value": 32,
+          "Name": "FORM_SPIRITOFREDEMPTION",
+          "Label": "Spiritofredemption",
+          "Description": ""
+        }
+      ]
+    },
+    "CreatureType": {
+      "Flags": false,
+      "Values": [
+        {
+          "Value": 1,
+          "Name": "CREATURE_TYPE_BEAST",
+          "Label": "Beast",
+          "Description": ""
+        },
+        {
+          "Value": 2,
+          "Name": "CREATURE_TYPE_DRAGONKIN",
+          "Label": "Dragonkin",
+          "Description": ""
+        },
+        {
+          "Value": 3,
+          "Name": "CREATURE_TYPE_DEMON",
+          "Label": "Demon",
+          "Description": ""
+        },
+        {
+          "Value": 4,
+          "Name": "CREATURE_TYPE_ELEMENTAL",
+          "Label": "Elemental",
+          "Description": ""
+        },
+        {
+          "Value": 5,
+          "Name": "CREATURE_TYPE_GIANT",
+          "Label": "Giant",
+          "Description": ""
+        },
+        {
+          "Value": 6,
+          "Name": "CREATURE_TYPE_UNDEAD",
+          "Label": "Undead",
+          "Description": ""
+        },
+        {
+          "Value": 7,
+          "Name": "CREATURE_TYPE_HUMANOID",
+          "Label": "Humanoid",
+          "Description": ""
+        },
+        {
+          "Value": 8,
+          "Name": "CREATURE_TYPE_CRITTER",
+          "Label": "Critter",
+          "Description": ""
+        },
+        {
+          "Value": 9,
+          "Name": "CREATURE_TYPE_MECHANICAL",
+          "Label": "Mechanical",
+          "Description": ""
+        },
+        {
+          "Value": 10,
+          "Name": "CREATURE_TYPE_NOT_SPECIFIED",
+          "Label": "Not Specified",
+          "Description": ""
+        },
+        {
+          "Value": 11,
+          "Name": "CREATURE_TYPE_TOTEM",
+          "Label": "Totem",
+          "Description": ""
+        },
+        {
+          "Value": 12,
+          "Name": "CREATURE_TYPE_NON_COMBAT_PET",
+          "Label": "Non Combat Pet",
+          "Description": ""
+        },
+        {
+          "Value": 13,
+          "Name": "CREATURE_TYPE_GAS_CLOUD",
+          "Label": "Gas Cloud",
+          "Description": ""
+        }
+      ]
+    }
+  }
+}
