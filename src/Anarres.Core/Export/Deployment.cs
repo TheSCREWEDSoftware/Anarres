@@ -80,6 +80,9 @@ public static class Deployment
         {
             progress?.Report((file, (double)index++ / files.Count));
             DbcTable table = await store.LoadAsync(file, definitions, null, cancellation);
+            // AzerothCore's world tables hold only the rows that differ, so they're laid over the clean file
+            if (store.Naming == TableNaming.AzerothCore)
+                table = DbcMerge.Overlay(LoadSourceOrFail(settings, file, definitions), table);
             byte[] data = DbcFile.Write(table);
             string path = Path.Combine(dbcFolder, table.Definition.File);
             await File.WriteAllBytesAsync(path, data, cancellation);
@@ -105,6 +108,16 @@ public static class Deployment
 
         progress?.Report((string.Empty, 1));
         return new ExportResult(written, server, patchPath);
+    }
+
+    private static DbcTable LoadSourceOrFail(ProjectSettings settings, string file, DbcDefinitions definitions)
+    {
+        string table = definitions.Find(file)?.Table ?? file;
+        return DbcMerge.LoadSource(settings, file, definitions) ??
+               throw new InvalidOperationException(
+                   "AzerothCore's " + table + " table holds only the rows that differ from the client's file, so " +
+                   "exporting needs the clean file to lay them over. Set the Clean DBC folder or the WoW Data " +
+                   "folder in Project settings.");
     }
 
     // A patch MPQ from .dbc files already on disk, such as the export folder's

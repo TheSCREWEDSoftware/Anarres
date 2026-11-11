@@ -109,15 +109,20 @@ public sealed class ClientArchives : IDisposable
         return null;
     }
 
-    // Every DBFilesClient\*.dbc any archive lists
-    public List<string> ListDbcFiles()
+    // Every DBFilesClient\*.dbc any archive lists, plus known files found in archives without a (listfile)
+    public List<string> ListDbcFiles(IEnumerable<string>? knownFiles = null)
     {
-        return _archives.SelectMany(archive => archive.ListFiles())
-                        .Where(name => name.StartsWith(DBC_FOLDER + "\\", StringComparison.OrdinalIgnoreCase) &&
-                                       name.EndsWith(".dbc", StringComparison.OrdinalIgnoreCase))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .Order(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
+        IEnumerable<string> listed = _archives.SelectMany(archive => archive.ListFiles())
+                                              .Where(name => name.StartsWith(DBC_FOLDER + "\\",
+                                                                             StringComparison.OrdinalIgnoreCase) &&
+                                                             name.EndsWith(".dbc", StringComparison.OrdinalIgnoreCase));
+        IEnumerable<string> probed = (knownFiles ?? Dbc.DbcDefinitions.Default.All.Select(entry => entry.File))
+                                     .Select(file => DBC_FOLDER + "\\" + file)
+                                     .Where(name => _archives.Any(archive => archive.Contains(name)));
+        return listed.Concat(probed)
+                     .Distinct(StringComparer.OrdinalIgnoreCase)
+                     .Order(StringComparer.OrdinalIgnoreCase)
+                     .ToList();
     }
 
     public void Dispose()

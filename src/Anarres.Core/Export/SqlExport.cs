@@ -23,6 +23,8 @@ public static class SqlExport
            .Append(definition.File).Append(" for ").Append(name).Append(", written by Anarres\n");
         if (rows.Count == 0)
             return sql.ToString();
+        // The text below escapes with backslashes, which servers set to NO_BACKSLASH_ESCAPES would read wrongly
+        sql.Append("SET @@SESSION.sql_mode = REPLACE(@@SESSION.sql_mode, 'NO_BACKSLASH_ESCAPES', '');\n");
 
         List<string> keys = rows.Select(row => Literal(table, row, columns[0])).ToList();
         for (int start = 0; start < keys.Count; start += ROWS_PER_INSERT)

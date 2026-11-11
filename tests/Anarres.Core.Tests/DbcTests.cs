@@ -160,4 +160,45 @@ public static class DbcTests
                 Assert.True(original.AsSpan().SequenceEqual(written), name + " is identical");
         }
     }
+
+    public static void RefusesTakenIds()
+    {
+        DbcTable table = SampleTable();
+        Assert.True(!table.TrySetText(0, 0, "11", out string error) && error.Contains("11"), "ID in use");
+        Assert.Equal(10u, table.GetUInt(0, 0), "ID unchanged");
+        Assert.Throws<InvalidOperationException>(() => table.AddRow(12), "adding a taken ID");
+        Assert.True(table.TrySetText(0, 0, "10", out _), "setting the row's own ID again");
+    }
+
+    public static void UndoesAndRedoes()
+    {
+        DbcTable table = SampleTable();
+        table.AcceptChanges();
+        table.ClearUndo();
+        table.SetString(0, 3, "F");
+        table.SetString(0, 3, "Fi");
+        table.SetString(0, 3, "Fire");
+        table.BreakUndoStep();
+        table.SetInt(0, 1, 99);
+        table.RemoveRow(2);
+        table.CopyRow(0, 50);
+
+        Assert.True(table.Undo() >= 0, "undo the copy");
+        Assert.Equal(-1, table.FindRow(50), "copy gone");
+        table.Undo();
+        Assert.Equal("Frost Nova", table.GetString(2, 3), "removed row back in place");
+        table.Undo();
+        Assert.Equal(-5, table.GetInt(0, 1), "number back");
+        table.Undo();
+        Assert.Equal("Fireball", table.GetString(0, 3), "typing undone in one step");
+        Assert.True(!table.CanUndo, "nothing left");
+
+        table.Redo();
+        Assert.Equal("Fire", table.GetString(0, 3), "redo the typing");
+        table.Redo();
+        table.Redo();
+        Assert.Equal(2, table.Rows.Count, "redo the removal");
+        table.SetInt(1, 1, 7);
+        Assert.True(!table.CanRedo, "a new edit clears redo");
+    }
 }

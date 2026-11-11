@@ -29,8 +29,8 @@ public sealed class SqliteDbcStore : SqlDbcStore
         SqliteConnection connection = new SqliteConnection(builder.ToString());
         await connection.OpenAsync(cancellation);
         SqliteDbcStore store = new SqliteDbcStore(connection, path);
-        // A rollback journal kept in memory makes big imports several times faster
-        await store.ExecuteAsync("PRAGMA journal_mode = MEMORY", null, cancellation);
+        // Write-ahead logging keeps big imports fast and the file whole if Anarres or the computer stops mid-save
+        await store.ExecuteAsync("PRAGMA journal_mode = WAL", null, cancellation);
         await store.ExecuteAsync("PRAGMA synchronous = NORMAL", null, cancellation);
         return store;
     }
@@ -71,6 +71,15 @@ public sealed class SqliteDbcStore : SqlDbcStore
             default:
                 return (long)raw;
         }
+    }
+
+    protected override async Task SwapInAsync(string staging, string name, bool replacing,
+                                              CancellationToken cancellation)
+    {
+        await using DbTransaction transaction = await Connection.BeginTransactionAsync(cancellation);
+        await ExecuteAsync("DROP TABLE IF EXISTS " + Quote(name), transaction, cancellation);
+        await ExecuteAsync("ALTER TABLE " + Quote(staging) + " RENAME TO " + Quote(name), transaction, cancellation);
+        await transaction.CommitAsync(cancellation);
     }
 
     protected override async Task<bool> TableExistsAsync(string table, CancellationToken cancellation)

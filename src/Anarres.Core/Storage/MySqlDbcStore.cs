@@ -119,6 +119,23 @@ public sealed class MySqlDbcStore : SqlDbcStore
         }
     }
 
+    // RENAME TABLE swaps both names at once, so readers never see the table missing
+    protected override async Task SwapInAsync(string staging, string name, bool replacing,
+                                              CancellationToken cancellation)
+    {
+        if (!replacing)
+        {
+            await ExecuteAsync("RENAME TABLE " + Quote(staging) + " TO " + Quote(name), null, cancellation);
+            return;
+        }
+
+        string old = name + "_anarres_old";
+        await ExecuteAsync("DROP TABLE IF EXISTS " + Quote(old), null, cancellation);
+        await ExecuteAsync("RENAME TABLE " + Quote(name) + " TO " + Quote(old) + ", " + Quote(staging) + " TO " +
+                           Quote(name), null, cancellation);
+        await ExecuteAsync("DROP TABLE " + Quote(old), null, cancellation);
+    }
+
     protected override async Task<bool> TableExistsAsync(string table, CancellationToken cancellation)
     {
         object? found = await ScalarAsync("SELECT COUNT(*) FROM information_schema.tables WHERE " +

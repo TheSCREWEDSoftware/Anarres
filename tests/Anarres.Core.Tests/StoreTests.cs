@@ -63,10 +63,10 @@ public static class StoreTests
     public static async Task HandlesRepeatedKeys()
     {
         using TempFolder temp = new TempFolder();
+        // Rows with the same ID come only from files; editing can't make them
         DbcTable table = new DbcTable(DbcTests.SampleDefinition());
-        table.AddRow(5);
-        table.AddRow(5);
-        table.SetString(1, 3, "second");
+        table.Load(new uint[8] { 5, 0, 0, 0, 0, 0, 0, 0 });
+        table.Load(new uint[8] { 5, 0, 0, table.Intern("second"), 0, 0, 0, 0 });
         using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
         await store.ImportAsync(table);
         DbcTable loaded = await store.LoadAsync("Sample.dbc", Definitions());
@@ -103,5 +103,52 @@ public static class StoreTests
         string sql = SqlExport.Build(table, new[] { 0 }, "sample_dbc");
         Assert.True(sql.Contains("DELETE FROM `sample_dbc` WHERE `ID` IN (10);"), "delete first");
         Assert.True(sql.Contains("(10, -5, 1.5, 'It\\'s \\\\ new', 255, 0, 0, -1);"), "row values: " + sql);
+    }
+
+    public static async Task KeepsFileOrder()
+    {
+        using TempFolder temp = new TempFolder();
+        DbcTable table = new DbcTable(DbcTests.SampleDefinition());
+        foreach (uint id in new uint[] { 30, 10, 20 })
+            table.AddRow(id);
+        using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
+        await store.ImportAsync(table);
+        DbcTable loaded = await store.LoadAsync("Sample.dbc", Definitions());
+        Assert.Equal("30,10,20", string.Join(",", loaded.Rows.Select(row => row[0])), "rows in the file's order");
+        Assert.True(DbcFile.Write(table).AsSpan().SequenceEqual(DbcFile.Write(loaded)), "same bytes");
+
+        loaded.SetString(1, 3, "changed");
+        await store.SaveChangesAsync(loaded);
+        DbcTable again = await store.LoadAsync("Sample.dbc", Definitions());
+        Assert.Equal("changed", again.GetString(1, 3), "saved in an unsorted table");
+    }
+
+    public static async Task ImportReplacesWholeTable()
+    {
+        using TempFolder temp = new TempFolder();
+        using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
+        await store.ImportAsync(DbcTests.SampleTable());
+        DbcTable smaller = new DbcTable(DbcTests.SampleDefinition());
+        smaller.AddRow(1);
+        await store.ImportAsync(smaller);
+        Assert.Equal(1, (await store.LoadAsync("Sample.dbc", Definitions())).Rows.Count, "old rows gone");
+        Assert.Equal(1, (await store.ListTablesAsync()).Count, "no staging table left behind");
+    }
+
+    public static void OverlaysAndFindsChanges()
+    {
+        DbcTable clean = DbcTests.SampleTable();
+        DbcTable overrides = new DbcTable(DbcTests.SampleDefinition());
+        int changed = overrides.AddRow(11);
+        overrides.SetString(changed, 3, "Override");
+        overrides.AddRow(5);
+
+        DbcTable merged = DbcMerge.Overlay(clean, overrides);
+        Assert.Equal(4, merged.Rows.Count, "three clean rows and one new");
+        Assert.Equal("Override", merged.GetString(merged.FindRow(11), 3), "override wins");
+        Assert.Equal("Frost Nova", merged.GetString(merged.FindRow(12), 3), "clean row kept");
+
+        List<int> rows = DbcMerge.Changed(clean, merged);
+        Assert.Equal("11,5", string.Join(",", rows.Select(row => merged.Key(row))), "changed and new rows");
     }
 }

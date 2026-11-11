@@ -10,7 +10,12 @@ public abstract class SqlDbcStore : IDbcStore
     public const string ROW_COLUMN = "_row";
     public const string ID_COLUMN = "ID";
 
+    public const string STAGING_SUFFIX = "_anarres_import";
+
     private const int PROGRESS_STEP = 500;
+
+    // One operation at a time: a connection can't run two commands at once
+    private readonly SemaphoreSlim _gate = new SemaphoreSlim(1, 1);
 
     protected SqlDbcStore(DbConnection connection, TableNaming naming)
     {
@@ -48,6 +53,9 @@ public abstract class SqlDbcStore : IDbcStore
     // The value to bind for a cell: unsigned columns as long, since SQLite has no unsigned integers
     protected abstract object Parameter(DbcColumnType type, uint raw);
 
+    // Puts a filled staging table in the place of the real one in one step, dropping the old one
+    protected abstract Task SwapInAsync(string staging, string name, bool replacing, CancellationToken cancellation);
+
     public string TableName(DbcDefinition definition)
     {
         if (Naming == TableNaming.AzerothCore)
@@ -61,7 +69,64 @@ public abstract class SqlDbcStore : IDbcStore
         return definition.Name;
     }
 
-    public async Task<List<StoredTable>> ListTablesAsync(CancellationToken cancellation = default)
+    public Task<List<StoredTable>> ListTablesAsync(CancellationToken cancellation = default)
+    {
+        return LockedAsync(() => ListTablesCoreAsync(cancellation), cancellation);
+    }
+
+    public Task<bool> ContainsAsync(string file, CancellationToken cancellation = default)
+    {
+        return LockedAsync(() => ContainsCoreAsync(file, cancellation), cancellation);
+    }
+
+    public Task ImportAsync(DbcTable table, IProgress<double>? progress = null,
+                            CancellationToken cancellation = default)
+    {
+        return LockedAsync(async () =>
+        {
+            await ImportCoreAsync(table, progress, cancellation);
+            return true;
+        }, cancellation);
+    }
+
+    public Task<DbcTable> LoadAsync(string file, DbcDefinitions definitions, IProgress<double>? progress = null,
+                                    CancellationToken cancellation = default)
+    {
+        return LockedAsync(() => LoadCoreAsync(file, definitions, progress, cancellation), cancellation);
+    }
+
+    public Task SaveChangesAsync(DbcTable table, CancellationToken cancellation = default)
+    {
+        return LockedAsync(async () =>
+        {
+            await SaveChangesCoreAsync(table, cancellation);
+            return true;
+        }, cancellation);
+    }
+
+    public Task UpsertRowsAsync(DbcTable table, IReadOnlyList<int> rows, CancellationToken cancellation = default)
+    {
+        return LockedAsync(async () =>
+        {
+            await UpsertRowsCoreAsync(table, rows, cancellation);
+            return true;
+        }, cancellation);
+    }
+
+    private async Task<T> LockedAsync<T>(Func<Task<T>> work, CancellationToken cancellation)
+    {
+        await _gate.WaitAsync(cancellation);
+        try
+        {
+            return await work();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private async Task<List<StoredTable>> ListTablesCoreAsync(CancellationToken cancellation)
     {
         HashSet<string> tables = new HashSet<string>(await TablesAsync(cancellation),
                                                      StringComparer.OrdinalIgnoreCase);
@@ -82,50 +147,75 @@ public abstract class SqlDbcStore : IDbcStore
         return result.OrderBy(entry => entry.File, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
-    public async Task<bool> ContainsAsync(string file, CancellationToken cancellation = default)
+    private async Task<bool> ContainsCoreAsync(string file, CancellationToken cancellation)
     {
         DbcDefinition? definition = await StoredDefinitionAsync(file, cancellation) ??
                                     DbcDefinitions.Default.Find(file);
         return definition != null && await TableExistsAsync(TableName(definition), cancellation);
     }
 
-    public async Task ImportAsync(DbcTable table, IProgress<double>? progress = null,
-                                  CancellationToken cancellation = default)
+    private async Task ImportCoreAsync(DbcTable table, IProgress<double>? progress, CancellationToken cancellation)
     {
         DbcDefinition definition = table.Definition;
         string name = TableName(definition);
-        bool uniqueKeys = !definition.HasKey ||
-                          table.Rows.Select(row => row[0]).Distinct().Count() == table.Rows.Count;
-        bool rowColumn = definition.HasKey && !uniqueKeys;
-        if (rowColumn && Naming == TableNaming.AzerothCore)
+        List<uint> keys = definition.HasKey ? table.Rows.Select(row => row[0]).ToList() : new List<uint>();
+        bool uniqueKeys = !definition.HasKey || keys.Distinct().Count() == keys.Count;
+        bool sorted = keys.Zip(keys.Skip(1)).All(pair => pair.First < pair.Second);
+        if (!uniqueKeys && Naming == TableNaming.AzerothCore)
             throw new InvalidOperationException(definition.File + " has rows with the same ID, which " +
                                                 definition.Table + " can't hold.");
+        // Rows keep the file's order: by ID when it's already in that order, otherwise by a row number column
+        bool rowColumn = definition.HasKey && (!uniqueKeys || !sorted) && Naming == TableNaming.DbcName;
+        List<int> rows = Enumerable.Range(0, table.Rows.Count).ToList();
 
-        // AzerothCore's own tables keep their structure; only their rows are replaced
-        bool keepTable = Naming == TableNaming.AzerothCore && await TableExistsAsync(name, cancellation);
-        if (keepTable)
-            await CheckColumnsAsync(definition, name, cancellation);
-
-        await using DbTransaction transaction = await Connection.BeginTransactionAsync(cancellation);
-        if (keepTable)
-            await ExecuteAsync("DELETE FROM " + Quote(name), transaction, cancellation);
-        else
+        // AzerothCore's own tables keep their structure; only their rows are replaced, in one transaction
+        if (Naming == TableNaming.AzerothCore && await TableExistsAsync(name, cancellation))
         {
-            await ExecuteAsync("DROP TABLE IF EXISTS " + Quote(name), transaction, cancellation);
-            await ExecuteAsync(CreateTableSql(definition, name, rowColumn, uniqueKeys), transaction, cancellation);
+            await CheckColumnsAsync(definition, name, cancellation);
+            await using DbTransaction replace = await Connection.BeginTransactionAsync(cancellation);
+            await ExecuteAsync("DELETE FROM " + Quote(name), replace, cancellation);
+            await InsertRowsAsync(table, rows, name, rowColumn: false, replace: false, replace, progress,
+                                  cancellation);
+            await replace.CommitAsync(cancellation);
+            table.AcceptChanges();
+            progress?.Report(1);
+            return;
         }
 
-        await InsertRowsAsync(table, Enumerable.Range(0, table.Rows.Count).ToList(), name, rowColumn, replace: false,
-                              transaction, progress, cancellation);
+        // Filled beside the old table and swapped in at the end, so a failed import leaves the old one whole
+        string staging = name + STAGING_SUFFIX;
+        bool replacing = await TableExistsAsync(name, cancellation);
+        await ExecuteAsync("DROP TABLE IF EXISTS " + Quote(staging), null, cancellation);
+        try
+        {
+            await ExecuteAsync(CreateTableSql(definition, staging, rowColumn, uniqueKeys), null, cancellation);
+            await using (DbTransaction fill = await Connection.BeginTransactionAsync(cancellation))
+            {
+                await InsertRowsAsync(table, rows, staging, rowColumn, replace: false, fill, progress, cancellation);
+                await fill.CommitAsync(cancellation);
+            }
+
+            await SwapInAsync(staging, name, replacing, cancellation);
+        }
+        catch
+        {
+            await ExecuteAsync("DROP TABLE IF EXISTS " + Quote(staging), null, CancellationToken.None);
+            throw;
+        }
+
         if (Naming == TableNaming.DbcName)
-            await SaveDefinitionAsync(definition, name, transaction, cancellation);
-        await transaction.CommitAsync(cancellation);
+        {
+            await using DbTransaction meta = await Connection.BeginTransactionAsync(cancellation);
+            await SaveDefinitionAsync(definition, name, meta, cancellation);
+            await meta.CommitAsync(cancellation);
+        }
+
         table.AcceptChanges();
         progress?.Report(1);
     }
 
-    public async Task<DbcTable> LoadAsync(string file, DbcDefinitions definitions, IProgress<double>? progress = null,
-                                          CancellationToken cancellation = default)
+    private async Task<DbcTable> LoadCoreAsync(string file, DbcDefinitions definitions, IProgress<double>? progress,
+                                               CancellationToken cancellation)
     {
         DbcDefinition definition = await StoredDefinitionAsync(file, cancellation) ?? definitions.Find(file) ??
                                    throw new InvalidOperationException("There's no definition for " + file + ".");
@@ -168,7 +258,7 @@ public abstract class SqlDbcStore : IDbcStore
         return table;
     }
 
-    public async Task SaveChangesAsync(DbcTable table, CancellationToken cancellation = default)
+    private async Task SaveChangesCoreAsync(DbcTable table, CancellationToken cancellation)
     {
         DbcDefinition definition = table.Definition;
         string name = TableName(definition);
@@ -194,8 +284,7 @@ public abstract class SqlDbcStore : IDbcStore
         table.AcceptChanges();
     }
 
-    public async Task UpsertRowsAsync(DbcTable table, IReadOnlyList<int> rows,
-                                      CancellationToken cancellation = default)
+    private async Task UpsertRowsCoreAsync(DbcTable table, IReadOnlyList<int> rows, CancellationToken cancellation)
     {
         string name = TableName(table.Definition);
         if (!await TableExistsAsync(name, cancellation))
@@ -215,6 +304,7 @@ public abstract class SqlDbcStore : IDbcStore
     public void Dispose()
     {
         Connection.Dispose();
+        _gate.Dispose();
         GC.SuppressFinalize(this);
     }
 
