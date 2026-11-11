@@ -4,6 +4,23 @@ The spell and other DBC data of WoW 3.3.5a lives in `.dbc` files. The client rea
 (`DBFilesClient\Spell.dbc`); the worldserver reads its own copy from its `dbc` folder. A change usually needs both
 updated, so Anarres keeps the data in one place while you edit it and writes both copies when you're done.
 
+## Why a database
+
+Anarres keeps imported tables in a database, SQLite or MySQL, and writes `.dbc` files only when you export or
+apply. This is the approach of Stoneharry's DBC editing workflow:
+
+- A `.dbc` is a packed binary table: records of fixed size and one shared block of text that every row points
+  into. Changing one string moves the others, so tools that edit the file in place are easy to break, and two
+  people can't work on one file.
+- In SQL the same data can be searched, compared and changed in bulk with any SQL tool (for example every spell
+  that costs mana), shared by several people on MySQL, and saved spell by spell instead of rewriting a 49 MB file.
+- The clean files stay untouched, so a mistake is undone by importing again, and "what did I change" is a
+  comparison with the clean file (the SQL of changed spells, and what Apply puts in `acore_world`).
+- The `.dbc` files written from the database are rebuilt in full each time, with a fresh text block, which is how
+  the client and the worldserver expect them. An unchanged table comes out byte for byte the same as it went in.
+
+The DBC editor can still open a `.dbc` straight from disk, like WDBX Editor, for a quick look or a one-off fix.
+
 ## 1. Set up the project
 
 Open **File > Project settings**.
@@ -16,9 +33,11 @@ Open **File > Project settings**.
   - *AzerothCore names* use `acore_world`'s `spell_dbc` and the other `*_dbc` tables. The worldserver loads those
     rows over the `.dbc` files at start-up, so keep only the rows you change there.
 - **Clean DBC folder.** Unmodified 3.3.5a files, such as the `dbc` folder of AzerothCore's client data.
-- **WoW Data folder** and **Locale** (such as `enUS`): to import from the client's MPQs and to put the patch in.
+- **Server data folder**: the worldserver's `DataDir` (the folder with `dbc`, `maps` and `vmaps`) or its `dbc`
+  folder. The window shows where files will go.
+- **WoW client folder**: the folder with `Wow.exe`, or its `Data` folder, and the **Locale** (such as `enUS`): to
+  import from the client's MPQs, show icons, and put the patch in.
 - **Export folder**: where exported `.dbc` files are written, under `DBFilesClient`.
-- **Server dbc folder**: the worldserver's `DataDir` `dbc` folder.
 - **Patch name**: `patch-A.MPQ` by default. The client loads `patch-2` to `patch-9`, then `patch-A` to `patch-Z`;
   later ones win, so pick one after any other custom patch you use.
 
@@ -63,6 +82,20 @@ With *AzerothCore names*, the world tables hold only the rows that differ, so Ex
 file from the Clean DBC folder or the client's MPQs; without one it refuses, rather than write a `.dbc` with only
 those rows.
 
+## Apply: one click
+
+**Apply** (F6) saves, then puts the changes where the server and client read them, as chosen under **Apply** in
+Project settings:
+
+- the tables ticked in the last export (Spell.dbc to start with) are written and copied to the server's `dbc`
+  folder, keeping the server's own copy of each file the first time (in the export folder's `server-backup`);
+- the client patch is built in the WoW `Data` folder;
+- optionally, the client's `Cache` folder is emptied, so WoW doesn't show old spell text;
+- optionally, rows that differ from the clean files go into `acore_world`'s `_dbc` tables.
+
+It lists what it will do first (an option turns that off), and says when the worldserver or WoW is running and
+needs a restart.
+
 ## Automating it
 
 `anarres-cli` uses the same settings as the app (or the options you give it), so the steps can run from a script
@@ -74,6 +107,7 @@ anarres-cli export --only Spell,SpellIcon --server --patch
 anarres-cli export --mysql localhost:3306/acore_dbc_extracted --user acore --password acore --server --patch
 anarres-cli sql Spell --ids 90000 --out spell_90000.sql
 anarres-cli sql Spell --changed --source "C:\client-data\dbc" --out changed.sql
+anarres-cli apply
 anarres-cli list
 ```
 

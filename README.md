@@ -52,8 +52,14 @@ same format as Urras's. See [docs/themes.md](docs/themes.md).
 1. **Import** clean `.dbc` files into the project: from a folder (such as AzerothCore's client data `dbc` folder)
    or straight out of the client's MPQs, the newest copy of each file as the client sees it.
 2. **Edit** with either editor.
-3. **Export and deploy**: write the `.dbc` files, copy them to the worldserver's `dbc` folder, and pack them into a
-   client patch MPQ (`patch-A.MPQ` by default) under `DBFilesClient`. Restart the worldserver and the client.
+3. **Apply** (one click) or **Export**: write the `.dbc` files, copy them to the worldserver's `dbc` folder
+   (keeping its own copy once), pack them into a client patch MPQ (`patch-A.MPQ` by default) under
+   `DBFilesClient`, and optionally empty the client's cache and put changed rows in `acore_world`. Set the server
+   data folder and the WoW client folder once in Project settings. Restart the worldserver and the client.
+
+The data lives in a database between import and export, as in Stoneharry's workflow: `.dbc` files are packed
+binary tables that don't take well to editing in place, while SQL can be searched, compared with the clean files,
+bulk-edited and shared. [docs/workflow.md](docs/workflow.md) explains why.
 
 Unchanged tables export byte for byte the same as the files they came from.
 
@@ -75,6 +81,7 @@ Unchanged tables export byte for byte the same as the files they came from.
 ```
 anarres-cli import "C:\client-data\dbc" --only Spell,SpellIcon
 anarres-cli export --server --patch
+anarres-cli apply
 anarres-cli sql Spell --ids 90000,90001 --out custom_spells.sql
 anarres-cli sql Spell --changed --out changed_spells.sql
 anarres-cli patch patch-A.MPQ Spell.dbc SpellIcon.dbc
