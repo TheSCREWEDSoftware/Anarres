@@ -80,8 +80,6 @@ public sealed class ProjectSettings
     // Tables the last export used, ticked again next time
     public List<string> ExportTables { get; set; } = new List<string> { "Spell.dbc" };
 
-    public string Theme { get; set; } = "Dark";
-
     public MySqlSettings MySql(string? password = null)
     {
         return new MySqlSettings(MySqlHost, MySqlPort, MySqlUser, password ?? MySqlPassword, MySqlDatabase);

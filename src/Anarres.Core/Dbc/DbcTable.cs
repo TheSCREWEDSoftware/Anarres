@@ -39,8 +39,10 @@ public sealed class DbcTable
 
     public bool CanRedo => _redo.Any(change => change is not Boundary);
 
+    public const int DEFAULT_MAX_UNDO = 1000;
+
     // Steps kept for undo; older ones are dropped
-    public const int MAX_UNDO = 1000;
+    public static int MaxUndo { get; set; } = DEFAULT_MAX_UNDO;
 
     public uint Key(int row)
     {
@@ -401,8 +403,8 @@ public sealed class DbcTable
         }
 
         _undo.Add(change);
-        if (_undo.Count > MAX_UNDO)
-            _undo.RemoveAt(0);
+        if (_undo.Count > MaxUndo)
+            _undo.RemoveRange(0, _undo.Count - MaxUndo);
     }
 
     public void ClearUndo()
