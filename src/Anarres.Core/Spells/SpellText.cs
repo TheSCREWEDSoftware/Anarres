@@ -76,13 +76,18 @@ public static partial class SpellText
     [GeneratedRegex(@"\$\{(?<expression>[^}]*)\}")]
     private static partial Regex ExpressionRegex();
 
+    [GeneratedRegex(@"\$<\w+>")]
+    private static partial Regex UnknownVariableRegex();
+
     public static string Render(SpellRecord spell, string text, SpellLookups lookups)
     {
         text = ExpandVariables(text, lookups.VariablesOf(spell.U("SpellDescriptionVariableID")));
+        text = Nest(TakeElseBranches(text));
         string expanded = ExpressionRegex().Replace(text, match =>
         {
-            string inner = TokenRegex().Replace(match.Groups["expression"].Value,
-                                                token => Value(spell, token, lookups, numeric: true));
+            // A variable no SpellDescriptionVariables row defines counts as 1, so the rest still adds up
+            string known = UnknownVariableRegex().Replace(match.Groups["expression"].Value, "1");
+            string inner = TokenRegex().Replace(known, token => Value(spell, token, lookups, numeric: true));
             return Evaluate(inner) is { } value ? Number(value) : match.Value;
         });
 
@@ -110,6 +115,71 @@ public static partial class SpellText
 
         output.Append(expanded, position, expanded.Length - position);
         return output.ToString().Replace("$$", "$");
+    }
+
+    // $?s12345[with][without] depends on the caster's spells; the preview shows the caster without them
+    private static string TakeElseBranches(string text)
+    {
+        const int MAX_PASSES = 8;
+        for (int pass = 0; pass < MAX_PASSES; ++pass)
+        {
+            int start = text.IndexOf("$?", StringComparison.Ordinal);
+            if (start < 0)
+                return text;
+            int open = text.IndexOf('[', start);
+            int firstEnd = open < 0 ? -1 : Closing(text, open);
+            int secondOpen = firstEnd + 1;
+            if (firstEnd < 0 || secondOpen >= text.Length || text[secondOpen] != '[')
+                return text;
+            int secondEnd = Closing(text, secondOpen);
+            if (secondEnd < 0)
+                return text;
+            text = text[..start] + text[(secondOpen + 1)..secondEnd] + text[(secondEnd + 1)..];
+        }
+
+        return text;
+    }
+
+    private static int Closing(string text, int open)
+    {
+        int depth = 0;
+        for (int i = open; i < text.Length; ++i)
+        {
+            if (text[i] == '[')
+                ++depth;
+            else if (text[i] == ']' && --depth == 0)
+                return i;
+        }
+
+        return -1;
+    }
+
+    // ${...} inside another ${...} becomes brackets, so the outer sum can be worked out in one go
+    private static string Nest(string text)
+    {
+        StringBuilder output = new StringBuilder(text.Length);
+        Stack<bool> braces = new Stack<bool>();
+        for (int i = 0; i < text.Length; ++i)
+        {
+            if (text[i] == '$' && i + 1 < text.Length && text[i + 1] == '{')
+            {
+                bool inner = braces.Count > 0;
+                braces.Push(inner);
+                output.Append(inner ? "(" : "${");
+                ++i;
+                continue;
+            }
+
+            if (text[i] == '}' && braces.Count > 0)
+            {
+                output.Append(braces.Pop() ? ")" : "}");
+                continue;
+            }
+
+            output.Append(text[i]);
+        }
+
+        return output.ToString();
     }
 
     // $<name> becomes its value; inside ${...} a value's own ${...} becomes brackets so the sums nest

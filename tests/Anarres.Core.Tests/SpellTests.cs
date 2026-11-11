@@ -35,6 +35,9 @@ public static class SpellTests
         Assert.Equal("10 points", SpellText.Render(spell, "$s1 $lpoint:points;", lookups), "plural");
         Assert.Equal("costs $5", SpellText.Render(spell, "costs $$5", lookups), "escaped dollar");
         Assert.Equal("10", SpellText.Render(spell, "$100s1", lookups), "another spell by ID");
+        Assert.Equal("plain", SpellText.Render(spell, "$?s1234[talented][plain]", lookups), "condition");
+        Assert.Equal("21 damage", SpellText.Render(spell, "${$s1*$?s5[${3}][${2.1}]} damage", lookups),
+                     "condition inside a sum");
     }
 
     public static void EnumsLoad()

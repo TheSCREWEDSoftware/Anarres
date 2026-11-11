@@ -17,8 +17,9 @@ Commands:
                                --server copies them to the server's dbc folder, --patch builds the client MPQ
   patch <out.MPQ> <files...>   Pack .dbc files into a patch MPQ under DBFilesClient
   sql <file> --ids 1,2,...     Write AzerothCore SQL for those rows (--out file.sql, --table name)
+  sql <file> --changed         ... or for every row that differs from the clean file (the Clean DBC folder)
 
-Paths (otherwise from the settings): --export, --server-dbc, --client-data, --patch-name
+Paths (otherwise from the settings): --export, --server-dbc, --client-data, --patch-name, --source
 
 Store options (otherwise the app's settings are used):
   --settings <settings.json>
@@ -28,7 +29,10 @@ Store options (otherwise the app's settings are used):
 
 Dictionary<string, string> options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 List<string> positional = new List<string>();
-HashSet<string> switches = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "--server", "--patch" };
+HashSet<string> switches = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    "--server", "--patch", "--changed"
+};
 for (int i = 0; i < args.Length; ++i)
 {
     if (args[i].StartsWith("--", StringComparison.Ordinal))
@@ -124,13 +128,23 @@ try
         }
         case "sql":
         {
-            if (positional.Count < 2 || !options.TryGetValue("--ids", out string? ids))
-                return Fail("Give the table and --ids.");
+            bool changed = options.ContainsKey("--changed");
+            if (positional.Count < 2 || (!options.TryGetValue("--ids", out string? ids) && !changed))
+                return Fail("Give the table and --ids or --changed.");
             using IDbcStore store = await settings.OpenStoreAsync();
             DbcTable table = await store.LoadAsync(positional[1], definitions);
             List<int> rows = new List<int>();
+            if (changed)
+            {
+                DbcTable? clean = DbcMerge.LoadSource(settings, table.Definition.File, definitions);
+                if (clean == null)
+                    return Fail("There's no clean " + table.Definition.File + "; set --source or the Clean DBC " +
+                                "folder in the settings.");
+                rows = DbcMerge.Changed(clean, table);
+            }
+
             StringSplitOptions split = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
-            foreach (string id in ids.Split(',', split))
+            foreach (string id in (ids ?? string.Empty).Split(',', split))
             {
                 int row = uint.TryParse(id, CultureInfo.InvariantCulture, out uint key) ? table.FindRow(key) : -1;
                 if (row < 0)
@@ -208,6 +222,9 @@ static void ApplyStoreOptions(ProjectSettings settings, Dictionary<string, strin
                 break;
             case "--patch-name":
                 settings.PatchName = value;
+                break;
+            case "--source":
+                settings.SourceDbcFolder = value;
                 break;
             default:
                 break;
