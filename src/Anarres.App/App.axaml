@@ -1,0 +1,78 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Anarres.App.App"
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <!-- Windows 11's own font, then Windows 10's, then common open fonts elsewhere -->
+    <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI Variable Text, Segoe UI, Noto Sans</FontFamily>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme />
+    <!-- Every window and dialog carries the Anarres icon, the theme's background and the app font -->
+    <Style Selector=":is(Window)">
+      <Setter Property="Icon" Value="/Assets/anarres.ico" />
+      <Setter Property="Background" Value="{DynamicResource Anarres.Background}" />
+      <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+    </Style>
+    <!-- The main areas sit on raised, rounded panels above the window background -->
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource Anarres.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Anarres.Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <!-- Groups of fields inside an editor tab -->
+    <Style Selector="Border.group">
+      <Setter Property="BorderBrush" Value="{DynamicResource Anarres.Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12,8,12,12" />
+      <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+    <Style Selector="TextBlock.groupTitle">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource Anarres.MutedText}" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Foreground" Value="{DynamicResource Anarres.MutedText}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBox.invalid">
+      <Setter Property="BorderBrush" Value="{DynamicResource Anarres.Error}" />
+    </Style>
+    <!-- Quiet buttons: no fill or edge until the pointer is over them -->
+    <Style Selector="Button.subtle, ToggleButton.subtle">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="ListBox, TreeView">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="GridSplitter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="10,0" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="MinHeight" Value="26" />
+    </Style>
+    <Style Selector="TextBlock.windowTitle">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource Anarres.MutedText}" />
+    </Style>
+  </Application.Styles>
+</Application>
