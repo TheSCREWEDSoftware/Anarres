@@ -20,14 +20,19 @@ with an Avalonia interface, so it runs on Windows and Linux, and it shares its l
     with each bit's value and AzerothCore's name and notes.
   - Every field has a readable label; its tooltip gives the `spell_dbc` column name.
   - Cast times, durations, ranges, radii, icons and other spells are shown by what they mean, not just their index.
-  - A live tooltip preview fills in `$s1`, `$d`, `$o1`, `$t1`, `${...}` sums, `$<variables>`, `$lsingular:plural;`
-    and references to other spells.
-  - New, Copy and Delete spells; Save, Revert; write a spell as SQL for `spell_dbc`, or send it straight to the
-    world database.
+  - Spell icons from the client's MPQs (with the WoW Data folder set), in the header and in an icon picker.
+  - A Visual tab for the spell's SpellVisual row and its kits; "own copy" gives the spell its own visual or kit so
+    other spells sharing it don't change.
+  - A live tooltip preview fills in `$s1`, `$d`, `$o1`, `$t1`, `${...}` sums, `$<variables>`, `$?s123[a][b]`,
+    `$lsingular:plural;` and references to other spells.
+  - New, Copy and Delete spells; Save, Revert, Undo and Redo (Ctrl+Z, Ctrl+Y); write one spell, or every spell
+    changed from the clean Spell.dbc, as SQL for `spell_dbc`, or send a spell straight to the world database.
 - **DBC Editor**, in the spirit of WDBX Editor: every table in the project, or any `.dbc` opened straight from disk,
   in a fast grid that draws only what's on screen (Spell.dbc's 50,000 rows by 234 columns scroll smoothly).
-  - Edit cells in place, add, copy and delete rows, filter by ID, text or `Column=value`.
-  - Save to the project or back to the file, save as `.dbc`, CSV or SQL.
+  - Edit cells in place, add, copy and delete rows, undo and redo, filter by ID, text or `Column=value`.
+  - Click a header to sort; right-click it to hide the column, hide every empty column, or show them all again.
+  - Save to the project or back to the file, save as `.dbc` or CSV, import CSV, and write the shown rows or the
+    rows changed from the clean file as SQL.
   - See and rename the columns of a layout, saved as a definition file that replaces the built-in one.
 
 ![The DBC editor with Spell.dbc](docs/screenshots/dbc-editor.png)
@@ -52,7 +57,7 @@ Unchanged tables export byte for byte the same as the files they came from.
   database, `acore_dbc_extracted`, is created on first use.
   - *DBC names* (`Spell`, `SpellIcon`...) for a database just for DBC data, like Stoneharry's editor.
   - *AzerothCore names* (`spell_dbc`, ...) to work in `acore_world`'s own override tables, which the worldserver
-    loads on top of the `.dbc` files.
+    loads on top of the `.dbc` files. Exporting lays those rows over the clean file, so the written `.dbc` is whole.
 
 ### Without a window
 
@@ -63,6 +68,7 @@ Unchanged tables export byte for byte the same as the files they came from.
 anarres-cli import "C:\client-data\dbc" --only Spell,SpellIcon
 anarres-cli export --server --patch
 anarres-cli sql Spell --ids 90000,90001 --out custom_spells.sql
+anarres-cli sql Spell --changed --out changed_spells.sql
 anarres-cli patch patch-A.MPQ Spell.dbc SpellIcon.dbc
 ```
 
@@ -75,7 +81,8 @@ dotnet build src/Anarres.App
 dotnet run --project src/Anarres.App
 ```
 
-Or `start.bat` on Windows. Tests: `test.bat` / `./test.sh`, or `dotnet run --project tests/Anarres.Core.Tests`.
+Or `start.bat` on Windows. Tests: `test.bat` / `./test.sh` run the core tests, the interface tests (headless) and
+the standards check; GitHub Actions runs the same on Windows and Linux.
 
 ## Layouts and names
 

@@ -32,6 +32,8 @@ Import once; the project keeps the data from then on.
 
 ## 3. Edit
 
+- **Undo and redo** (Edit menu, Ctrl+Z and Ctrl+Y outside a text box) work in both editors, back to when the
+  table was loaded.
 - **Spell Editor**: search by ID or name, or by field: `effect:6` (Apply Aura), `aura:3`, `target:22`,
   `trigger:12345`, `family:3`, `icon:1`, `visual:`, `misc:`, `category:`, `mechanic:`, `school:`.
   **New** makes an empty spell with the next free ID; **Copy** duplicates the selected one. **Save** (Ctrl+S)
@@ -50,8 +52,13 @@ Unsaved changes are marked in the status line; Anarres asks before closing or im
 - packs them into the patch MPQ in the WoW Data folder: restart the client (and clear its `Cache` folder when spell
   text looks out of date).
 
-For a few spells, the spell editor's **SQL...** writes them for `spell_dbc`, and **Send to world DB...** writes
-them straight into `acore_world.spell_dbc`. The client still needs the patch to know the spells.
+For a few spells, the spell editor's **SQL...** writes the shown spell, or every spell that differs from the clean
+Spell.dbc, for `spell_dbc`; **Send to world DB...** writes a spell straight into `acore_world.spell_dbc`. The client
+still needs the patch to know the spells.
+
+With *AzerothCore names*, the world tables hold only the rows that differ, so Export lays them over the clean
+file from the Clean DBC folder or the client's MPQs; without one it refuses, rather than write a `.dbc` with only
+those rows.
 
 ## Automating it
 
@@ -63,6 +70,7 @@ anarres-cli import-client "C:\WoW\Data" --locale enUS --only Spell
 anarres-cli export --only Spell,SpellIcon --server --patch
 anarres-cli export --mysql localhost:3306/acore_dbc_extracted --user acore --password acore --server --patch
 anarres-cli sql Spell --ids 90000 --out spell_90000.sql
+anarres-cli sql Spell --changed --source "C:\client-data\dbc" --out changed.sql
 anarres-cli list
 ```
 

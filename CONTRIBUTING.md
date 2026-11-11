@@ -5,8 +5,9 @@ Thanks for helping. Before opening a pull request:
 1. Read [CODING_STANDARDS.md](CODING_STANDARDS.md).
 2. Write commit messages following [.git_commit_template.txt](.git_commit_template.txt). To use the template:
    `git config commit.template .git_commit_template.txt`.
-3. Run the core tests: `dotnet run --project tests/Anarres.Core.Tests`. Set `ANARRES_TEST_DBC` to a folder of
-   clean 3.3.5a .dbc files to also round-trip every real file.
+3. Run the tests: `test.bat` or `./test.sh`, or `dotnet run --project tests/Anarres.Core.Tests` and
+   `dotnet run --project tests/Anarres.App.Tests` (the interface tests open the windows without showing them). Set
+   `ANARRES_TEST_DBC` to a folder of clean 3.3.5a .dbc files to also round-trip every real file.
 4. Check your changes: `check-standards.bat` on Windows or `./check-standards.sh` on Linux (use `--unpushed`
    before opening the pull request).
 5. Fill in the pull request template, including the AI disclosure if AI tools were used.
