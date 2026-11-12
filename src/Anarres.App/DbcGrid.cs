@@ -1,6 +1,7 @@
 using System.Globalization;
 using Anarres.Core.Dbc;
 using Anarres.Core.Settings;
+using Anarres.Core.Spells;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -437,6 +438,7 @@ public sealed class DbcGrid : Grid
         private int _resizing = -1;
         private double _resizeStart;
         private double _resizeWidth;
+        private int _tipColumn = -1;
 
         public Surface(DbcGrid grid)
         {
@@ -613,6 +615,35 @@ public sealed class DbcGrid : Grid
             }
 
             Cursor = _grid.ResizeColumn(point) >= 0 ? new Cursor(StandardCursorType.SizeWestEast) : Cursor.Default;
+            (int index, int column) = _grid.HitTest(point);
+            ShowHeaderTip(index < 0 ? column : -1);
+        }
+
+        protected override void OnPointerExited(PointerEventArgs e)
+        {
+            base.OnPointerExited(e);
+            ShowHeaderTip(-1);
+        }
+
+        // Hovering a header explains the column: what it's for, its type and its name in the file
+        private void ShowHeaderTip(int column)
+        {
+            if (column == _tipColumn)
+                return;
+            _tipColumn = column;
+            ToolTip.SetIsOpen(this, false);
+            if (column < 0 || _grid._table == null)
+            {
+                ToolTip.SetTip(this, null);
+                return;
+            }
+
+            DbcDefinition definition = _grid._table.Definition;
+            DbcColumn info = definition.Columns[column];
+            string tip = info.Name + " (" + info.Type + ")";
+            string? note = ColumnDocs.Describe(definition.File, info.Name);
+            ToolTip.SetTip(this, note == null ? tip : tip + "\n\n" + note);
+            ToolTip.SetIsOpen(this, true);
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)

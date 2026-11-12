@@ -2,6 +2,7 @@ using Anarres.Core.Dbc;
 using Anarres.Core.Settings;
 using Anarres.Core.Spells;
 using Avalonia.Controls;
+using Avalonia.LogicalTree;
 
 namespace Anarres.App.Tests;
 
@@ -37,6 +38,23 @@ public static class WindowTests
         window.Session.Forget(SpellRecord.FILE);
         DbcTable reloaded = await window.Session.LoadAsync(SpellRecord.FILE);
         Assert.Equal("Pyroblast", reloaded.GetString(reloaded.FindRow(133), name), "saved name");
+        window.Session.Close();
+        window.Close();
+    }
+
+    // Fields carry a "?" badge explaining the column, as Keira3 does
+    public static async Task FieldsExplainColumns()
+    {
+        using TestProject project = await TestProject.CreateAsync();
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
+        window.Show();
+        await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
+        List<string> tips = window.SpellEditor.GetLogicalDescendants().OfType<Border>()
+                                  .Where(border => border.Classes.Contains("info"))
+                                  .Select(border => ToolTip.GetTip(border) as string ?? string.Empty).ToList();
+        Assert.True(tips.Count > 50, "badges on the fields (" + tips.Count + ")");
+        Assert.True(tips.Any(tip => tip.Contains("global cooldown") && tip.Contains("StartRecoveryCategory")),
+                    "the global cooldown field is explained");
         window.Session.Close();
         window.Close();
     }

@@ -329,7 +329,7 @@ public sealed class MiscField : IField
         };
         View = Ui.Horizontal(_label, Value.Box, _meaning);
         View.Margin = new Thickness(0, 2);
-        ToolTip.SetTip(View, "spell_dbc: " + column);
+        Ui.Documented(View, SpellRecord.FILE, column, "spell_dbc");
     }
 
     public CellField Value { get; }
@@ -401,6 +401,7 @@ public sealed class AllFieldsView
             TextBlock type = new TextBlock { Text = column.Type.ToString(), Width = 60, Classes = { "label" },
                                              FontSize = 11 };
             StackPanel row = Ui.Horizontal(Ui.Label(column.Name, 240), type, field.Box);
+            Ui.Documented(row, definition.File, column.Name, definition.Table);
             _entries.Add((column.Name, row));
             _rows.Children.Add(row);
         }

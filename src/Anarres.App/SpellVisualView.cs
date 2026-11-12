@@ -92,7 +92,8 @@ public sealed class SpellVisualView : StackPanel
             CellField field = new CellField(visual, column.Name, 120);
             if (!column.Name.EndsWith(KIT_SUFFIX, StringComparison.Ordinal))
             {
-                fields.Children.Add(Ui.Row(column.Name, field.Box));
+                fields.Children.Add(Ui.Documented(Ui.Row(column.Name, field.Box), _visuals.Definition.File,
+                                                  column.Name));
                 continue;
             }
 
@@ -113,6 +114,7 @@ public sealed class SpellVisualView : StackPanel
         copy.IsEnabled = kitRow >= 0;
         ToolTip.SetTip(copy, "Copy the kit to a new ID and use the copy here, so other visuals keep theirs");
         StackPanel header = Ui.Row(column, field.Box, copy, new TextBlock { Text = state, Classes = { "label" } });
+        Ui.Documented(header, _visuals.Definition.File, column);
         if (kitRow < 0)
             return header;
 

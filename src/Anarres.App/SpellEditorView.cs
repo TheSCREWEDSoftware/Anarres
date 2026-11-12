@@ -323,11 +323,15 @@ public sealed class SpellEditorView : Grid
         return Named(Ui.Row(label, new LookupField(_binding, column, describe).View), column);
     }
 
-    // Fields show readable labels; the tooltip gives the column's name in spell_dbc and Spell.dbc
+    // Fields show readable labels; the tooltip says what the column does and gives its name in spell_dbc
     private static Control Named(Control row, params string[] columns)
     {
-        ToolTip.SetTip(row, "spell_dbc: " + string.Join(", ", columns));
-        return row;
+        List<string> notes = columns.Select(column => ColumnDocs.Describe(SpellRecord.FILE, column))
+                                    .OfType<string>().Distinct().ToList();
+        string tip = "spell_dbc: " + string.Join(", ", columns);
+        if (notes.Count > 0)
+            tip = string.Join("\n\n", notes) + "\n\n" + tip;
+        return Ui.Explained(row, tip, notes.Count > 0);
     }
 
     private Control BaseTab()

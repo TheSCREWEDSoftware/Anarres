@@ -1,3 +1,5 @@
+using Anarres.Core.Settings;
+using Anarres.Core.Spells;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -48,6 +50,54 @@ public static class Ui
         foreach (Control control in controls)
             row.Children.Add(control);
         return row;
+    }
+
+    public const double BADGE_SIZE = 16;
+
+    // A small round "?" that explains a field when hovered, like Keira3's column notes
+    public static Control InfoBadge(string tip)
+    {
+        Border badge = new Border
+        {
+            Width = BADGE_SIZE,
+            Height = BADGE_SIZE,
+            CornerRadius = new CornerRadius(BADGE_SIZE / 2),
+            BorderThickness = new Thickness(1),
+            VerticalAlignment = VerticalAlignment.Center,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Help),
+            Background = Brushes.Transparent,
+            Classes = { "info" },
+            Child = Themed(new TextBlock
+            {
+                Text = "?",
+                FontSize = 10,
+                FontWeight = FontWeight.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }, TextBlock.ForegroundProperty, ThemeColours.ACCENT)
+        };
+        Themed(badge, Border.BorderBrushProperty, ThemeColours.ACCENT);
+        ToolTip.SetTip(badge, tip);
+        ToolTip.SetShowDelay(badge, 150);
+        return badge;
+    }
+
+    // Tooltip on the row, plus a badge after its label (or an equal gap, so fields stay lined up)
+    public static Control Explained(Control row, string tip, bool described)
+    {
+        ToolTip.SetTip(row, tip);
+        if (row is not StackPanel { Orientation: Orientation.Horizontal } panel || panel.Children.Count == 0 ||
+            panel.Children[0] is not TextBlock label || double.IsNaN(label.Width))
+            return row;
+        label.Width = Math.Max(40, label.Width - BADGE_SIZE - panel.Spacing);
+        panel.Children.Insert(1, described ? InfoBadge(tip) : new Control { Width = BADGE_SIZE });
+        return row;
+    }
+
+    // A row for a column, explained by what ColumnDocs knows about it
+    public static Control Documented(Control row, string file, string column, string? table = null)
+    {
+        return Explained(row, ColumnDocs.Tooltip(file, column, table), ColumnDocs.Describe(file, column) != null);
     }
 
     public static StackPanel Horizontal(params Control[] controls)
