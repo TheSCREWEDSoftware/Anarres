@@ -45,6 +45,12 @@ public sealed class ModelCamera
         Distance = Radius / MathF.Sin(FIELD_OF_VIEW / 2f) * FIT_MARGIN;
     }
 
+    // A copy for drawing a frame elsewhere while this one keeps following the mouse
+    public ModelCamera Clone()
+    {
+        return (ModelCamera)MemberwiseClone();
+    }
+
     public void Turn(float yaw, float pitch)
     {
         Yaw += yaw;

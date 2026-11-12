@@ -250,6 +250,38 @@ public sealed class MainWindow : Window
         }
     }
 
+    // Like Keira's: the system and what's open, then frame times every 2 seconds, in perf.log beside the settings
+    private void TogglePerfLog(MenuItem item)
+    {
+        if (PerfLog.IsOn)
+        {
+            PerfLog.Stop();
+            item.IsChecked = false;
+            SetStatus("Stopped the performance log (" + PerfLog.DefaultPath + ").");
+            return;
+        }
+
+        try
+        {
+            PerfLog.Start(PerfLog.DefaultPath, AppVersion, new[]
+            {
+                ("Project", _session.Settings.Store + " " + (_session.Settings.Store == StoreKind.MySql
+                                                                 ? _session.Settings.MySqlHost + "/" +
+                                                                   _session.Settings.MySqlDatabase
+                                                                 : _session.Settings.SqlitePath)),
+                ("Client", _session.Settings.ClientData()),
+                ("Screen scale", RenderScaling.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))
+            });
+            item.IsChecked = true;
+            SetStatus("Writing a performance log to " + PerfLog.DefaultPath + "; open the 3D view and use it.");
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            item.IsChecked = false;
+            SetStatus("The performance log couldn't be started: " + exception.Message);
+        }
+    }
+
     // Minimise, maximise and close, themed; the maximise glyph follows the window's state
     private Control CaptionButtons()
     {
@@ -351,6 +383,10 @@ public sealed class MainWindow : Window
         view.Items.Add(Item("_Dark", () => SetLookAsync(ThemeLook.Dark)));
         view.Items.Add(Item("_Light", () => SetLookAsync(ThemeLook.Light)));
         view.Items.Add(Item("_System", () => SetLookAsync(ThemeLook.System)));
+        view.Items.Add(new Separator());
+        MenuItem perf = new MenuItem { Header = "Write a _performance log", ToggleType = MenuItemToggleType.CheckBox };
+        perf.Click += (_, _) => TogglePerfLog(perf);
+        view.Items.Add(perf);
         MenuItem help = new MenuItem { Header = "_Help" };
         help.Items.Add(Item("_Anarres on GitHub", () =>
         {

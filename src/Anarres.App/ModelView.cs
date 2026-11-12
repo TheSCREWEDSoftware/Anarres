@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Anarres.Core.Models;
@@ -26,6 +27,8 @@ public sealed class ModelView
     private const int BYTES_PER_PIXEL = 4;
     private const double DEFAULT_HEIGHT = 360;
     private const float MAX_FRAME_SECONDS = 0.1f;
+    private const int SMOOTH_SCALE = 2;
+    private const double PERF_SECONDS = 0.5;
 
     private readonly Func<string, byte[]?> _read;
     private readonly Image _image = new Image { Stretch = Stretch.Fill };
@@ -51,6 +54,17 @@ public sealed class ModelView
     private int[] _copy = Array.Empty<int>();
     private Point? _drag;
     private bool _playing = true;
+    private bool _rendering;
+    private bool _again;
+    private float _owedSeconds;
+    private readonly object _renderLock = new object();
+    private readonly CheckBox _smooth = new CheckBox { Content = "Smooth edges" };
+    private readonly CheckBox _showPerf = new CheckBox { Content = "Performance" };
+    private readonly TextBlock _perf = new TextBlock { Classes = { "hint" }, IsVisible = false };
+    private readonly Stopwatch _perfClock = Stopwatch.StartNew();
+    private int _perfFrames;
+    private double _perfTotal;
+    private Vector4 _perfParts;
     private bool _changing;
     private int _loadVersion;
     private string _missing = string.Empty;
@@ -111,16 +125,21 @@ public sealed class ModelView
         };
         _animations.SelectionChanged += (_, _) =>
         {
-            if (_instance != null && _animations.SelectedIndex >= 0)
+            if (_instance == null || _animations.SelectedIndex < 0)
+                return;
+            lock (_renderLock)
                 _instance.SetSequence(_animations.SelectedIndex);
         };
         _particles.IsCheckedChanged += (_, _) =>
         {
             if (_instance == null)
                 return;
-            _instance.ShowParticles = _particles.IsChecked == true;
-            foreach (ParticleSystem system in _instance.Particles)
-                system.Clear();
+            lock (_renderLock)
+            {
+                _instance.ShowParticles = _particles.IsChecked == true;
+                foreach (ParticleSystem system in _instance.Particles)
+                    system.Clear();
+            }
         };
         _play.Click += (_, _) =>
         {
@@ -129,12 +148,21 @@ public sealed class ModelView
             UpdateTimer();
         };
         Button reset = Ui.Button("Reset view", ResetView);
+        ToolTip.SetTip(_smooth, "Draws at twice the size and scales down: smoother edges, four times the work");
+        ToolTip.SetTip(_showPerf, "Frames per second and where each frame's time goes");
+        _showPerf.IsCheckedChanged += (_, _) => _perf.IsVisible = _showPerf.IsChecked == true;
+        _smooth.IsCheckedChanged += (_, _) =>
+        {
+            if (!_playing)
+                Draw(0f);
+        };
         _timer.Tick += (_, _) => Tick();
 
         View = Ui.Vertical(6,
             Ui.Horizontal(Ui.Label("Model", 60), _models),
             _canvas,
-            Ui.Horizontal(Ui.Label("Animation", 70), _animations, _play, _particles, reset),
+            Ui.Horizontal(Ui.Label("Animation", 70), _animations, _play, _particles, _smooth, _showPerf, reset),
+            _perf,
             _status);
     }
 
@@ -194,7 +222,13 @@ public sealed class ModelView
         List<string> missing = new List<string>();
         try
         {
+            long loading = Stopwatch.GetTimestamp();
             ModelInstance instance = await Task.Run(() => ModelLoader.Load(_read, choice, missing));
+            double loadMs = Stopwatch.GetElapsedTime(loading).TotalMilliseconds;
+            PerfLog.Note("opened " + choice.Path + " in " + loadMs.ToString("0", CultureInfo.InvariantCulture) +
+                         " ms: " + instance.Model.Vertices.Length + " vertices, " + instance.Skin.Indices.Length / 3 +
+                         " triangles, " + instance.Model.Particles.Length + " emitters, " +
+                         instance.Model.Textures.Length + " textures");
             if (version != _loadVersion)
                 return;
             _instance = instance;
@@ -233,7 +267,10 @@ public sealed class ModelView
         Vector3 max = model.BoundsMax;
         // Particles fly beyond the mesh, so effects keep the header's box; other models frame their posed mesh
         if (model.Particles.Length == 0 || (max - min).LengthSquared() < 0.0001f)
-            (min, max) = _instance.PosedBounds();
+        {
+            lock (_renderLock)
+                (min, max) = _instance.PosedBounds();
+        }
 
         if ((max - min).LengthSquared() < 0.0001f)
         {
@@ -274,44 +311,76 @@ public sealed class ModelView
         Draw(seconds);
     }
 
-    // Any frame, the first one included, goes through here
+    // Asks for a frame; one is drawn at a time in the background, and one asked for meanwhile follows it
     private void Draw(float seconds)
     {
-        try
-        {
-            DrawFrame(seconds);
-        }
-        // One bad frame stops the animation and says why, instead of failing every 33 ms
-        catch (Exception exception)
-        {
-            _timer.Stop();
-            _playing = false;
-            _play.Content = "Play";
-            _status.Text = "This model couldn't be drawn: " + exception.Message +
-                           (CrashLog.Write(exception, "Model viewer") is { } log ? " (details in " + log + ")" : "");
-        }
-    }
-
-    // Moves the animation on and draws a frame at the view's size (capped, then stretched, on very big screens)
-    private void DrawFrame(float seconds)
-    {
+        _owedSeconds = Math.Min(_owedSeconds + seconds, MAX_FRAME_SECONDS);
         if (_instance == null)
             return;
+        if (_rendering)
+        {
+            _again = true;
+            return;
+        }
+
+        StartFrame();
+    }
+
+    private void StartFrame()
+    {
+        ModelInstance instance = _instance!;
         double scale = (_canvas.GetVisualRoot() as TopLevel)?.RenderScaling ?? 1.0;
         int width = Math.Max(MIN_SIDE, (int)(_canvas.Bounds.Width * scale));
         int height = Math.Max(MIN_SIDE, (int)(_canvas.Bounds.Height * scale));
         double shrink = Math.Sqrt(Math.Min(1.0, MAX_PIXELS / (double)(width * height)));
         width = Math.Max(MIN_SIDE, (int)(width * shrink));
         height = Math.Max(MIN_SIDE, (int)(height * shrink));
-
-        _instance.Advance(seconds, _camera.Position, Vector3.UnitZ);
+        ModelCamera camera = _camera.Clone();
+        float seconds = _owedSeconds;
+        _owedSeconds = 0;
+        int supersample = _smooth.IsChecked == true ? SMOOTH_SCALE : 1;
         if (_pixels.Length != width * height)
         {
             _pixels = new uint[width * height];
             _copy = new int[width * height];
         }
 
-        _renderer.Render(_instance, _camera, width, height, _pixels);
+        uint[] pixels = _pixels;
+        _rendering = true;
+        long started = Stopwatch.GetTimestamp();
+        Task.Run(() =>
+        {
+            lock (_renderLock)
+            {
+                instance.Advance(seconds, camera.Position, Vector3.UnitZ);
+                _renderer.Supersample = supersample;
+                _renderer.Render(instance, camera, width, height, pixels);
+            }
+        }).ContinueWith(task => Dispatcher.UIThread.Post(() => FinishFrame(task, instance, width, height, started)));
+    }
+
+    // Back on the window's thread: shows the finished frame, keeps the numbers, and starts any frame asked for
+    private void FinishFrame(Task task, ModelInstance instance, int width, int height, long started)
+    {
+        _rendering = false;
+        if (task.Exception?.GetBaseException() is { } exception)
+        {
+            _timer.Stop();
+            _playing = false;
+            _play.Content = "Play";
+            _status.Text = "This model couldn't be drawn: " + exception.Message +
+                           (CrashLog.Write(exception, "Model viewer") is { } log ? " (details in " + log + ")" : "");
+            return;
+        }
+
+        // A frame of a model that has since been replaced isn't shown
+        if (!ReferenceEquals(instance, _instance) || _pixels.Length != width * height)
+        {
+            Again();
+            return;
+        }
+
+        long uploading = Stopwatch.GetTimestamp();
         WriteableBitmap? bitmap = _bitmaps[_back];
         if (bitmap == null || bitmap.PixelSize.Width != width || bitmap.PixelSize.Height != height)
         {
@@ -329,6 +398,52 @@ public sealed class ModelView
 
         _image.Source = bitmap;
         _back = 1 - _back;
+        Measure(Stopwatch.GetElapsedTime(uploading).TotalMilliseconds,
+                Stopwatch.GetElapsedTime(started).TotalMilliseconds, width, height);
+        Again();
+    }
+
+    private void Again()
+    {
+        if (!_again)
+            return;
+        _again = false;
+        StartFrame();
+    }
+
+    // Frame times for the readout under the view (twice a second, so it doesn't flicker) and the performance log
+    private void Measure(double uploadMs, double frameMs, int width, int height)
+    {
+        PerfLog.Add("skin", _renderer.SkinMs);
+        PerfLog.Add("mesh", _renderer.MeshMs);
+        PerfLog.Add("particles", _renderer.ParticlesMs);
+        PerfLog.Add("finish", _renderer.FinishMs);
+        PerfLog.Add("upload", uploadMs);
+        PerfLog.Frame(frameMs);
+        _perfFrames++;
+        _perfTotal += frameMs;
+        _perfParts += new Vector4((float)_renderer.SkinMs, (float)_renderer.MeshMs, (float)_renderer.ParticlesMs,
+                                  (float)(_renderer.FinishMs + uploadMs));
+        double elapsed = _perfClock.Elapsed.TotalSeconds;
+        if (elapsed < PERF_SECONDS)
+            return;
+        if (_showPerf.IsChecked == true)
+        {
+            Vector4 parts = _perfParts / Math.Max(1, _perfFrames);
+            _perf.Text = (_perfFrames / elapsed).ToString("0", CultureInfo.InvariantCulture) + " frames/s, " +
+                         (_perfTotal / Math.Max(1, _perfFrames)).ToString("0.0", CultureInfo.InvariantCulture) +
+                         " ms each: skin " + parts.X.ToString("0.0", CultureInfo.InvariantCulture) +
+                         ", mesh " + parts.Y.ToString("0.0", CultureInfo.InvariantCulture) +
+                         ", particles " + parts.Z.ToString("0.0", CultureInfo.InvariantCulture) +
+                         ", finish " + parts.W.ToString("0.0", CultureInfo.InvariantCulture) + ". " +
+                         width + "x" + height + (_renderer.Supersample > 1 ? " drawn at twice the size" : "") +
+                         ", " + _renderer.TrianglesDrawn + " triangles, " + _renderer.ParticlesDrawn + " particles.";
+        }
+
+        _perfFrames = 0;
+        _perfTotal = 0;
+        _perfParts = Vector4.Zero;
+        _perfClock.Restart();
     }
 
     // What the model holds, written once per model so the line under the picture stays still

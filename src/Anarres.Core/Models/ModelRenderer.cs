@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 
 namespace Anarres.Core.Models;
@@ -17,6 +18,7 @@ public sealed class ModelRenderer
     private const int GREEN_SHIFT = 8;
     private const float CHANNEL_MAX = 255f;
     private const int QUAD_CORNERS = 4;
+    private const int MAX_SUPERSAMPLE = 3;
     // How many times over particles may cover the picture per frame; beyond it the furthest are left out
     private const float PARTICLE_FILL_BUDGET = 12f;
     // A single particle bigger than this many pictures is the camera sitting inside it; it isn't drawn
@@ -38,10 +40,25 @@ public sealed class ModelRenderer
 
     public int ParticlesDrawn { get; private set; }
 
+    // Draws at this many times the size each way and averages down, smoothing jagged edges (2 costs 4 times as much)
+    public int Supersample { get; set; } = 1;
+
+    // Where the last frame's time went, in milliseconds
+    public double SkinMs { get; private set; }
+    public double MeshMs { get; private set; }
+    public double ParticlesMs { get; private set; }
+    public double FinishMs { get; private set; }
+
     public void Render(ModelInstance instance, ModelCamera camera, int width, int height, uint[] bgra)
     {
         if (width <= 0 || height <= 0 || bgra.Length < width * height)
             throw new ArgumentException("The pixel buffer is smaller than the picture.");
+        int scale = Math.Clamp(Supersample, 1, MAX_SUPERSAMPLE);
+        int outputWidth = width;
+        int outputHeight = height;
+        width *= scale;
+        height *= scale;
+        long started = Stopwatch.GetTimestamp();
         Prepare(width, height);
         TrianglesDrawn = 0;
         ParticlesDrawn = 0;
@@ -51,6 +68,7 @@ public sealed class ModelRenderer
         Matrix4x4 viewProjection = view * projection;
         Vector3 light = Vector3.Normalize(camera.Position - camera.Target + Vector3.UnitZ * camera.Distance);
         Skin(instance);
+        long skinned = Stopwatch.GetTimestamp();
 
         M2Model model = instance.Model;
         M2Skin skin = instance.Skin;
@@ -61,14 +79,35 @@ public sealed class ModelRenderer
                      .ToList();
         foreach (int index in order)
             DrawBatch(instance, skin.Batches[index], viewProjection, view, light);
+        long meshed = Stopwatch.GetTimestamp();
         if (instance.ShowParticles)
             DrawParticles(instance, view, projection);
+        long particled = Stopwatch.GetTimestamp();
 
-        for (int i = 0; i < width * height; ++i)
+        float average = 1f / (scale * scale);
+        for (int y = 0; y < outputHeight; ++y)
         {
-            Vector3 c = Vector3.Clamp(_colour[i], Vector3.Zero, Vector3.One) * CHANNEL_MAX;
-            bgra[i] = OPAQUE_ALPHA | ((uint)c.X << RED_SHIFT) | ((uint)c.Y << GREEN_SHIFT) | (uint)c.Z;
+            for (int x = 0; x < outputWidth; ++x)
+            {
+                Vector3 sum = Vector3.Zero;
+                for (int dy = 0; dy < scale; ++dy)
+                {
+                    int row = (y * scale + dy) * width + x * scale;
+                    for (int dx = 0; dx < scale; ++dx)
+                        sum += Vector3.Clamp(_colour[row + dx], Vector3.Zero, Vector3.One);
+                }
+
+                Vector3 c = sum * (average * CHANNEL_MAX);
+                bgra[y * outputWidth + x] = OPAQUE_ALPHA | ((uint)c.X << RED_SHIFT) | ((uint)c.Y << GREEN_SHIFT) |
+                                            (uint)c.Z;
+            }
         }
+
+        long finished = Stopwatch.GetTimestamp();
+        SkinMs = Stopwatch.GetElapsedTime(started, skinned).TotalMilliseconds;
+        MeshMs = Stopwatch.GetElapsedTime(skinned, meshed).TotalMilliseconds;
+        ParticlesMs = Stopwatch.GetElapsedTime(meshed, particled).TotalMilliseconds;
+        FinishMs = Stopwatch.GetElapsedTime(particled, finished).TotalMilliseconds;
     }
 
     private static bool IsOpaque(M2Model model, M2Batch batch)
@@ -385,6 +424,9 @@ public sealed class ModelRenderer
         ++TrianglesDrawn;
 
         float inverseArea = 1f / area;
+        // The smaller copy of the texture that matches how many texels land on each pixel of this triangle
+        float uvArea = MathF.Abs((b.Uv.X - a.Uv.X) * (c.Uv.Y - a.Uv.Y) - (b.Uv.Y - a.Uv.Y) * (c.Uv.X - a.Uv.X));
+        texture = texture.Level(uvArea * texture.Width * texture.Height, MathF.Abs(area));
         for (int y = minY; y <= maxY; ++y)
         {
             float py = y + 0.5f;
