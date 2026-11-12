@@ -95,7 +95,9 @@ try
                 return Fail("Give the folder to import from.");
             using IDbcStore store = await OpenAsync(createDatabase: true);
             List<ImportResult> results = positional[0] == "import"
-                                             ? await Deployment.ImportFolderAsync(store, positional[1], definitions,
+                                             ? await Deployment.ImportFolderAsync(store,
+                                                                                  ProjectSettings.ResolveServerDbc(
+                                                                                      positional[1]), definitions,
                                                                                   only, progress)
                                              : await Deployment.ImportClientAsync(store, positional[1],
                                                                                   options.GetValueOrDefault("--locale",

@@ -13,23 +13,37 @@ public static class DbcMerge
         string name = Path.GetFileName(file);
         if (!name.EndsWith(".dbc", StringComparison.OrdinalIgnoreCase))
             name += ".dbc";
-        if (settings.SourceDbcFolder.Length > 0 && Directory.Exists(settings.SourceDbcFolder))
+        foreach (string folder in CleanFolders(settings))
         {
-            string? path = Directory.EnumerateFiles(settings.SourceDbcFolder, name, Files.AnyCase).FirstOrDefault();
+            string? path = Directory.EnumerateFiles(folder, name, Files.AnyCase).FirstOrDefault();
             if (path != null && new FileInfo(path).Length > 0)
                 return DbcFile.Read(path, definitions);
         }
 
+        // The client's own MPQs, without the patch Anarres builds, which holds the edits
         string client = settings.ClientData();
         if (client.Length > 0 && Directory.Exists(client))
         {
-            using ClientArchives archives = ClientArchives.Open(client, settings.Locale);
+            using ClientArchives archives = ClientArchives.Open(client, settings.Locale, settings.PatchPath());
             byte[]? data = archives.TryRead(ClientArchives.DBC_FOLDER + "\\" + name);
             if (data is { Length: > 0 })
                 return DbcFile.Read(data, name, definitions);
         }
 
         return null;
+    }
+
+    // Clean DBC folder, then the server copies Apply kept before replacing them, then the server's untouched files
+    public static List<string> CleanFolders(ProjectSettings settings)
+    {
+        List<string> folders = new List<string>();
+        if (settings.SourceDbcFolder.Length > 0)
+            folders.Add(ProjectSettings.ResolveServerDbc(settings.SourceDbcFolder));
+        if (settings.ExportFolder.Length > 0)
+            folders.Add(Path.Combine(settings.ExportFolder, Deployment.BACKUP_FOLDER));
+        if (settings.ServerDbcFolder.Length > 0 && settings.ApplyBackupServer)
+            folders.Add(settings.ServerDbc());
+        return folders.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     // The clean rows with the override rows laid over them by ID, new IDs added after them

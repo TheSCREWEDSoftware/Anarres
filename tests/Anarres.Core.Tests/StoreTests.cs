@@ -208,4 +208,46 @@ public static class StoreTests
                      File.ReadAllText(Path.Combine(settings.ExportFolder, Deployment.BACKUP_FOLDER, "Sample.dbc")),
                      "the first copy stays the backup");
     }
+
+    // Without a Clean DBC folder the server's files are clean, even after Apply; Anarres's own patch never is
+    public static async Task FindsCleanFilesWithoutACleanFolder()
+    {
+        using TempFolder temp = new TempFolder();
+        string wow = Directory.CreateDirectory(temp.File("WoW")).FullName;
+        Directory.CreateDirectory(Path.Combine(wow, "Data"));
+        string dbc = Directory.CreateDirectory(Path.Combine(temp.File("server"), "dbc")).FullName;
+        DbcFile.Write(DbcTests.SampleTable(), Path.Combine(dbc, "Sample.dbc"));
+
+        using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
+        await store.ImportAsync(DbcTests.SampleTable());
+        ProjectSettings settings = new ProjectSettings
+        {
+            ExportFolder = temp.File("Export"),
+            ServerDbcFolder = temp.File("server"),
+            ClientDataFolder = wow,
+            ApplyWorldDatabase = false
+        };
+        Assert.Equal("Fireball", DbcMerge.LoadSource(settings, "Sample", Definitions())!.GetString(1, 3),
+                     "the server's file");
+
+        DbcTable edited = await store.LoadAsync("Sample.dbc", Definitions());
+        edited.SetString(1, 3, "Edited Fireball");
+        await store.SaveChangesAsync(edited);
+        await Deployment.ApplyAsync(store, settings, new[] { "Sample.dbc" }, Definitions());
+        Assert.Equal("Edited Fireball", DbcFile.Read(Path.Combine(dbc, "Sample.dbc"), Definitions()).GetString(1, 3),
+                     "the server has the edit");
+        Assert.Equal("Fireball", DbcMerge.LoadSource(settings, "Sample", Definitions())!.GetString(1, 3),
+                     "the copy kept before Apply replaced it");
+
+        ProjectSettings clientOnly = new ProjectSettings { ClientDataFolder = wow };
+        Assert.True(File.Exists(clientOnly.PatchPath()), "the patch was built");
+        Assert.True(DbcMerge.LoadSource(clientOnly, "Sample", Definitions()) == null, "the patch isn't clean");
+
+        Directory.CreateDirectory(Path.Combine(wow, "Data", "enGB"));
+        File.WriteAllBytes(Path.Combine(wow, "Data", "enGB", "locale-enGB.MPQ"), new byte[] { 0 });
+        Directory.CreateDirectory(Path.Combine(wow, "Data", "Interface"));
+        Assert.Equal("enGB", string.Join(",", Anarres.Core.Mpq.ClientArchives.FindLocales(Path.Combine(wow, "Data"))),
+                     "locale folders found");
+        Assert.Equal(dbc, ProjectSettings.ResolveServerDbc(temp.File("server")), "a Data folder gives its dbc");
+    }
 }
