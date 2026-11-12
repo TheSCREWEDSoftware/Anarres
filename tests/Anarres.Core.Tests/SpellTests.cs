@@ -24,6 +24,26 @@ public static class SpellTests
         return spell;
     }
 
+    public static void DescribesColumns()
+    {
+        Assert.True(ColumnDocs.Describe(SpellRecord.FILE, "StartRecoveryCategory")!.Contains("global cooldown"),
+                    "global cooldown group");
+        Assert.Equal(ColumnDocs.Describe("Spell", "Effect"), ColumnDocs.Describe(SpellRecord.FILE, "Effect_2"),
+                     "numbered columns share their base");
+        Assert.Equal(ColumnDocs.Describe(SpellRecord.FILE, "Name"),
+                     ColumnDocs.Describe(SpellRecord.FILE, "Name_Lang_deDE"), "locales share their base");
+        Assert.True(ColumnDocs.Describe(SpellRecord.FILE, "AttributesEx3") != null, "attribute columns");
+        Assert.True(ColumnDocs.Describe("SpellRange.dbc", "RangeMax_2") != null, "other spell tables");
+        Assert.Equal(null, ColumnDocs.Describe("Item.dbc", "ID"), "unknown file");
+        Assert.True(ColumnDocs.Tooltip(SpellRecord.FILE, "Mechanic", "spell_dbc").EndsWith("spell_dbc: Mechanic"),
+                    "tooltip names the column");
+
+        DbcDefinition definition = DbcDefinitions.Default.Find(SpellRecord.FILE)!;
+        string[] missing = definition.Columns.Select(column => column.Name)
+                                     .Where(name => ColumnDocs.Describe(SpellRecord.FILE, name) == null).ToArray();
+        Assert.Equal(string.Empty, string.Join(", ", missing), "every Spell.dbc column is described");
+    }
+
     public static void RendersTooltipTokens()
     {
         SpellRecord spell = NewSpell(out SpellLookups lookups);
