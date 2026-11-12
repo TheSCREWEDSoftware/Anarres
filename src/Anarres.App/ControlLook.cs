@@ -47,6 +47,10 @@ public static class ControlLook
                                                                    accent.B));
 
         Set(resources, background, "SystemRegionBrush", "SystemControlBackgroundAltHighBrush");
+        // Minimise, maximise and close: Fluent's own colours are light-only grey, so they follow the theme
+        Set(resources, hover, "CaptionButtonBackground");
+        Set(resources, pressed, "CaptionButtonBorderBrush");
+        Set(resources, text, "CaptionButtonForeground");
 
         Set(resources, raised, "ButtonBackground", "ToggleButtonBackground", "RepeatButtonBackground",
             "TextControlBackground", "TextControlBackgroundPointerOver", "ComboBoxBackground",
