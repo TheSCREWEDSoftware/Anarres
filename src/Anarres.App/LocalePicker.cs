@@ -10,6 +10,13 @@ namespace Anarres.App;
 public sealed class LocalePicker : StackPanel
 {
     private readonly ComboBox _box = new ComboBox { Width = 120 };
+    // Shown with All available: every locale's archives are read as well
+    private readonly TextBlock _slower = new TextBlock
+    {
+        Text = "Importing every locale takes longer",
+        VerticalAlignment = VerticalAlignment.Center,
+        IsVisible = false
+    };
     private readonly TextBlock _found = new TextBlock
     {
         Classes = { "hint" },
@@ -27,6 +34,7 @@ public sealed class LocalePicker : StackPanel
         _box.Width = 150;
         Children.Add(_box);
         Children.Add(_found);
+        Children.Add(Ui.Themed(_slower, TextBlock.ForegroundProperty, ThemeColours.ERROR));
         Fill(new List<string>(), locale, all);
     }
 
@@ -69,6 +77,7 @@ public sealed class LocalePicker : StackPanel
         _box.ItemsSource = items;
         _box.SelectedItem = all && found.Count > 1 ? ALL : locale.Length > 0 ? locale : items[0];
         _box.SelectionChanged += OnChanged;
+        _slower.IsVisible = All;
         _found.Text = found.Count switch
         {
             0 => "No locale folder found in the client; showing all",
@@ -102,6 +111,7 @@ public sealed class LocalePicker : StackPanel
 
     private void OnChanged(object? sender, SelectionChangedEventArgs e)
     {
+        _slower.IsVisible = All;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

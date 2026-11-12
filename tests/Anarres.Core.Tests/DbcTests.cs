@@ -282,4 +282,18 @@ public static class DbcTests
         Assert.Equal("DELETE FROM `spell_dbc` WHERE `ID` = -5; -- note\nSELECT 'it''s'",
                      string.Concat(tokens.Select(token => token.Text)), "nothing lost");
     }
+
+    // Links come from column names and the list of the ones names don't tell
+    public static void FindsTableLinks()
+    {
+        List<DbcLink> links = DbcLinks.Find(DbcDefinitions.Default.All);
+        bool Has(string from, string column, string to) =>
+            links.Any(link => link.From == from && link.Column == column && link.To == to);
+        Assert.True(Has("Spell.dbc", "SpellIconID", "SpellIcon.dbc"), "by name");
+        Assert.True(Has("Spell.dbc", "CastingTimeIndex", "SpellCastTimes.dbc"), "from the list");
+        Assert.True(Has("SpellVisual.dbc", "CastKit", "SpellVisualKit.dbc"), "visual kits");
+        Assert.True(Has("ItemSubClass.dbc", "ClassID", "ItemClass.dbc"), "an item's class, not a character's");
+        Assert.True(!links.Any(link => link.From == "Spell.dbc" && link.Column == "ID"), "a row's own ID isn't a link");
+        Assert.True(DbcLinks.Mermaid(links).StartsWith("flowchart LR"), "Mermaid");
+    }
 }

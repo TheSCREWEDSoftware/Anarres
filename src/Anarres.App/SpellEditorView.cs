@@ -436,7 +436,7 @@ public sealed class SpellEditorView : Grid
         Value = MAX_PLAYER_LEVEL,
         IsSnapToTickEnabled = true,
         TickFrequency = 1,
-        Width = 260
+        Width = 220
     };
     // The level in a fixed-width box, so the slider doesn't move between 1 and 80
     private readonly TextBlock _levelText = new TextBlock
@@ -453,7 +453,7 @@ public sealed class SpellEditorView : Grid
         Value = MAX_PLAYER_LEVEL,
         Increment = 1,
         FormatString = "0",
-        Width = 120
+        Width = 104
     };
     private readonly TextBlock _levelRange = new TextBlock
     {

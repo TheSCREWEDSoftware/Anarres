@@ -183,7 +183,8 @@ public static class WindowTests
             new UsedByWindow(133, "Fireball", SpellReferences.Find(spells, row)),
             new DiffWindow("old.dbc", spells, "new.dbc", spells),
             new PatchesWindow(project.Settings),
-            new ModelWindow(window.Session)
+            new ModelWindow(window.Session),
+            new TableLinksWindow(window, window.Session.Definitions)
         };
         foreach (Window dialog in dialogs)
         {

@@ -334,6 +334,11 @@ public sealed class DbcEditorView : Grid
         _filter.SelectAll();
     }
 
+    public Task OpenTableAsync(string file)
+    {
+        return OpenStoredAsync(file);
+    }
+
     internal Task OpenForTestAsync(string file)
     {
         return OpenStoredAsync(file);
