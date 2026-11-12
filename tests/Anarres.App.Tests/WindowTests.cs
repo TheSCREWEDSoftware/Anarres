@@ -97,7 +97,8 @@ public static class WindowTests
             new ImportWindow(window.Session),
             new ExportWindow(window.Session),
             new ColumnsWindow(spell, project.Settings.DefinitionsFolder),
-            new WorldDatabaseWindow(project.Settings, 133, "Fireball"),
+            new WorldDatabaseWindow(project.Settings, "Spell 133 (Fireball)"),
+            new SetupWindow(project.Settings, showAgain: true),
             new FlagsDialog("Attributes", SpellEnums.Get("Attributes"), 0x10000),
             new OptionsWindow(new AppOptions(), OptionsWindow.GENERAL),
             new ThemeEditorWindow(Theme.BuiltIn(ThemeBase.Light), new ThemeStore(project.Folder))

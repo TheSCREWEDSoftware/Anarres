@@ -118,6 +118,8 @@ public sealed class MainWindow : Window
         UseOptions(_options);
         Opened += async (_, _) =>
         {
+            if (_options.ShowSetup && !IsTest)
+                await RunSetupAsync(reload: false);
             StartEditor start = _options.StartIn == StartEditor.Last ? _options.LastEditor : _options.StartIn;
             if (start == StartEditor.Tables)
                 await ShowTablesAsync();
@@ -218,6 +220,8 @@ public sealed class MainWindow : Window
         edit.Items.Add(Item("_Undo", () => UndoAsync(redo: false), "Ctrl+Z"));
         edit.Items.Add(Item("_Redo", () => UndoAsync(redo: true), "Ctrl+Y"));
         MenuItem tools = new MenuItem { Header = "_Tools" };
+        tools.Items.Add(Item("_Setup...", () => RunSetupAsync(reload: true)));
+        tools.Items.Add(new Separator());
         tools.Items.Add(Item("Build _patch MPQ from .dbc files...", BuildPatchFromFilesAsync));
         tools.Items.Add(Item("_Open the export folder", () =>
         {
@@ -519,6 +523,42 @@ public sealed class MainWindow : Window
             return;
         await Task.Run(() => Anarres.Core.Export.Deployment.BuildPatch(path, files));
         SetStatus("Built " + path + " with " + files.Count + " files under DBFilesClient.");
+    }
+
+    // The first-start questions; Start saves them as the project settings and can go straight to importing
+    internal async Task RunSetupAsync(bool reload)
+    {
+        if (reload && !await ResolveUnsavedAsync())
+            return;
+        SetupWindow dialog = new SetupWindow(_session.Settings, _options.ShowSetup);
+        ProjectSettings? settings = await dialog.ShowDialog<ProjectSettings?>(this);
+        if (_options.ShowSetup == dialog.DontShowAgain)
+        {
+            _options.ShowSetup = !dialog.DontShowAgain;
+            if (!IsTest)
+                _options.Save();
+        }
+
+        if (settings == null)
+            return;
+        if (!IsTest)
+            settings.Save();
+        _session.Use(settings);
+        _session.ForgetAll();
+        _tables.ForgetStoredTable();
+        if (settings.MySqlPassword.Length > 0)
+            _session.MySqlPassword = settings.MySqlPassword;
+        if (dialog.ImportNow && await EnsureStoreAsync())
+        {
+            ImportWindow import = new ImportWindow(_session);
+            await import.ShowDialog(this);
+            if (import.Imported && !IsTest)
+                _session.Settings.Save();
+            _session.ForgetAll();
+        }
+
+        if (reload)
+            await ReloadAsync();
     }
 
     private async Task OpenOptionsAsync(string section)
