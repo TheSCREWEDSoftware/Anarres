@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
@@ -34,6 +35,23 @@ public sealed class SpellEditorView : Grid
     private readonly ListBox _list = new ListBox();
     private readonly FieldFinder _finder;
     private readonly TextBlock _count = new TextBlock { Classes = { "hint" }, Margin = new Thickness(4, 4, 0, 0) };
+    // How the list is ordered, and which spells it shows besides the search
+    private static readonly string[] SortChoices =
+    {
+        "ID, lowest first", "ID, highest first", "Name, A to Z", "Name, Z to A", "Recently changed first"
+    };
+    private const int SORT_ID_DOWN = 1;
+    private const int SORT_NAME = 2;
+    private const int SORT_NAME_DOWN = 3;
+    private const int SORT_CHANGED = 4;
+    private const string SHOW_ALL = "All spells";
+    private const string SHOW_CHANGED = "Changed (saved or not)";
+    private readonly ComboBox _sort = new ComboBox { ItemsSource = SortChoices, SelectedIndex = 0 };
+    private readonly ComboBox _show = new ComboBox { SelectedIndex = 0, MaxDropDownHeight = 500 };
+    private List<SpellGroup> _groups = new List<SpellGroup>();
+    // When each spell was last changed this session, and the spells that differ from the clean Spell.dbc
+    private readonly Dictionary<uint, long> _changedAt = new Dictionary<uint, long>();
+    private HashSet<uint>? _changedSinceImport;
     private readonly TextBlock _title = new TextBlock { FontSize = 20, FontWeight = FontWeight.SemiBold };
     private readonly TextBlock _subtitle = new TextBlock { Classes = { "label" } };
     // The school in its combat text colour, as on the list's strip, and how many talents change the spell
@@ -113,6 +131,12 @@ public sealed class SpellEditorView : Grid
             _searchTimer.Start();
         };
         _list.SelectionChanged += (_, _) => ShowSelected();
+        _show.ItemsSource = new List<string> { SHOW_ALL, SHOW_CHANGED };
+        ToolTip.SetTip(_sort, "The order of the spell list");
+        ToolTip.SetTip(_show, "Which spells the list shows: changed ones, talents, a class's, a race's or a " +
+                              "profession's, from the skill lines in SkillLineAbility.dbc and the spell families");
+        _sort.SelectionChanged += async (_, _) => await ListChoiceChangedAsync();
+        _show.SelectionChanged += async (_, _) => await ListChoiceChangedAsync();
         _visual = new SpellVisualView(session, () => session.NotifyChanged());
         _binding.Edited += column =>
         {
@@ -214,7 +238,10 @@ public sealed class SpellEditorView : Grid
             _images = new IconImages(await _session.IconLibraryAsync(), Icons);
             await _visual.LoadAsync(spells);
             _spells = spells;
+            _changedSinceImport = null;
+            _changedAt.Clear();
             BuildEditor(_spells.Definition);
+            _ = LoadGroupsAsync(spells);
             Filter();
             if (_reopen is { } last && _spells.FindRow(last) >= 0)
                 Select(last);
@@ -279,10 +306,22 @@ public sealed class SpellEditorView : Grid
         _list.ItemTemplate = ListTemplate();
 
         DockPanel panel = new DockPanel { Margin = new Thickness(10) };
+        Grid choices = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,6,*"),
+            Margin = new Thickness(0, 6, 0, 0)
+        };
+        _sort.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _show.HorizontalAlignment = HorizontalAlignment.Stretch;
+        Grid.SetColumn(_show, 2);
+        choices.Children.Add(_sort);
+        choices.Children.Add(_show);
         DockPanel.SetDock(_search, Dock.Top);
+        DockPanel.SetDock(choices, Dock.Top);
         DockPanel.SetDock(_count, Dock.Top);
         DockPanel.SetDock(buttons, Dock.Bottom);
         panel.Children.Add(_search);
+        panel.Children.Add(choices);
         panel.Children.Add(_count);
         panel.Children.Add(buttons);
         panel.Children.Add(_list);
@@ -1307,10 +1346,13 @@ public sealed class SpellEditorView : Grid
         int schoolColumn = table.Definition.IndexOf("SchoolMask");
         string query = (_search.Text ?? string.Empty).Trim();
         Func<int, bool> matches = SpellSearch.Build(table, query);
+        string show = _show.SelectedItem as string ?? SHOW_ALL;
+        HashSet<uint>? only = show == SHOW_CHANGED ? ChangedSpells()
+                              : _groups.FirstOrDefault(group => group.Label == show)?.Spells;
         List<SpellItem> items = new List<SpellItem>();
         for (int row = 0; row < table.Rows.Count; ++row)
         {
-            if (!matches(row))
+            if (!matches(row) || (only != null && !only.Contains(table.Key(row))))
                 continue;
             string name = Localised(table, row, nameColumn, englishName);
             string rank = _showRank ? Localised(table, row, rankColumn, englishRank) : string.Empty;
@@ -1322,12 +1364,109 @@ public sealed class SpellEditorView : Grid
             });
         }
 
+        items = Sorted(items);
         uint? selected = (_list.SelectedItem as SpellItem)?.Id;
         _list.ItemsSource = items;
         _count.Text = items.Count.ToString("N0", CultureInfo.InvariantCulture) + " of " +
                       table.Rows.Count.ToString("N0", CultureInfo.InvariantCulture) + " spells";
         if (selected is { } id && items.FindIndex(item => item.Id == id) is var index and >= 0)
             _list.SelectedIndex = index;
+    }
+
+    private List<SpellItem> Sorted(List<SpellItem> items)
+    {
+        switch (_sort.SelectedIndex)
+        {
+            case SORT_ID_DOWN:
+                return items.OrderByDescending(item => item.Id).ToList();
+            case SORT_NAME:
+                return items.OrderBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
+                            .ThenBy(item => item.Rank, StringComparer.CurrentCultureIgnoreCase)
+                            .ThenBy(item => item.Id).ToList();
+            case SORT_NAME_DOWN:
+                return items.OrderByDescending(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
+                            .ThenBy(item => item.Rank, StringComparer.CurrentCultureIgnoreCase)
+                            .ThenBy(item => item.Id).ToList();
+            case SORT_CHANGED:
+            {
+                // Changed this session, latest first; then the rest changed since import; then everything else
+                HashSet<uint> changed = ChangedSpells();
+                return items.OrderByDescending(item => _changedAt.GetValueOrDefault(item.Id))
+                            .ThenByDescending(item => changed.Contains(item.Id))
+                            .ThenBy(item => item.Id).ToList();
+            }
+            default:
+                return items;
+        }
+    }
+
+    // Spells not saved yet, and spells that differ from the clean Spell.dbc once that's been compared
+    private HashSet<uint> ChangedSpells()
+    {
+        HashSet<uint> changed = new HashSet<uint>(_spells?.ChangedKeys ?? new HashSet<uint>());
+        changed.UnionWith(_changedAt.Keys);
+        if (_changedSinceImport != null)
+            changed.UnionWith(_changedSinceImport);
+        return changed;
+    }
+
+    private async Task ListChoiceChangedAsync()
+    {
+        bool needsClean = _sort.SelectedIndex == SORT_CHANGED || _show.SelectedItem as string == SHOW_CHANGED;
+        if (needsClean && _changedSinceImport == null && _spells != null)
+        {
+            _window.SetStatus("Comparing Spell.dbc with the clean file...");
+            DbcTable spells = _spells;
+            DbcTable? clean = await CleanAsync(quiet: true);
+            _changedSinceImport = clean == null ? new HashSet<uint>()
+                                                : await Task.Run(() => DifferentFrom(spells, clean));
+            _window.SetStatus(clean == null
+                                  ? "There's no clean Spell.dbc to compare with, so only this session's changes count."
+                                  : _changedSinceImport.Count.ToString("N0", CultureInfo.InvariantCulture) +
+                                    " spells differ from the clean Spell.dbc.");
+        }
+
+        Filter();
+    }
+
+    private static HashSet<uint> DifferentFrom(DbcTable spells, DbcTable clean)
+    {
+        HashSet<uint> different = new HashSet<uint>();
+        if (clean.Definition.Columns.Count != spells.Definition.Columns.Count)
+            return different;
+        for (int row = 0; row < spells.Rows.Count; ++row)
+        {
+            int cleanRow = clean.FindRow(spells.Key(row));
+            bool same = cleanRow >= 0;
+            for (int column = 0; same && column < spells.Definition.Columns.Count; ++column)
+                same = spells.SameCell(row, column, clean, cleanRow);
+            if (!same)
+                different.Add(spells.Key(row));
+        }
+
+        return different;
+    }
+
+    // Classes, races, professions and talents for the Show list, from tables that may not be imported
+    private async Task LoadGroupsAsync(DbcTable spells)
+    {
+        DbcTable? abilities = await _session.TryLoadAsync(SkillView.FILE);
+        DbcTable? skillRaceClass = await _session.TryLoadAsync("SkillRaceClassInfo.dbc");
+        DbcTable? classes = _session.NamingTable("ChrClasses.dbc");
+        DbcTable? races = _session.NamingTable("ChrRaces.dbc");
+        DbcTable? skillLines = _session.NamingTable("SkillLine.dbc");
+        DbcTable? talents = _session.NamingTable("Talent.dbc");
+        _groups = await Task.Run(() => SpellGroups.Build(spells, classes, races, skillLines, abilities,
+                                                         skillRaceClass, talents));
+        string? shown = _show.SelectedItem as string;
+        _groups = _groups.Select(group => group with
+        {
+            Label = group.Label + "  (" + group.Spells.Count.ToString("N0", CultureInfo.InvariantCulture) + ")"
+        }).ToList();
+        List<string> labels = new List<string> { SHOW_ALL, SHOW_CHANGED };
+        labels.AddRange(_groups.Select(group => group.Label));
+        _show.ItemsSource = labels;
+        _show.SelectedItem = labels.Contains(shown ?? SHOW_ALL) ? shown : SHOW_ALL;
     }
 
     private static string Localised(DbcTable table, int row, int column, int english)
@@ -1427,6 +1566,8 @@ public sealed class SpellEditorView : Grid
     private void Edited()
     {
         UpdateHeading();
+        if (_binding.IsBound)
+            _changedAt[new SpellRecord(_spells!, _binding.Row).Id] = Stopwatch.GetTimestamp();
         if (_list.SelectedItem is SpellItem item && _binding.IsBound)
         {
             SpellRecord spell = new SpellRecord(_spells!, _binding.Row);
