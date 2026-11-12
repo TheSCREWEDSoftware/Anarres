@@ -20,16 +20,9 @@ public sealed class SkillView : IField
     private readonly ValueNames _names;
     private readonly TextBlock _status = new TextBlock { Classes = { "hint" }, TextWrapping = TextWrapping.Wrap };
     private readonly TextBox _trainer = new TextBox { Width = 120, Watermark = "Trainer ID" };
-    private readonly TextBox _cost = new TextBox { Width = 120, Text = "0", Watermark = "Copper" };
+    private readonly MoneyBox _cost = new MoneyBox();
     private readonly TextBox _level = new TextBox { Width = 80, Text = "1" };
-    private readonly TextBox _sql = new TextBox
-    {
-        IsReadOnly = true,
-        AcceptsReturn = true,
-        TextWrapping = TextWrapping.Wrap,
-        Height = 90,
-        FontFamily = new FontFamily("Consolas, Menlo, monospace")
-    };
+    private readonly SqlBox _sql = new SqlBox();
     private DbcTable? _skills;
     private bool _loading;
 
@@ -42,8 +35,9 @@ public sealed class SkillView : IField
         _grid.Names = _names.For;
         binding.Add(this);
         _grid.CellEdited += (_, _) => _session.NotifyChanged();
-        foreach (TextBox box in new[] { _trainer, _cost, _level })
+        foreach (TextBox box in new[] { _trainer, _level })
             box.TextChanged += (_, _) => WriteSql();
+        _cost.Changed += WriteSql;
 
         Button add = Ui.Button("Add to a skill line", AddRow);
         Button remove = Ui.Button("Remove the selected row", RemoveRow);
@@ -58,9 +52,9 @@ public sealed class SkillView : IField
                      _status),
             Ui.Group("Trainer (acore_world.trainer_spell)",
                      Ui.Row("Trainer ID", _trainer),
-                     Ui.Row("Cost (copper)", _cost),
+                     Ui.Row("Cost", _cost.View),
                      Ui.Row("Required level", _level),
-                     _sql,
+                     _sql.View,
                      Ui.Horizontal(copy),
                      Ui.Hint("The trainer is a trainer.Id; creatures teach it through creature_default_trainer. " +
                              "The skill line and rank come from the first row above.")));
@@ -135,23 +129,26 @@ public sealed class SkillView : IField
 
     private void WriteSql()
     {
-        if (!_binding.IsBound || _skills == null)
+        if (!_binding.IsBound)
         {
-            _sql.Text = string.Empty;
+            _sql.Sql = string.Empty;
             return;
         }
 
+        // Without SkillLineAbility.dbc the skill line and rank are left at 0
         uint id = new SpellRecord(_binding.Table!, _binding.Row).Id;
-        int spell = _skills.Definition.IndexOf("Spell");
-        int first = Enumerable.Range(0, _skills.Rows.Count)
-                              .FirstOrDefault(row => spell >= 0 && _skills.GetRaw(row, spell) == id, -1);
+        int spell = _skills?.Definition.IndexOf("Spell") ?? -1;
+        int first = _skills == null
+                        ? -1
+                        : Enumerable.Range(0, _skills.Rows.Count)
+                                    .FirstOrDefault(row => spell >= 0 && _skills.GetRaw(row, spell) == id, -1);
         uint skill = first >= 0 ? Raw("SkillLine", first) : 0;
         uint rank = first >= 0 ? Raw("MinSkillLineRank", first) : 0;
         string trainer = Number(_trainer.Text, "0");
-        _sql.Text = "DELETE FROM `trainer_spell` WHERE `TrainerId` = " + trainer + " AND `SpellId` = " + id + ";\n" +
+        _sql.Sql = "DELETE FROM `trainer_spell` WHERE `TrainerId` = " + trainer + " AND `SpellId` = " + id + ";\n" +
                     "INSERT INTO `trainer_spell` (`TrainerId`, `SpellId`, `MoneyCost`, `ReqSkillLine`, " +
                     "`ReqSkillRank`, `ReqAbility1`, `ReqAbility2`, `ReqAbility3`, `ReqLevel`, `VerifiedBuild`) " +
-                    "VALUES (" + trainer + ", " + id + ", " + Number(_cost.Text, "0") + ", " + skill + ", " + rank +
+                    "VALUES (" + trainer + ", " + id + ", " + _cost.Copper + ", " + skill + ", " + rank +
                     ", 0, 0, 0, " + Number(_level.Text, "1") + ", 0);";
     }
 
@@ -170,7 +167,7 @@ public sealed class SkillView : IField
 
     private async Task CopyAsync()
     {
-        if (TopLevel.GetTopLevel(_window)?.Clipboard is { } clipboard && _sql.Text is { Length: > 0 } text)
+        if (TopLevel.GetTopLevel(_window)?.Clipboard is { } clipboard && _sql.Sql is { Length: > 0 } text)
         {
             await clipboard.SetTextAsync(text);
             _window.SetStatus("Copied the trainer_spell SQL.");

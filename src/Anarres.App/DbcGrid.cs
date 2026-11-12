@@ -1,4 +1,5 @@
 using System.Globalization;
+using Anarres.Core;
 using Anarres.Core.Dbc;
 using Anarres.Core.Settings;
 using Anarres.Core.Spells;
@@ -115,6 +116,13 @@ public sealed class DbcGrid : Grid
     // A cell's value, one named bit or value per line, for its tooltip
     private string? CellTip(int row, int column)
     {
+        if (_table != null && Money.IsColumn(_table.Definition.File, _table.Definition.Columns[column].Name))
+        {
+            uint copper = _table.GetRaw(row, column);
+            return _table.Definition.Columns[column].Name + " = " + copper.ToString(CultureInfo.InvariantCulture) +
+                   " copper\n\n" + Money.Text(copper);
+        }
+
         if (_table == null || !DbcColumnTypes.IsInteger(_table.Definition.Columns[column].Type) ||
             Names?.Invoke(_table, column, row) is not { } names)
             return null;
