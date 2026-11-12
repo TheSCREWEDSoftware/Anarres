@@ -177,6 +177,7 @@ public sealed class DbcGrid : Grid
                           : NUMBER_WIDTH).ToArray()
                       ?? Array.Empty<double>();
             _order = Enumerable.Range(0, _widths.Length).ToList();
+            _surface.WidenTextColumns();
             _sortColumn = -1;
             _vertical.Value = 0;
             _horizontal.Value = 0;
@@ -641,6 +642,26 @@ public sealed class DbcGrid : Grid
         }
 
         private const int MOST_ROWS_MEASURED = 20000;
+        private const int ROWS_MEASURED_ON_OPEN = 200;
+        private const double MAX_OPENING_WIDTH = 360;
+
+        // Text columns start as wide as their first rows need, up to a limit, so paths and names can be read
+        public void WidenTextColumns()
+        {
+            DbcTable? table = _grid._table;
+            if (table == null)
+                return;
+            for (int column = 0; column < table.Definition.Columns.Count; ++column)
+            {
+                if (table.Definition.Columns[column].Type != DbcColumnType.String)
+                    continue;
+                double widest = Measure(table.Definition.Columns[column].Name, _bold);
+                for (int row = 0; row < Math.Min(table.Rows.Count, ROWS_MEASURED_ON_OPEN); ++row)
+                    widest = Math.Max(widest, Measure(table.GetString(row, column), _typeface));
+                _grid._widths[column] = Math.Clamp(widest + CELL_PADDING * 2 + 2, _grid._widths[column],
+                                                   MAX_OPENING_WIDTH);
+            }
+        }
         private const double MAX_FITTED_WIDTH = 640;
 
         private void FitColumn(int column)

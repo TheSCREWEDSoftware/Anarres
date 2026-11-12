@@ -468,7 +468,9 @@ public sealed class SpellEditorView : Grid
         Value = MAX_PLAYER_LEVEL,
         Increment = 1,
         FormatString = "0",
-        Width = 104
+        Width = 104,
+        VerticalContentAlignment = VerticalAlignment.Center,
+        HorizontalContentAlignment = HorizontalAlignment.Center
     };
     private readonly TextBlock _levelRange = new TextBlock
     {
@@ -1141,7 +1143,8 @@ public sealed class SpellEditorView : Grid
                             found.All(texts => texts.Slot != source.Slot))
                             found.Add(LocaleMerge.Texts(source));
                     }
-                    catch (Exception exception) when (exception is IOException or InvalidDataException)
+                    catch (Exception exception) when (exception is IOException or InvalidDataException or
+                                                          UnauthorizedAccessException or NotSupportedException)
                     {
                         // A locale that can't be read just has no preview
                     }

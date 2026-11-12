@@ -3867,7 +3867,7 @@
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR1_IGNORE_OWNERS_DEATH",
-          "Label": "Unknwon attribute 23",
+          "Label": "Ignore owner's death",
           "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {

@@ -44,17 +44,25 @@ public sealed class SpellChips
     {
         SpellLook look = _look(id);
         StackPanel text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        text.Children.Add(new TextBlock { Text = look.Name, TextTrimming = TextTrimming.CharacterEllipsis });
+        text.Children.Add(new TextBlock
+        {
+            Text = look.Name,
+            TextWrapping = TextWrapping.NoWrap,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        });
         string detail = id + (note.Length > 0 ? "  -  " + note : string.Empty);
         text.Children.Add(new TextBlock
         {
             Text = detail,
             Classes = { "hint" },
+            TextWrapping = TextWrapping.NoWrap,
             TextTrimming = TextTrimming.CharacterEllipsis
         });
-        StackPanel content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        // A dock rather than a horizontal stack, so long notes end in "..." instead of being cut off
+        DockPanel content = new DockPanel();
         content.Children.Add(new Border
         {
+            Margin = new Thickness(0, 0, 8, 0),
             Width = ICON_SIZE,
             Height = ICON_SIZE,
             CornerRadius = new CornerRadius(3),
