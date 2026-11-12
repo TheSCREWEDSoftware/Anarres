@@ -1,3 +1,4 @@
+using Anarres.Core.Dbc;
 using Anarres.Core.Export;
 using Anarres.Core.Settings;
 using Anarres.Core.Spells;
@@ -231,6 +232,9 @@ public sealed class MainWindow : Window
         tools.Items.Add(new Separator());
         tools.Items.Add(Item("Open the project in the _SQL tool", OpenInSqlToolAsync));
         tools.Items.Add(Item("Build _patch MPQ from .dbc files...", BuildPatchFromFilesAsync));
+        tools.Items.Add(Item("_Compare two .dbc files...", CompareFilesAsync));
+        tools.Items.Add(Item("Write a changes _report...", ChangesReportAsync));
+        tools.Items.Add(Item("Client _patches...", ShowPatchesAsync));
         tools.Items.Add(Item("_Open the export folder", () =>
         {
             SystemShell.Open(_session.Settings.ExportFolder);
@@ -485,7 +489,19 @@ public sealed class MainWindow : Window
             files = settings.ExportTables.Count > 0 ? settings.ExportTables : new List<string> { SpellRecord.FILE };
         string message = (unsaved.Count > 0 ? "Save " + string.Join(", ", unsaved) + ", then write " : "Write ") +
                          string.Join(", ", files) + ", and " + string.Join("; ", plan) + ".";
-        if (_options.ConfirmApply && !await Dialogs.ConfirmAsync(this, "Apply", message, "Apply"))
+        // Edited spells that point at things that don't exist are worth a look first, so Apply asks then too
+        List<SpellProblem> problems = new List<SpellProblem>();
+        if (files.Contains(SpellRecord.FILE, StringComparer.OrdinalIgnoreCase) && _spells.Spells != null)
+        {
+            SetStatus("Checking the edited spells...");
+            problems = await _spells.CheckEditedAsync(quiet: true) ?? problems;
+            SetStatus(string.Empty);
+        }
+
+        if (problems.Count > 0)
+            message += "\n\n" + SpellEditorView.Describe(problems, 12) + "\n\nApply anyway?";
+        if ((_options.ConfirmApply || problems.Count > 0) &&
+            !await Dialogs.ConfirmAsync(this, "Apply", message, problems.Count > 0 ? "Apply anyway" : "Apply"))
             return;
 
         await SaveAllAsync();
@@ -519,6 +535,65 @@ public sealed class MainWindow : Window
                                                                  ? " A file may be in use; close WoW and try again."
                                                                  : string.Empty));
         }
+    }
+
+    private async Task CompareFilesAsync()
+    {
+        List<string> before = await Ui.PickFilesAsync(this, "The older .dbc file", "DBC files", new[] { "*.dbc" },
+                                                      many: false);
+        if (before.Count == 0)
+            return;
+        List<string> after = await Ui.PickFilesAsync(this, "The newer .dbc file", "DBC files", new[] { "*.dbc" },
+                                                     many: false);
+        if (after.Count == 0)
+            return;
+        try
+        {
+            DbcTable old = await Task.Run(() => DbcFile.Read(before[0], _session.Definitions));
+            DbcTable current = await Task.Run(() => DbcFile.Read(after[0], _session.Definitions));
+            if (old.Definition.Columns.Count != current.Definition.Columns.Count)
+            {
+                await Dialogs.MessageAsync(this, "Compare", "The two files have different layouts (" +
+                                                            old.Definition.Columns.Count + " and " +
+                                                            current.Definition.Columns.Count + " columns).");
+                return;
+            }
+
+            await new DiffWindow(before[0], old, after[0], current).ShowDialog(this);
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException)
+        {
+            await Dialogs.MessageAsync(this, "Compare", "The files couldn't be read: " + exception.Message);
+        }
+    }
+
+    // Every table edited since import, against its clean file, written as Markdown
+    private async Task ChangesReportAsync()
+    {
+        if (!await EnsureStoreAsync())
+            return;
+        string? path = await Ui.SaveFileAsync(this, "Save the changes report", "changes.md", "Markdown", "md");
+        if (path == null)
+            return;
+        IDbcStore store = await _session.StoreAsync();
+        ProjectSettings settings = _session.Settings;
+        DbcDefinitions definitions = _session.Definitions;
+        SetStatus("Comparing the edited tables with the clean files...");
+        string report = await Task.Run(async () =>
+        {
+            List<string> files = await Deployment.EditedFilesAsync(store, settings, definitions);
+            return await ChangeReport.BuildAsync(store, settings, definitions, files);
+        });
+        await File.WriteAllTextAsync(path, report);
+        SetStatus("Wrote the changes report to " + path + ".");
+        string? problem = ExternalTools.OpenInEditor(_options.TextEditor, path);
+        if (problem != null)
+            SetStatus(problem);
+    }
+
+    private async Task ShowPatchesAsync()
+    {
+        await new PatchesWindow(_session.Settings).ShowDialog(this);
     }
 
     private async Task BuildPatchFromFilesAsync()

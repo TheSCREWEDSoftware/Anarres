@@ -23,6 +23,9 @@ public sealed class DbcEditorView : Grid
     private readonly ListBox _tables = new ListBox();
     private readonly DbcGrid _grid = new DbcGrid();
     private readonly ValueNames _names;
+    // Tables opened from the project this session, shown as tabs above the grid
+    private readonly List<string> _open = new List<string>();
+    private readonly WrapPanel _tabStrip = new WrapPanel { Margin = new Thickness(12, 8, 12, 0) };
     private readonly TextBox _filter = Ui.Clearable(new TextBox
     {
         Watermark = "Filter: an ID, text, or Column=value",
@@ -85,8 +88,10 @@ public sealed class DbcEditorView : Grid
         {
             _session.NotifyChanged();
             ShowInfo();
+            ShowTabs();
         };
         _grid.EditRejected += message => _window.SetStatus(message);
+        _grid.PasteRequested += Paste;
 
         Children.Add(BuildList());
         Border right = Ui.Card(BuildEditor());
@@ -95,6 +100,80 @@ public sealed class DbcEditorView : Grid
     }
 
     public DbcTable? Current => _table;
+
+    // A tab per table opened this session; the shown one is marked, and each closes with its x
+    private void ShowTabs()
+    {
+        _tabStrip.Children.Clear();
+        foreach (string file in _open)
+        {
+            bool current = _table != null && _filePath == null &&
+                           string.Equals(_table.Definition.File, file, StringComparison.OrdinalIgnoreCase);
+            bool modified = _session.ModifiedTables.Any(table => string.Equals(table.Definition.File, file,
+                                                                               StringComparison.OrdinalIgnoreCase));
+            Button tab = new Button
+            {
+                Content = file.Replace("_", "__") + (modified ? " *" : string.Empty),
+                Padding = new Thickness(10, 3),
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            if (current)
+                tab.Classes.Add("accent");
+            tab.Click += async (_, _) => await OpenStoredAsync(file);
+            Button close = new Button
+            {
+                Content = "x",
+                Padding = new Thickness(6, 3),
+                Margin = new Thickness(0, 0, 8, 4)
+            };
+            ToolTip.SetTip(close, "Close the tab; unsaved changes stay until you save or revert them");
+            close.Click += async (_, _) => await CloseTabAsync(file);
+            _tabStrip.Children.Add(tab);
+            _tabStrip.Children.Add(close);
+        }
+    }
+
+    private async Task CloseTabAsync(string file)
+    {
+        _open.RemoveAll(open => string.Equals(open, file, StringComparison.OrdinalIgnoreCase));
+        bool current = _table != null &&
+                       string.Equals(_table.Definition.File, file, StringComparison.OrdinalIgnoreCase);
+        if (current && _open.Count > 0)
+        {
+            await OpenStoredAsync(_open[^1]);
+            return;
+        }
+
+        if (current)
+        {
+            _table = null;
+            _grid.Show(null);
+            ShowInfo();
+        }
+
+        ShowTabs();
+    }
+
+    // Ctrl+V: rows copied from this or another table go in as new rows
+    private void Paste(string text)
+    {
+        if (_table == null)
+            return;
+        PasteResult result = RowPaste.Paste(_table, text);
+        if (result.Added == 0)
+        {
+            _window.SetStatus("Nothing to paste: copy rows (Shift+click, then Ctrl+C) first.");
+            return;
+        }
+
+        _grid.Show(_table);
+        _session.NotifyChanged();
+        ShowInfo();
+        ShowTabs();
+        _window.SetStatus("Pasted " + result.Added + (result.Added == 1 ? " row" : " rows") +
+                          (result.Renumbered > 0 ? "; " + result.Renumbered + " got new IDs because theirs were taken"
+                                                 : string.Empty) + ". Save to keep them.");
+    }
 
     private bool ConfirmDeletes { get; set; } = true;
 
@@ -240,6 +319,8 @@ public sealed class DbcEditorView : Grid
 
         _info.Margin = new Thickness(12, 0, 12, 6);
         DockPanel panel = new DockPanel();
+        DockPanel.SetDock(_tabStrip, Dock.Top);
+        panel.Children.Add(_tabStrip);
         DockPanel.SetDock(toolbar, Dock.Top);
         DockPanel.SetDock(_info, Dock.Top);
         DockPanel.SetDock(_cell, Dock.Bottom);
@@ -258,6 +339,9 @@ public sealed class DbcEditorView : Grid
         {
             _window.SetStatus("Loading " + file + "...");
             _table = await _session.LoadAsync(file);
+            if (!_open.Contains(_table.Definition.File, StringComparer.OrdinalIgnoreCase))
+                _open.Add(_table.Definition.File);
+            ShowTabs();
             await _session.LoadNamingTablesAsync();
             _names.Forget();
             _filePath = null;
@@ -395,6 +479,7 @@ public sealed class DbcEditorView : Grid
                 await _session.SaveAsync(_table);
                 // Saved races, classes or item classes rename the values shown for them
                 _names.Forget();
+                ShowTabs();
                 _window.SetStatus("Saved " + _table.Definition.File + " to the project.");
                 await RefreshCountsAsync();
             }

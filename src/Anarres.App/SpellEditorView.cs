@@ -284,7 +284,21 @@ public sealed class SpellEditorView : Grid
                               "changed spells.");
 
         StackPanel heading = Ui.Horizontal(_headerIcon, Ui.Vertical(2, _title, _subtitle));
-        StackPanel actions = Ui.Horizontal(_finder.Box, _unsaved, sql, world, revert, save);
+        Button tools = new Button { Content = "Spell..." };
+        tools.Flyout = new MenuFlyout
+        {
+            Items =
+            {
+                Item("Compare with clean", CompareAsync),
+                Item("Used by...", UsedByAsync),
+                Item("New from a template...", NewFromTemplateAsync),
+                Item("Find and replace across spells...", FindReplaceAsync),
+                Item("Check edited spells", CheckAsync)
+            }
+        };
+        ToolTip.SetTip(tools, "Compare with the clean Spell.dbc, see what uses this spell, start from a template, " +
+                              "change many spells at once, or check edited spells for mistakes");
+        StackPanel actions = Ui.Horizontal(_finder.Box, _unsaved, tools, sql, world, revert, save);
         actions.HorizontalAlignment = HorizontalAlignment.Right;
         actions.VerticalAlignment = VerticalAlignment.Center;
         Grid header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(16, 12) };
@@ -325,6 +339,7 @@ public sealed class SpellEditorView : Grid
         _tabs.Items.Add(Tab("Targets and Requirements", TargetsTab()));
         _tabs.Items.Add(Tab("Procs and Interrupts", ProcsTab()));
         _tabs.Items.Add(Tab("Items and Reagents", ItemsTab()));
+        _tabs.Items.Add(Tab("Skill", new SkillView(_binding, _session, _window).View));
         _tabs.Items.Add(Tab("Visual", _visual));
         _tabs.Items.Add(Tab("Localisation", LocalesTab()));
         _tabs.Items.Add(new TabItem { Header = "All fields", Content = new AllFieldsView(_binding, definition).View });
@@ -864,6 +879,128 @@ public sealed class SpellEditorView : Grid
         }
 
         _session.NotifyChanged();
+    }
+
+    private DbcTable? _clean;
+
+    // The clean Spell.dbc, read once; null with a message when there's none
+    private async Task<DbcTable?> CleanAsync(bool quiet = false)
+    {
+        _clean ??= await Task.Run(() => DbcMerge.LoadSource(_session.Settings, SpellRecord.FILE,
+                                                            _session.Definitions));
+        if (_clean == null && !quiet)
+            await Dialogs.MessageAsync(_window, "No clean Spell.dbc", "There's no clean Spell.dbc to compare with. " +
+                                                                      "Set the Clean DBC folder, the server's data " +
+                                                                      "folder or the WoW client in Project settings.");
+        return _clean;
+    }
+
+    private async Task CompareAsync()
+    {
+        if (_spells == null || !_binding.IsBound || await CleanAsync() is not { } clean)
+            return;
+        CompareWindow dialog = new CompareWindow(clean, _spells, _binding.Row, _session.NamingTable);
+        await dialog.ShowDialog(_window);
+        if (!dialog.Reverted)
+            return;
+        _binding.Refresh();
+        Edited();
+    }
+
+    private async Task NewFromTemplateAsync()
+    {
+        if (_spells == null || await new TemplateWindow().ShowDialog<SpellTemplate?>(_window) is not { } template)
+            return;
+        uint id = _spells.NextFreeKey();
+        int row = _spells.AddRow(id);
+        CopyLanguageMasks(row);
+        SpellTemplates.Apply(template, _spells, row);
+        _spells.BreakUndoStep();
+        AfterAdd(id);
+    }
+
+    // The rows that differ from the clean Spell.dbc, new spells included, checked for mistakes
+    public async Task<List<SpellProblem>?> CheckEditedAsync(bool quiet = false)
+    {
+        if (_spells == null || await CleanAsync(quiet) is not { } clean)
+            return null;
+        DbcTable spells = _spells;
+        foreach (string file in new[] { "SpellCastTimes.dbc", "SpellDuration.dbc", "SpellRange.dbc", "SpellIcon.dbc",
+                                        "SpellVisual.dbc", "SpellRuneCost.dbc", "SpellDifficulty.dbc",
+                                        "SpellDescriptionVariables.dbc", "SpellCategory.dbc", "SpellRadius.dbc" })
+            _checkTables[file] = await _session.TryLoadAsync(file) ??
+                                 await Task.Run(() => DbcMerge.LoadSource(_session.Settings, file,
+                                                                          _session.Definitions));
+        List<int> rows = await Task.Run(() => DbcMerge.Changed(clean, spells));
+        return SpellValidator.Check(spells, rows, file => _checkTables.TryGetValue(file, out DbcTable? table)
+                                                              ? table
+                                                              : null);
+    }
+
+    private readonly Dictionary<string, DbcTable?> _checkTables =
+        new Dictionary<string, DbcTable?>(StringComparer.OrdinalIgnoreCase);
+
+    private async Task CheckAsync()
+    {
+        _window.SetStatus("Checking the edited spells...");
+        List<SpellProblem>? problems = await CheckEditedAsync();
+        _window.SetStatus(string.Empty);
+        if (problems == null)
+            return;
+        await Dialogs.MessageAsync(_window, "Check edited spells",
+                                   problems.Count == 0
+                                       ? "Nothing looks wrong with the spells that differ from the clean Spell.dbc."
+                                       : Describe(problems));
+    }
+
+    // One line per problem, by spell
+    public static string Describe(List<SpellProblem> problems, int most = 40)
+    {
+        IEnumerable<string> lines = problems.Take(most)
+                                            .Select(problem => problem.SpellId + " " + problem.SpellName + ": " +
+                                                               problem.Text);
+        return problems.Count + (problems.Count == 1 ? " thing looks" : " things look") + " wrong:\n\n" +
+               string.Join("\n", lines) + (problems.Count > most ? "\n..." : string.Empty);
+    }
+
+    private void CopyLanguageMasks(int row)
+    {
+        // The language masks say which translations the client may show; they're taken from an existing spell
+        foreach (string mask in new[] { "Name_Lang_Mask", "NameSubtext_Lang_Mask", "Description_Lang_Mask",
+                                        "AuraDescription_Lang_Mask" })
+        {
+            int column = _spells!.Definition.IndexOf(mask);
+            if (column >= 0 && row > 0)
+                _spells.SetRaw(row, column, _spells.GetRaw(0, column));
+        }
+    }
+
+    private async Task UsedByAsync()
+    {
+        if (_spells == null || !_binding.IsBound)
+            return;
+        DbcTable spells = _spells;
+        int row = _binding.Row;
+        SpellRecord spell = new SpellRecord(spells, row);
+        List<SpellReference> references = await Task.Run(() => SpellReferences.Find(spells, row));
+        uint? open = await new UsedByWindow(spell.Id, spell.Name, references).ShowDialog<uint?>(_window);
+        if (open is { } id)
+            Select(id);
+    }
+
+    private async Task FindReplaceAsync()
+    {
+        if (_spells == null)
+            return;
+        FindReplaceWindow dialog = new FindReplaceWindow(_spells, _search.Text ?? string.Empty);
+        int changed = await dialog.ShowDialog<int>(_window);
+        if (changed == 0)
+            return;
+        _binding.Refresh();
+        Filter();
+        Edited();
+        _window.SetStatus("Changed " + changed + (changed == 1 ? " spell" : " spells") +
+                          ". Save to keep it; Undo takes it back.");
     }
 
     private void NewSpell()

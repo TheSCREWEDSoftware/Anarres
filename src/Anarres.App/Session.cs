@@ -127,7 +127,8 @@ public sealed class Session : IDisposable
     // Tables that name values (races, classes, item classes...), from the project or else the clean files
     public static readonly string[] NamingTables =
     {
-        "ChrRaces.dbc", "ChrClasses.dbc", "ItemClass.dbc", "ItemSubClass.dbc", "TotemCategory.dbc"
+        "ChrRaces.dbc", "ChrClasses.dbc", "ItemClass.dbc", "ItemSubClass.dbc", "TotemCategory.dbc",
+        "SkillLine.dbc"
     };
 
     private readonly Dictionary<string, DbcTable?> _naming =

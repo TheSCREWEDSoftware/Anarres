@@ -324,11 +324,38 @@ public sealed class DbcGrid : Grid
         _horizontal.LargeChange = Math.Max(NUMBER_WIDTH, viewWidth - NUMBER_WIDTH);
     }
 
-    private void Select(int index, int column)
+    // The other end of a Shift selection; equals SelectedIndex when one row is selected
+    private int _anchor = -1;
+
+    // Rows of the table in the selected range, in the order shown
+    public List<int> SelectedRows
+    {
+        get
+        {
+            if (SelectedIndex < 0 || _rows.Count == 0)
+                return new List<int>();
+            int from = Math.Clamp(Math.Min(_anchor < 0 ? SelectedIndex : _anchor, SelectedIndex), 0, _rows.Count - 1);
+            int to = Math.Clamp(Math.Max(_anchor < 0 ? SelectedIndex : _anchor, SelectedIndex), 0, _rows.Count - 1);
+            return _rows.GetRange(from, to - from + 1);
+        }
+    }
+
+    // Ctrl+V with rows on the clipboard; the editor decides how they go in
+    public event Action<string>? PasteRequested;
+
+    private bool InRange(int index)
+    {
+        int anchor = _anchor < 0 ? SelectedIndex : _anchor;
+        return index >= Math.Min(anchor, SelectedIndex) && index <= Math.Max(anchor, SelectedIndex);
+    }
+
+    private void Select(int index, int column, bool extend = false)
     {
         if (_table == null || _rows.Count == 0)
             return;
         SelectedIndex = Math.Clamp(index, 0, _rows.Count - 1);
+        if (!extend || _anchor < 0)
+            _anchor = SelectedIndex;
         SelectedColumn = _order.Contains(column) ? column : Step(column, 0);
         ScrollIntoView();
         _surface.InvalidateVisual();
@@ -455,11 +482,43 @@ public sealed class DbcGrid : Grid
         }
     }
 
+    // One cell, or with several rows selected, those rows as tab-separated text under a line of column names
     private async void Copy()
     {
         if (_table == null || SelectedRow < 0 || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard)
             return;
-        await clipboard.SetTextAsync(_table.GetText(SelectedRow, SelectedColumn));
+        List<int> rows = SelectedRows;
+        if (rows.Count <= 1)
+        {
+            await clipboard.SetTextAsync(_table.GetText(SelectedRow, SelectedColumn));
+            return;
+        }
+
+        await clipboard.SetTextAsync(RowsText(_table, rows));
+    }
+
+    // Every column of the rows, so pasting brings back whole rows
+    public static string RowsText(DbcTable table, IEnumerable<int> rows)
+    {
+        System.Text.StringBuilder text = new System.Text.StringBuilder();
+        text.Append(string.Join('\t', table.Definition.Columns.Select(column => column.Name))).Append('\n');
+        foreach (int row in rows)
+        {
+            IEnumerable<string> cells = Enumerable.Range(0, table.Definition.Columns.Count)
+                                                  .Select(column => table.GetText(row, column).Replace('\t', ' ')
+                                                                         .Replace("\n", "\\n"));
+            text.Append(string.Join('\t', cells)).Append('\n');
+        }
+
+        return text.ToString();
+    }
+
+    private async Task PasteAsync()
+    {
+        if (TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard ||
+            await clipboard.GetTextAsync() is not { Length: > 0 } text)
+            return;
+        PasteRequested?.Invoke(text);
     }
 
     // Draws the visible cells and handles the pointer and keyboard for the grid
@@ -514,7 +573,7 @@ public sealed class DbcGrid : Grid
                     int row = _grid._rows[index];
                     double top = HEADER_HEIGHT + index * _grid.RowHeight - offsetY;
                     Rect rowRect = new Rect(0, top, Bounds.Width, _grid.RowHeight);
-                    if (index == _grid.SelectedIndex)
+                    if (_grid.InRange(index))
                         context.FillRectangle(selectedRow, rowRect);
                     else if (table.ChangedKeys.Contains(table.Key(row)))
                         context.FillRectangle(changed, rowRect);
@@ -631,7 +690,7 @@ public sealed class DbcGrid : Grid
 
             if (index >= _grid._rows.Count)
                 return;
-            _grid.Select(index, column);
+            _grid.Select(index, column, (e.KeyModifiers & KeyModifiers.Shift) != 0);
             if (e.ClickCount == 2)
                 _grid.BeginEdit();
         }
@@ -731,13 +790,14 @@ public sealed class DbcGrid : Grid
                 return;
             int page = Math.Max(1, (int)((Bounds.Height - HEADER_HEIGHT) / _grid.RowHeight) - 1);
             bool control = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
+            bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
             switch (e.Key)
             {
                 case Key.Up:
-                    _grid.Select(_grid.SelectedIndex - 1, _grid.SelectedColumn);
+                    _grid.Select(_grid.SelectedIndex - 1, _grid.SelectedColumn, shift);
                     break;
                 case Key.Down:
-                    _grid.Select(_grid.SelectedIndex + 1, _grid.SelectedColumn);
+                    _grid.Select(_grid.SelectedIndex + 1, _grid.SelectedColumn, shift);
                     break;
                 case Key.Left:
                     _grid.Select(_grid.SelectedIndex, _grid.Step(_grid.SelectedColumn, -1));
@@ -765,6 +825,15 @@ public sealed class DbcGrid : Grid
                 case Key.C when control:
                     _grid.Copy();
                     break;
+                case Key.V when control:
+                    _ = _grid.PasteAsync();
+                    break;
+                case Key.A when control:
+                {
+                    _grid._anchor = 0;
+                    _grid.Select(_grid._rows.Count - 1, _grid.SelectedColumn, extend: true);
+                    break;
+                }
                 default:
                     return;
             }
