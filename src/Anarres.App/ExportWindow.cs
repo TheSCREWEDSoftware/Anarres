@@ -191,6 +191,8 @@ public sealed class ExportWindow : Window
                                                                                _session.Definitions, server, patch,
                                                                                progress));
             List<string> done = new List<string> { "Wrote " + result.DbcFiles.Count + " .dbc files." };
+            if (result.BackedUp > 0)
+                done.Add("Kept the server's own copy of " + result.BackedUp + " in " + Deployment.BACKUP_FOLDER + ".");
             if (result.ServerFolder != null)
                 done.Add("Copied them to the server; restart the worldserver.");
             if (result.PatchPath != null)

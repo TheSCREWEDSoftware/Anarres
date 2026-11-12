@@ -209,6 +209,32 @@ public static class StoreTests
                      "the first copy stays the backup");
     }
 
+    // Export copies to the server too, so it keeps the server's own file first, and leaves no half-written files
+    public static async Task ExportKeepsTheServersFilesFirst()
+    {
+        using TempFolder temp = new TempFolder();
+        string dbc = Directory.CreateDirectory(Path.Combine(temp.File("server"), "dbc")).FullName;
+        File.WriteAllText(Path.Combine(dbc, "Sample.dbc"), "the server's own file");
+
+        using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
+        await store.ImportAsync(DbcTests.SampleTable());
+        ProjectSettings settings = new ProjectSettings
+        {
+            ExportFolder = temp.File("Export"),
+            ServerDbcFolder = temp.File("server")
+        };
+
+        ExportResult result = await Deployment.ExportAsync(store, settings, new[] { "Sample.dbc" }, Definitions(),
+                                                           copyToServer: true, buildPatch: false);
+        Assert.Equal(1, result.BackedUp, "one file kept");
+        Assert.Equal("the server's own file",
+                     File.ReadAllText(Path.Combine(settings.ExportFolder, Deployment.BACKUP_FOLDER, "Sample.dbc")),
+                     "the server's copy kept");
+        Assert.Equal(3, DbcFile.Read(Path.Combine(dbc, "Sample.dbc"), Definitions()).Rows.Count, "server replaced");
+        Assert.Equal(0, Directory.GetFiles(temp.Path, "*.anarres-new", SearchOption.AllDirectories).Length,
+                     "no temporary files left");
+    }
+
     // Without a Clean DBC folder the server's files are clean, even after Apply; Anarres's own patch never is
     public static async Task FindsCleanFilesWithoutACleanFolder()
     {

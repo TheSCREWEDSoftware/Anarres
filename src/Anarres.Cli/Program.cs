@@ -171,6 +171,9 @@ try
             Console.WriteLine();
             Console.WriteLine("Wrote " + result.DbcFiles.Count + " files to " +
                               Path.Combine(settings.ExportFolder, ClientArchives.DBC_FOLDER) + ".");
+            if (result.BackedUp > 0)
+                Console.WriteLine("Kept the server's own copy of " + result.BackedUp + " files in " +
+                                  Path.Combine(settings.ExportFolder, Deployment.BACKUP_FOLDER) + ".");
             if (result.ServerFolder != null)
                 Console.WriteLine("Copied them to " + result.ServerFolder + ". Restart the worldserver to load them.");
             if (result.PatchPath != null)

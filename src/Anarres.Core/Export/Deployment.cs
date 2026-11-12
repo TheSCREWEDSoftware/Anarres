@@ -8,7 +8,8 @@ namespace Anarres.Core.Export;
 // Skipped: not imported, because the world database has no table for it or the file couldn't be read (Problem)
 public sealed record ImportResult(string File, int Rows, bool Inferred, bool Skipped = false, string? Problem = null);
 
-public sealed record ExportResult(List<string> DbcFiles, string? ServerFolder, string? PatchPath);
+// BackedUp counts the server files copied aside before they were first replaced
+public sealed record ExportResult(List<string> DbcFiles, string? ServerFolder, string? PatchPath, int BackedUp = 0);
 
 // What Apply did, one line a step, and what it couldn't do
 public sealed record ApplyResult(List<string> Done, List<string> Problems);
@@ -91,18 +92,22 @@ public static class Deployment
                 FillLanguages(table, settings, definitions);
             byte[] data = DbcFile.Write(table);
             string path = Path.Combine(dbcFolder, table.Definition.File);
-            await File.WriteAllBytesAsync(path, data, cancellation);
+            await WriteSafelyAsync(path, data, cancellation);
             written.Add(path);
             patch.Add((ClientArchives.DBC_FOLDER + "\\" + table.Definition.File, data));
         }
 
         string? server = null;
+        int backedUp = 0;
         string serverDbc = settings.ServerDbc();
         if (copyToServer && serverDbc.Length > 0)
         {
             Directory.CreateDirectory(serverDbc);
+            // Export and Apply alike keep the server's own files before replacing them the first time
+            if (settings.ApplyBackupServer)
+                backedUp = BackUpServerFiles(settings, written.Select(Path.GetFileName).OfType<string>(), serverDbc);
             foreach (string path in written)
-                File.Copy(path, Path.Combine(serverDbc, Path.GetFileName(path)), overwrite: true);
+                ReplaceSafely(path, Path.Combine(serverDbc, Path.GetFileName(path)));
             server = serverDbc;
         }
 
@@ -114,8 +119,24 @@ public static class Deployment
         }
 
         progress?.Report((string.Empty, 1));
-        return new ExportResult(written, server, patchPath);
+        return new ExportResult(written, server, patchPath, backedUp);
     }
+
+    // Written beside the target and then swapped in, so a crash or a full disk never leaves half a file
+    private static async Task WriteSafelyAsync(string path, byte[] data, CancellationToken cancellation)
+    {
+        string temporary = path + TEMPORARY_EXTENSION;
+        await File.WriteAllBytesAsync(temporary, data, cancellation);
+        File.Move(temporary, path, overwrite: true);
+    }
+
+    private static void ReplaceSafely(string source, string target)
+    {
+        string temporary = target + TEMPORARY_EXTENSION;
+        File.Copy(source, temporary, overwrite: true);
+        File.Move(temporary, target, overwrite: true);
+    }
+
 
     // Empty language columns filled from each locale folder the client has, so one file carries every language
     public static int FillLanguages(DbcTable table, ProjectSettings settings, DbcDefinitions definitions)
@@ -186,6 +207,8 @@ public static class Deployment
     }
 
     public const string BACKUP_FOLDER = "server-backup";
+    // Files are written under this name beside their target, then swapped in
+    private const string TEMPORARY_EXTENSION = ".anarres-new";
 
     // The one-click deploy: tables written, server copies backed up and replaced, patch built, and the chosen extras
     public static async Task<ApplyResult> ApplyAsync(IDbcStore store, ProjectSettings settings,
@@ -203,16 +226,11 @@ public static class Deployment
         if (settings.ApplyPatch && settings.ClientData().Length == 0)
             problems.Add("No client folder is set, so no patch was built.");
 
-        if (toServer && settings.ApplyBackupServer)
-        {
-            int kept = BackUpServerFiles(settings, files, serverDbc);
-            if (kept > 0)
-                done.Add("Kept the server's own copy of " + kept + (kept == 1 ? " file" : " files") + " in " +
-                         Path.Combine(settings.ExportFolder, BACKUP_FOLDER) + ".");
-        }
-
         ExportResult result = await ExportAsync(store, settings, files, definitions, toServer, patch, progress,
                                                 cancellation);
+        if (result.BackedUp > 0)
+            done.Add("Kept the server's own copy of " + result.BackedUp + (result.BackedUp == 1 ? " file" : " files") +
+                     " in " + Path.Combine(settings.ExportFolder, BACKUP_FOLDER) + ".");
         done.Add("Wrote " + result.DbcFiles.Count + " .dbc " + (result.DbcFiles.Count == 1 ? "file" : "files") +
                  " to " + Path.Combine(settings.ExportFolder, ClientArchives.DBC_FOLDER) + ".");
         if (result.ServerFolder != null)
