@@ -60,7 +60,7 @@ public sealed class ImportWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         _folder.Text = session.Settings.SourceDbcFolder;
         _client.Text = session.Settings.ClientDataFolder;
-        _locale = new LocalePicker(session.Settings.Locale);
+        _locale = new LocalePicker(session.Settings.Locale, session.Settings.AllLocales);
         _locale.Detect(session.Settings.ClientDataFolder);
         _client.TextChanged += (_, _) => _locale.Detect(_client.Text ?? string.Empty);
         _fromFolder.IsChecked = true;
@@ -292,10 +292,13 @@ public sealed class ImportWindow : Window
             {
                 string data = ProjectSettings.ResolveClientData(_client.Text ?? string.Empty);
                 string locale = _locale.Locale;
+                List<string> others = _locale.OtherLocales;
                 _session.Settings.ClientDataFolder = (_client.Text ?? string.Empty).Trim();
                 _session.Settings.Locale = locale;
+                _session.Settings.AllLocales = _locale.All;
                 results = await Task.Run(() => Deployment.ImportClientAsync(store, data, locale, _session.Definitions,
-                                                                             chosen, progress));
+                                                                             chosen, progress,
+                                                                             otherLocales: others));
             }
 
             Imported = true;

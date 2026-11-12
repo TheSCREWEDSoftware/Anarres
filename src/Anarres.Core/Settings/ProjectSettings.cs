@@ -70,6 +70,9 @@ public sealed class ProjectSettings
 
     public string Locale { get; set; } = DEFAULT_LOCALE;
 
+    // Every locale the client has: Locale is read first, the others fill their own language columns
+    public bool AllLocales { get; set; }
+
     // Exported .dbc files are written here, under DBFilesClient
     public string ExportFolder { get; set; } = Path.Combine(DefaultFolder, "Export");
 

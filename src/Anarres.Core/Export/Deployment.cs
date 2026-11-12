@@ -1,6 +1,7 @@
 using Anarres.Core.Dbc;
 using Anarres.Core.Mpq;
 using Anarres.Core.Settings;
+using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 
 namespace Anarres.Core.Export;
@@ -42,15 +43,39 @@ public static class Deployment
         return results;
     }
 
-    // DBFilesClient files straight out of the client's MPQs, the newest copy of each
+    // The client's newest DBFilesClient files; otherLocales fill the other language columns from their own folders
     public static async Task<List<ImportResult>> ImportClientAsync(IDbcStore store, string dataFolder, string locale,
                                                                    DbcDefinitions definitions,
                                                                    IReadOnlyCollection<string>? only = null,
                                                                    IProgress<(string File, double Done)>? progress =
                                                                        null,
-                                                                   CancellationToken cancellation = default)
+                                                                   CancellationToken cancellation = default,
+                                                                   IReadOnlyList<string>? otherLocales = null)
     {
         using ClientArchives archives = ClientArchives.Open(dataFolder, locale);
+        // Each other locale's archives are opened once, then read for every table with text
+        List<(string Locale, ClientArchives Archives)> others = (otherLocales ?? Array.Empty<string>())
+                                                                 .Where(other => other != locale)
+                                                                 .Select(other => (other,
+                                                                                   ClientArchives.Open(dataFolder,
+                                                                                                       other)))
+                                                                 .ToList();
+        try
+        {
+            return await ImportClientTablesAsync(store, archives, others, definitions, only, progress, cancellation);
+        }
+        finally
+        {
+            foreach ((string _, ClientArchives open) in others)
+                open.Dispose();
+        }
+    }
+
+    private static async Task<List<ImportResult>> ImportClientTablesAsync(
+        IDbcStore store, ClientArchives archives, List<(string Locale, ClientArchives Archives)> others,
+        DbcDefinitions definitions, IReadOnlyCollection<string>? only,
+        IProgress<(string File, double Done)>? progress, CancellationToken cancellation)
+    {
         List<string> names = archives.ListDbcFiles()
                                      .Where(name => only == null ||
                                                     only.Contains(Path.GetFileName(name),
@@ -62,8 +87,21 @@ public static class Deployment
             if (data == null)
                 continue;
             string file = Path.GetFileName(names[i]);
-            results.Add(await ImportTableAsync(store, () => DbcFile.Read(data, file, definitions), file, i,
-                                               names.Count, progress, cancellation));
+            results.Add(await ImportTableAsync(store, () =>
+            {
+                DbcTable table = DbcFile.Read(data, file, definitions);
+                if (others.Count > 0 && LocaleMerge.HasText(table.Definition))
+                {
+                    foreach ((string other, ClientArchives otherArchives) in others)
+                    {
+                        if (LocaleMerge.Read(otherArchives, other, file, definitions) is { } copy)
+                            LocaleMerge.Apply(table, copy, onlyEmpty: true);
+                    }
+                }
+
+                table.ClearUndo();
+                return table;
+            }, file, i, names.Count, progress, cancellation));
         }
 
         return results;

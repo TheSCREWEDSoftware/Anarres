@@ -105,7 +105,7 @@ public sealed class SettingsWindow : Window
         _naming.SelectedIndex = settings.MySqlNaming == TableNaming.AzerothCore ? 1 : 0;
         _source.Text = settings.SourceDbcFolder;
         _client.Text = settings.ClientDataFolder;
-        _locale = new LocalePicker(settings.Locale);
+        _locale = new LocalePicker(settings.Locale, settings.AllLocales);
         _locale.Detect(settings.ClientDataFolder);
         _export.Text = settings.ExportFolder;
         _server.Text = settings.ServerDbcFolder;
@@ -238,6 +238,7 @@ public sealed class SettingsWindow : Window
             SourceDbcFolder = (_source.Text ?? string.Empty).Trim(),
             ClientDataFolder = (_client.Text ?? string.Empty).Trim(),
             Locale = _locale.Locale,
+            AllLocales = _locale.All,
             ExportFolder = (_export.Text ?? string.Empty).Trim(),
             ServerDbcFolder = (_server.Text ?? string.Empty).Trim(),
             PatchName = string.IsNullOrWhiteSpace(_patch.Text) ? ProjectSettings.DEFAULT_PATCH_NAME

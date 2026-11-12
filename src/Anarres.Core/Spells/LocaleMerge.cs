@@ -24,6 +24,13 @@ public static class LocaleMerge
                                      DbcDefinitions? definitions = null)
     {
         using ClientArchives archives = ClientArchives.Open(dataFolder, locale, skip);
+        return Read(archives, locale, file, definitions);
+    }
+
+    // The same from archives already open, for reading many files from one locale
+    public static LocaleSource? Read(ClientArchives archives, string locale, string file,
+                                     DbcDefinitions? definitions = null)
+    {
         byte[]? data = archives.TryRead(ClientArchives.DBC_FOLDER + "\\" + Path.GetFileName(file));
         if (data is not { Length: > 0 })
             return null;
@@ -64,6 +71,11 @@ public static class LocaleMerge
         }
 
         return changed;
+    }
+
+    public static bool HasText(DbcDefinition definition)
+    {
+        return TextFields(definition).Count > 0;
     }
 
     // The first column of each text field (Name_Lang_enUS, Description_Lang_enUS...)
