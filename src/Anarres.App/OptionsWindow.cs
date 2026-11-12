@@ -36,6 +36,13 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _colours = new ComboBox { Width = 380 };
     private readonly ThemePreview _preview = new ThemePreview { Margin = new Thickness(0, 8, 0, 0) };
     private readonly ComboBox _fontSize = new ComboBox { Width = 120 };
+    private readonly ComboBox _font = new ComboBox { Width = 260 };
+    private readonly ComboBox _themeSize = new ComboBox { Width = 200 };
+    private readonly ComboBox _themeFont = new ComboBox { Width = 260 };
+    private readonly TextBlock _themeTextTitle = new TextBlock { FontWeight = Avalonia.Media.FontWeight.SemiBold };
+    private Dictionary<string, ThemeText> _themeText = new Dictionary<string, ThemeText>();
+    private List<string> _fonts = new List<string>();
+    private string? _textTheme;
     private readonly ComboBox _gridFontSize = new ComboBox { Width = 120 };
     private readonly ComboBox _locale = new ComboBox { ItemsSource = SpellRecord.ClientLocales, Width = 120 };
     private readonly CheckBox _rank = new CheckBox { Content = "Show the rank beside each name in the spell list" };
@@ -90,6 +97,17 @@ public sealed class OptionsWindow : Window
         _look.SelectedIndex = (int)_options.Look;
         _fontSize.ItemsSource = AppOptions.FontSizes.Select(Size).ToList();
         _fontSize.SelectedIndex = Math.Max(0, Array.IndexOf(AppOptions.FontSizes, _options.FontSize));
+        _themeText = _options.ThemeText.ToDictionary(entry => entry.Key,
+                                                     entry => new ThemeText
+                                                     {
+                                                         FontSize = entry.Value.FontSize,
+                                                         FontFamily = entry.Value.FontFamily
+                                                     }, StringComparer.OrdinalIgnoreCase);
+        _fonts = SystemFonts();
+        _font.ItemsSource = new[] { SYSTEM_FONT }.Concat(_fonts).ToList();
+        _font.SelectedIndex = Math.Max(0, _fonts.IndexOf(_options.FontFamily) + 1);
+        _themeSize.ItemsSource = new[] { SAME_FOR_ALL }.Concat(AppOptions.FontSizes.Select(Size)).ToList();
+        _themeFont.ItemsSource = new[] { SAME_FOR_ALL }.Concat(_fonts).ToList();
         _gridFontSize.ItemsSource = AppOptions.GridFontSizes.Select(Size).ToList();
         _gridFontSize.SelectedIndex = Math.Max(0, Array.IndexOf(AppOptions.GridFontSizes, _options.GridFontSize));
         _locale.SelectedItem = SpellRecord.ClientLocales.Contains(_options.DisplayLocale) ? _options.DisplayLocale
@@ -196,7 +214,11 @@ public sealed class OptionsWindow : Window
     {
         ListColours(_options.Colours);
         _look.SelectionChanged += (_, _) => ShowPreview();
-        _colours.SelectionChanged += (_, _) => ShowPreview();
+        _colours.SelectionChanged += (_, _) =>
+        {
+            ShowPreview();
+            ShowThemeText();
+        };
         _colours.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((name, _) =>
         {
             StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
@@ -209,19 +231,90 @@ public sealed class OptionsWindow : Window
 
         Button create = Ui.AsyncButton("New theme...", NewThemeAsync);
         Button edit = Ui.AsyncButton("Edit theme...", EditThemeAsync);
+        ToolTip.SetTip(edit, "Change the colours of the theme chosen under Colours");
         Button folder = Ui.Button("Open themes folder", () => SystemShell.Open(_themeStore.Folder));
         ShowPreview();
+        ShowThemeText();
         return Page(Ui.Title("Theme"),
                     Ui.Row("Look", _look),
                     Ui.Row("Colours", _colours),
                     _preview,
                     Ui.Horizontal(create, edit, folder),
-                    Ui.Hint("Colours offers ready-made themes and your own. A theme sets every colour on top of a " +
-                            "dark or light base, and its base wins over the look above. Editing a ready-made " +
-                            "theme makes a copy. Themes are .json files in the themes folder, in the same format " +
-                            "as Urras's, so they can be shared between the two."),
-                    Ui.Title("Text"),
-                    Ui.Row("Text size", _fontSize));
+                    Ui.Hint("Colours offers the built-in colours, ready-made themes and your own. A theme sets " +
+                            "every colour on top of a dark or light base, and its base wins over the look above. " +
+                            "Edit changes the theme chosen under Colours, built-in and ready-made ones included; " +
+                            "Restore defaults in the editor brings back their original colours. Themes are .json " +
+                            "files in the themes folder, in the same format as Urras's, so they can be shared."),
+                    Ui.Title("Text, every theme"),
+                    Ui.Row("Text size", _fontSize),
+                    Ui.Row("Font", _font),
+                    _themeTextTitle,
+                    Ui.Row("Text size", _themeSize),
+                    Ui.Row("Font", _themeFont),
+                    Ui.Horizontal(Ui.Button("Use this theme's text for every theme", UseThemeTextEverywhere)),
+                    Ui.Hint("A theme can have its own text size and font; \"" + SAME_FOR_ALL + "\" follows " +
+                            "the settings above. The button makes this theme's choice the one for every theme " +
+                            "and clears the other themes' own choices. Fonts are the ones installed on this " +
+                            "computer."));
+    }
+
+    private const string SYSTEM_FONT = "System default";
+    private const string SAME_FOR_ALL = "Same as every theme";
+
+    // Fonts installed on this computer, by name
+    private static List<string> SystemFonts()
+    {
+        try
+        {
+            return Avalonia.Media.FontManager.Current.SystemFonts.Select(family => family.Name)
+                           .Where(name => name.Length > 0)
+                           .Distinct(StringComparer.OrdinalIgnoreCase)
+                           .Order(StringComparer.OrdinalIgnoreCase)
+                           .ToList();
+        }
+        catch (InvalidOperationException)
+        {
+            return new List<string>();
+        }
+    }
+
+    private string ThemeKey => _colours.SelectedItem as string ?? AppOptions.BUILT_IN_COLOURS;
+
+    // Keeps the shown theme's own text choices, then shows the newly chosen theme's
+    private void ShowThemeText()
+    {
+        KeepThemeText();
+        _textTheme = ThemeKey;
+        _themeTextTitle.Text = "Text, this theme only: " + _textTheme;
+        ThemeText? text = _themeText.GetValueOrDefault(_textTheme);
+        _themeSize.SelectedIndex = text?.FontSize is { } size
+                                       ? Math.Max(0, Array.IndexOf(AppOptions.FontSizes, size) + 1)
+                                       : 0;
+        _themeFont.SelectedIndex = !string.IsNullOrEmpty(text?.FontFamily)
+                                       ? Math.Max(0, _fonts.IndexOf(text.FontFamily) + 1)
+                                       : 0;
+    }
+
+    private void KeepThemeText()
+    {
+        if (_textTheme == null)
+            return;
+        _themeText[_textTheme] = new ThemeText
+        {
+            FontSize = _themeSize.SelectedIndex > 0 ? AppOptions.FontSizes[_themeSize.SelectedIndex - 1] : null,
+            FontFamily = _themeFont.SelectedIndex > 0 ? _fonts[_themeFont.SelectedIndex - 1] : null
+        };
+    }
+
+    private void UseThemeTextEverywhere()
+    {
+        if (_themeSize.SelectedIndex > 0)
+            _fontSize.SelectedIndex = _themeSize.SelectedIndex - 1;
+        if (_themeFont.SelectedIndex > 0)
+            _font.SelectedIndex = _themeFont.SelectedIndex;
+        _themeText.Clear();
+        _textTheme = null;
+        ShowThemeText();
     }
 
     private static StackPanel Page(params Control[] controls)
@@ -237,11 +330,15 @@ public sealed class OptionsWindow : Window
     // Built-in colours first, then the presets, then each theme file, with the given one chosen
     private void ListColours(string? chosen)
     {
-        List<Theme> listed = ThemePresets.Names.Select(name => ThemePresets.Find(name)!)
-                                     .Concat(_themeStore.LoadAll()).ToList();
         _listedThemes = new Dictionary<string, Theme>(StringComparer.OrdinalIgnoreCase);
-        foreach (Theme theme in listed)
-            _listedThemes.TryAdd(theme.Name, theme);
+        foreach (string preset in ThemePresets.Names)
+            _listedThemes[preset] = ThemePresets.Find(preset)!;
+        // A file named after a preset is your version of it; Dark and Light files are the built-in colours
+        foreach (Theme theme in _themeStore.LoadAll())
+        {
+            if (theme.Name is not (Anarres.Core.Settings.Theme.DARK or Anarres.Core.Settings.Theme.LIGHT))
+                _listedThemes[theme.Name] = theme;
+        }
         List<string> names = new List<string> { AppOptions.BUILT_IN_COLOURS };
         names.AddRange(_listedThemes.Keys);
         _colours.ItemsSource = names;
@@ -264,7 +361,7 @@ public sealed class OptionsWindow : Window
 
     private void ShowPreview()
     {
-        _preview.Show(SelectedTheme() ?? Anarres.Core.Settings.Theme.BuiltIn(ChosenBase()));
+        _preview.Show(SelectedTheme() ?? _themeStore.BuiltIn(ChosenBase()));
     }
 
     // A new theme starts as a copy of the chosen colours
@@ -297,39 +394,38 @@ public sealed class OptionsWindow : Window
         await EditThemeAsync();
     }
 
+    // Edits the chosen theme in place; built-in and ready-made ones are saved as your version of them
     private async Task EditThemeAsync()
     {
-        if (_colours.SelectedItem is not string name || name == AppOptions.BUILT_IN_COLOURS)
+        string chosen = _colours.SelectedItem as string ?? AppOptions.BUILT_IN_COLOURS;
+        Theme theme;
+        string about;
+        if (chosen == AppOptions.BUILT_IN_COLOURS)
         {
-            await Dialogs.MessageAsync(this, "Edit theme", "Choose a theme under Colours first, or make a new one.");
-            return;
+            theme = _themeStore.BuiltIn(ChosenBase()).Copy(ChosenBase() == ThemeBase.Light
+                                                               ? Anarres.Core.Settings.Theme.LIGHT
+                                                               : Anarres.Core.Settings.Theme.DARK);
+            about = "the built-in " + theme.Name + " colours (Look above picks Dark or Light)";
         }
-
-        // A ready-made theme stays as it is; editing it makes a copy to change
-        if (ThemePresets.Find(name) is { } preset)
+        else if (ThemePresets.IsPreset(chosen))
         {
-            string copyName = name + " (copy)";
-            for (int number = 2; _themeStore.Find(copyName) != null; number++)
-                copyName = name + " (copy " + number + ")";
-            try
-            {
-                _themeStore.Save(preset.Copy(copyName));
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                await Dialogs.MessageAsync(this, "Edit theme", "The copy couldn't be saved: " + exception.Message);
-                return;
-            }
-
-            name = copyName;
+            theme = (_themeStore.Find(chosen) ?? ThemePresets.Find(chosen)!).Copy(chosen);
+            about = chosen + ", a ready-made theme";
         }
-
-        if (_themeStore.Find(name) is not { } theme)
-            return;
-        if (await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this))
-            ListColours(name);
+        else if (_themeStore.Find(chosen) is { } custom)
+        {
+            theme = custom;
+            about = chosen + ", your theme";
+        }
         else
-            ListColours(_colours.SelectedItem as string);
+        {
+            return;
+        }
+
+        ThemeEditorWindow editor = new ThemeEditorWindow(theme, _themeStore, about);
+        await editor.ShowDialog<bool>(this);
+        ListColours(chosen);
+        ShowPreview();
     }
 
     private void ShowFailure(Exception exception)
@@ -375,6 +471,12 @@ public sealed class OptionsWindow : Window
         options.Look = (ThemeLook)Math.Max(0, _look.SelectedIndex);
         options.Colours = _colours.SelectedItem as string ?? AppOptions.BUILT_IN_COLOURS;
         options.FontSize = AppOptions.FontSizes[Math.Max(0, _fontSize.SelectedIndex)];
+        options.FontFamily = _font.SelectedIndex > 0 ? _fonts[_font.SelectedIndex - 1] : string.Empty;
+        KeepThemeText();
+        options.ThemeText = _themeText.Where(entry => entry.Value.FontSize != null ||
+                                                      !string.IsNullOrEmpty(entry.Value.FontFamily))
+                                      .ToDictionary(entry => entry.Key, entry => entry.Value,
+                                                    StringComparer.OrdinalIgnoreCase);
         options.GridFontSize = AppOptions.GridFontSizes[Math.Max(0, _gridFontSize.SelectedIndex)];
         options.DisplayLocale = _locale.SelectedItem as string ?? SpellRecord.ENGLISH;
         options.ShowRankInList = _rank.IsChecked == true;
