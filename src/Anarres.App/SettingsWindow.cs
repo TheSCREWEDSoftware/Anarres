@@ -64,6 +64,10 @@ public sealed class SettingsWindow : Window
         Content = "Keep the server's own copy of each file the first time it's replaced"
     };
     private readonly CheckBox _applyPatch = new CheckBox { Content = "Build the client patch MPQ" };
+    private readonly CheckBox _allLanguages = new CheckBox
+    {
+        Content = "Export every language the client has (fills empty language columns from its locale folders)"
+    };
     private readonly CheckBox _applyEdited = new CheckBox
     {
         Content = "Write only tables edited since import (otherwise the ones ticked in the last export)"
@@ -109,6 +113,7 @@ public sealed class SettingsWindow : Window
         _patchInLocale.IsChecked = settings.PatchInLocaleFolder;
         _definitions.Text = settings.DefinitionsFolder;
         _applyEdited.IsChecked = settings.ExportEditedOnly;
+        _allLanguages.IsChecked = settings.ExportAllLanguages;
         _applyServer.IsChecked = settings.ApplyToServer;
         _applyBackup.IsChecked = settings.ApplyBackupServer;
         _applyPatch.IsChecked = settings.ApplyPatch;
@@ -173,7 +178,7 @@ public sealed class SettingsWindow : Window
                                    Ui.Hint("Later letters win: patch-A.MPQ loads after patch-3.MPQ."),
                                    Ui.Row("Export folder", Ui.FolderPicker(this, _export, "Export folder"))));
         body.Children.Add(Ui.Group("Apply (one click: save, then put the changes in place)",
-                                   _applyEdited, _applyServer, _applyBackup, _applyPatch, _applyCache,
+                                   _applyEdited, _allLanguages, _applyServer, _applyBackup, _applyPatch, _applyCache,
                                    _applyWorld,
                                    Ui.Row("World database", _worldHost, _worldPort),
                                    Ui.Row("User", _worldUser),
@@ -241,6 +246,7 @@ public sealed class SettingsWindow : Window
             DefinitionsFolder = (_definitions.Text ?? string.Empty).Trim(),
             ExportTables = _original.ExportTables,
             ExportEditedOnly = _applyEdited.IsChecked == true,
+            ExportAllLanguages = _allLanguages.IsChecked == true,
             ApplyToServer = _applyServer.IsChecked == true,
             ApplyBackupServer = _applyBackup.IsChecked == true,
             ApplyPatch = _applyPatch.IsChecked == true,

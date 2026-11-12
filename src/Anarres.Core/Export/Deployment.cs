@@ -87,6 +87,8 @@ public static class Deployment
             // AzerothCore's world tables hold only the rows that differ, so they're laid over the clean file
             if (store.Naming == TableNaming.AzerothCore)
                 table = DbcMerge.Overlay(LoadSourceOrFail(settings, file, definitions), table);
+            if (settings.ExportAllLanguages)
+                FillLanguages(table, settings, definitions);
             byte[] data = DbcFile.Write(table);
             string path = Path.Combine(dbcFolder, table.Definition.File);
             await File.WriteAllBytesAsync(path, data, cancellation);
@@ -113,6 +115,24 @@ public static class Deployment
 
         progress?.Report((string.Empty, 1));
         return new ExportResult(written, server, patchPath);
+    }
+
+    // Empty language columns filled from each locale folder the client has, so one file carries every language
+    public static int FillLanguages(DbcTable table, ProjectSettings settings, DbcDefinitions definitions)
+    {
+        string data = settings.ClientData();
+        if (data.Length == 0 || !table.Definition.Columns.Any(column => column.Name.EndsWith(
+                "_Lang_" + Spells.SpellRecord.ENGLISH, StringComparison.OrdinalIgnoreCase)))
+            return 0;
+        int filled = 0;
+        foreach (string locale in Spells.LocaleMerge.Order(ClientArchives.FindLocales(data)))
+        {
+            if (Spells.LocaleMerge.Read(data, locale, table.Definition.File, settings.PatchPath(), definitions) is
+                { } source)
+                filled += Spells.LocaleMerge.Apply(table, source, onlyEmpty: true);
+        }
+
+        return filled;
     }
 
     // Tables edited since import plus unsaved ones; untracked older imports are compared with clean files once

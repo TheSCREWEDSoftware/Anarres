@@ -87,6 +87,9 @@ public sealed class ProjectSettings
     // Tables the last export used, ticked again next time, and the ones Apply writes
     public List<string> ExportTables { get; set; } = new List<string> { "Spell.dbc" };
 
+    // Exported tables get every language the client's locale folders have, in the columns still empty
+    public bool ExportAllLanguages { get; set; }
+
     // Export and Apply write only tables edited since import, instead of the ticked ones
     public bool ExportEditedOnly { get; set; } = true;
 
