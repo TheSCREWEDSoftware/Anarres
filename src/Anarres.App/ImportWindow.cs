@@ -1,3 +1,4 @@
+using System.Globalization;
 using Anarres.Core;
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
@@ -170,11 +171,25 @@ public sealed class ImportWindow : Window
         _files.Children.Clear();
         foreach (CheckBox box in _boxes)
             _files.Children.Add(box);
-        if (_status.Text is null or "" || names.Count > 0)
-            _status.Text = names.Count == 0 ? "No .dbc files found there." : names.Count + " files found.";
         await MarkImportedAsync();
+        if (_status.Text is null or "" || names.Count > 0)
+            _status.Text = names.Count == 0 ? "No .dbc files found there." : FoundText() + ".";
         if (names.Count > 0)
             await DetectLanguageAsync();
+    }
+
+    // "246 files found, 245 already in the project (99.6%)": how far along the project is
+    private string FoundText()
+    {
+        int found = _boxes.Count;
+        int imported = _boxes.Count(box => _inProject.Contains(box.Tag as string ?? string.Empty));
+        string text = found.ToString("N0", CultureInfo.InvariantCulture) + (found == 1 ? " file" : " files") +
+                      " found";
+        if (imported == 0)
+            return text + ", none in the project yet";
+        double share = Math.Floor(imported * 1000.0 / found) / 10.0;
+        return text + ", " + imported.ToString("N0", CultureInfo.InvariantCulture) +
+               " already in the project (" + share.ToString("0.#", CultureInfo.InvariantCulture) + "%)";
     }
 
     // Files already in the project are marked, so a stopped import can carry on with the rest
@@ -298,6 +313,7 @@ public sealed class ImportWindow : Window
                                 : ".") +
                            (already > 0 ? " " + already + " already in the project were left as they were." : "");
             await MarkImportedAsync();
+            _status.Text += " " + FoundText() + ".";
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or
                                               InvalidOperationException or NotSupportedException or
