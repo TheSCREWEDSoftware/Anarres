@@ -14,6 +14,8 @@ Commands:
   import <folder>              Import every .dbc in a folder (or --only some)
   import-client <Data folder>  Import DBFilesClient files from the client's MPQs (--locale enUS)
   edited                       Tables edited since import (--check compares every one with its clean file again)
+  diff [old.dbc new.dbc]       What changed, as Markdown: two .dbc files, or every edited table against its clean
+                               file (--out report.md writes it to a file)
   export                       Write .dbc files to the export folder (--only some, --edited, or every table)
                                --server copies them to the server's dbc folder, --patch builds the client MPQ
   apply                        Save nothing, but do what the app's Apply does with the settings: write the tables,
@@ -114,6 +116,32 @@ try
 
             Console.WriteLine("Imported " + results.Count(result => !result.Skipped) + " files into " +
                               store.Description + ".");
+            return 0;
+        }
+        case "diff":
+        {
+            string report;
+            if (positional.Count >= 3)
+            {
+                DbcTable old = DbcFile.Read(positional[1], definitions);
+                DbcTable current = DbcFile.Read(positional[2], definitions);
+                report = ChangeReport.Tables(Path.GetFileName(positional[1]) + " → " + Path.GetFileName(positional[2]),
+                                             old, current);
+            }
+            else
+            {
+                using IDbcStore store = await OpenAsync();
+                List<string> files = await Deployment.EditedFilesAsync(store, settings, definitions);
+                report = await ChangeReport.BuildAsync(store, settings, definitions, files);
+            }
+
+            if (options.TryGetValue("--out", out string? reportPath))
+            {
+                File.WriteAllText(reportPath, report);
+                Console.WriteLine("Wrote " + reportPath + ".");
+            }
+            else
+                Console.Write(report);
             return 0;
         }
         case "edited":
