@@ -221,4 +221,65 @@ public static class DbcTests
         table.SetInt(1, 1, 7);
         Assert.True(!table.CanRedo, "a new edit clears redo");
     }
+
+    // Unsaved changes are what still differs from the saved table, not every edit ever made
+    public static void ChangesSetBackAreNotUnsaved()
+    {
+        DbcTable table = SampleTable();
+        table.AcceptChanges();
+        int row = table.FindRow(10);
+        table.SetInt(row, 1, 7);
+        Assert.True(table.IsModified, "edited");
+        table.SetInt(row, 1, -5);
+        Assert.True(!table.IsModified && table.ChangedKeys.Count == 0, "set back by hand");
+
+        table.SetInt(row, 1, 9);
+        table.Undo();
+        Assert.True(!table.IsModified, "undone");
+        table.Redo();
+        Assert.True(table.IsModified, "redone");
+        table.Undo();
+
+        table.AddRow(50);
+        table.Undo();
+        Assert.True(!table.IsModified, "new row undone");
+        table.RemoveRow(table.FindRow(11));
+        Assert.True(table.IsModified && table.RemovedKeys.Contains(11u), "row deleted");
+        table.Undo();
+        Assert.True(!table.IsModified && table.RemovedKeys.Count == 0, "delete undone");
+
+        int added = table.AddRow(60);
+        table.SetInt(added, 1, 3);
+        table.RemoveRow(added);
+        Assert.True(!table.IsModified && table.RemovedKeys.Count == 0, "a new row deleted leaves nothing");
+
+        table.SetRaw(row, 0, 70);
+        table.SetRaw(table.FindRow(70), 0, 10);
+        Assert.True(!table.IsModified && table.RemovedKeys.Count == 0, "an ID changed and changed back");
+    }
+
+    // The example from Keira3 issue 3123: 193837 copper, then gold and silver changed
+    public static void ConvertsMoney()
+    {
+        Assert.Equal((19u, 38u, 37u), Anarres.Core.Money.Split(193837), "19g 38s 37c");
+        Assert.Equal(215937u, Anarres.Core.Money.ToCopper(21, 59, 37), "21g 59s 37c");
+        Assert.Equal("19g 38s 37c", Anarres.Core.Money.Text(193837), "as text");
+        Assert.Equal("0c", Anarres.Core.Money.Text(0), "nothing");
+        Assert.Equal(150u, Anarres.Core.Money.ToCopper(0, 0, 150), "copper past 99 carries over");
+        Assert.True(Anarres.Core.Money.IsColumn("TaxiPath.dbc", "Cost") &&
+                    Anarres.Core.Money.IsColumn("SkillTiers.dbc", "Cost_3") &&
+                    !Anarres.Core.Money.IsColumn("Spell.dbc", "ManaCost"), "money columns");
+    }
+
+    public static void ColoursSql()
+    {
+        List<Anarres.Core.Export.SqlToken> tokens =
+            Anarres.Core.Export.SqlTokens.Split("DELETE FROM `spell_dbc` WHERE `ID` = -5; -- note\nSELECT 'it''s'");
+        string kinds = string.Join(",", tokens.Where(token => token.Kind != Anarres.Core.Export.SqlTokenKind.Plain)
+                                              .Select(token => token.Kind + ":" + token.Text));
+        Assert.Equal("Keyword:DELETE,Keyword:FROM,Identifier:`spell_dbc`,Keyword:WHERE,Identifier:`ID`,Number:-5," +
+                     "Comment:-- note,Keyword:SELECT,Text:'it''s'", kinds, "tokens");
+        Assert.Equal("DELETE FROM `spell_dbc` WHERE `ID` = -5; -- note\nSELECT 'it''s'",
+                     string.Concat(tokens.Select(token => token.Text)), "nothing lost");
+    }
 }

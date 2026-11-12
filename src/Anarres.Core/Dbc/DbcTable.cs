@@ -15,6 +15,14 @@ public sealed class DbcTable
     private Dictionary<uint, int>? _rowsByKey;
     private bool _replaying;
 
+    // Changes since the last save, by row object since rows move: saved cell values, added and removed rows
+    private readonly Dictionary<(uint[] Row, int Column), uint> _savedValues =
+        new Dictionary<(uint[] Row, int Column), uint>();
+    private readonly Dictionary<uint[], int> _editedCells = new Dictionary<uint[], int>();
+    private readonly HashSet<uint[]> _addedRows = new HashSet<uint[]>();
+    private readonly HashSet<uint[]> _removedRows = new HashSet<uint[]>();
+    private bool _replaced;
+
     public DbcTable(DbcDefinition definition)
     {
         Definition = definition;
@@ -30,8 +38,8 @@ public sealed class DbcTable
     // Keys of rows removed since the table was loaded or last saved
     public HashSet<uint> RemovedKeys { get; } = new HashSet<uint>();
 
-    // Any change at all, including in tables without a key
-    public bool IsModified { get; private set; }
+    // Any change still standing: an edit set back to the saved value, or a new row deleted again, doesn't count
+    public bool IsModified => _replaced || _savedValues.Count > 0 || _addedRows.Count > 0 || _removedRows.Count > 0;
 
     public int ColumnCount => Definition.Columns.Count;
 
@@ -104,12 +112,16 @@ public sealed class DbcTable
         {
             if (IsKeyTaken(value, row))
                 throw new InvalidOperationException(KeyTakenMessage(value));
-            // The old ID is gone from the table; the row lives on under the new one
-            RemovedKeys.Add(Rows[row][0]);
+            // The old ID is gone from the table, if it was ever saved; the row lives on under the new one
+            uint[] cells = Rows[row];
+            if (!_addedRows.Contains(cells) &&
+                (!_savedValues.TryGetValue((cells, 0), out uint savedKey) || savedKey == cells[0]))
+                RemovedKeys.Add(cells[0]);
             _rowsByKey = null;
         }
 
         Record(new CellChange(row, column, Rows[row][column], value));
+        TrackCell(Rows[row], column, value);
         Rows[row][column] = value;
         MarkChanged(row);
     }
@@ -301,12 +313,17 @@ public sealed class DbcTable
     public void RemoveRow(int row)
     {
         uint key = Key(row);
-        Record(new RowRemoved(row, Rows[row]));
+        uint[] cells = Rows[row];
+        Record(new RowRemoved(row, cells));
         Rows.RemoveAt(row);
         _rowsByKey = null;
         ChangedKeys.Remove(key);
-        RemovedKeys.Add(key);
-        IsModified = true;
+        // A row added since the save leaves nothing behind; a saved one is gone from the saved data
+        if (!_addedRows.Remove(cells))
+        {
+            _removedRows.Add(cells);
+            RemovedKeys.Add(key);
+        }
         // Rows after it in a row-number table get new IDs, so they count as changed too
         if (Definition.IndexIsRowNumber)
         {
@@ -333,6 +350,9 @@ public sealed class DbcTable
         Rows.Insert(index, cells);
         _rowsByKey = null;
         Record(new RowAdded(index, cells));
+        // Undoing the delete of a saved row brings back that same row, not a new one
+        if (!_removedRows.Remove(cells))
+            _addedRows.Add(cells);
         MarkChanged(index);
         return index;
     }
@@ -438,22 +458,49 @@ public sealed class DbcTable
     // The whole table counts as changed, such as after its rows were replaced from a CSV file
     public void MarkModified()
     {
-        IsModified = true;
+        _replaced = true;
     }
 
     public void AcceptChanges()
     {
         ChangedKeys.Clear();
         RemovedKeys.Clear();
-        IsModified = false;
+        _savedValues.Clear();
+        _editedCells.Clear();
+        _addedRows.Clear();
+        _removedRows.Clear();
+        _replaced = false;
+    }
+
+    // Remembers a cell's saved value on its first edit, and forgets it once the cell is back to that value
+    private void TrackCell(uint[] cells, int column, uint value)
+    {
+        if (_addedRows.Contains(cells))
+            return;
+        (uint[] Row, int Column) cell = (cells, column);
+        if (!_savedValues.TryGetValue(cell, out uint saved))
+        {
+            _savedValues[cell] = cells[column];
+            _editedCells[cells] = _editedCells.GetValueOrDefault(cells) + 1;
+        }
+        else if (saved == value)
+        {
+            _savedValues.Remove(cell);
+            if (--_editedCells[cells] == 0)
+                _editedCells.Remove(cells);
+        }
     }
 
     private void MarkChanged(int row)
     {
         uint key = Key(row);
-        ChangedKeys.Add(key);
         RemovedKeys.Remove(key);
-        IsModified = true;
+        uint[] cells = Rows[row];
+        // A saved row with every cell back to its saved value isn't changed any more
+        if (_addedRows.Contains(cells) || _editedCells.ContainsKey(cells) || Definition.IndexIsRowNumber)
+            ChangedKeys.Add(key);
+        else
+            ChangedKeys.Remove(key);
     }
 
     private Dictionary<uint, int> BuildKeyIndex()
