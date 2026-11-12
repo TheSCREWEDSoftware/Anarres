@@ -7,7 +7,7 @@ public static class BlpTests
 {
     private const int HEADER = 148 + 1024;
 
-    private static byte[] Header(byte compression, byte alphaDepth, byte alphaType, int width, int height,
+    internal static byte[] Header(byte compression, byte alphaDepth, byte alphaType, int width, int height,
                                  byte[] pixels)
     {
         byte[] data = new byte[HEADER + pixels.Length];
