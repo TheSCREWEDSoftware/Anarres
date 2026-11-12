@@ -114,7 +114,8 @@ public sealed class SpellVisualView : StackPanel
         copy.IsEnabled = kitRow >= 0;
         ToolTip.SetTip(copy, "Copy the kit to a new ID and use the copy here, so other visuals keep theirs");
         StackPanel header = Ui.Row(column, field.Box, copy, new TextBlock { Text = state, Classes = { "label" } });
-        Ui.Documented(header, _visuals.Definition.File, column);
+        if (_visuals != null)
+            Ui.Documented(header, _visuals.Definition.File, column);
         if (kitRow < 0)
             return header;
 
