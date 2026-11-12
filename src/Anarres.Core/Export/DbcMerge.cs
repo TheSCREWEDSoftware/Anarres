@@ -37,13 +37,24 @@ public static class DbcMerge
     public static List<string> CleanFolders(ProjectSettings settings)
     {
         List<string> folders = new List<string>();
-        if (settings.SourceDbcFolder.Length > 0)
-            folders.Add(ProjectSettings.ResolveServerDbc(settings.SourceDbcFolder));
+        string server = settings.ServerDbc();
+        string source = ProjectSettings.ResolveServerDbc(settings.SourceDbcFolder);
+        // Imported from the server's own dbc folder: Apply's copies of its originals come first, as for the server
+        if (source.Length > 0 && !SameFolder(source, server))
+            folders.Add(source);
         if (settings.ExportFolder.Length > 0)
             folders.Add(Path.Combine(settings.ExportFolder, Deployment.BACKUP_FOLDER));
-        if (settings.ServerDbcFolder.Length > 0 && settings.ApplyBackupServer)
-            folders.Add(settings.ServerDbc());
+        if (server.Length > 0 && (settings.ApplyBackupServer || SameFolder(source, server)))
+            folders.Add(server);
         return folders.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static bool SameFolder(string first, string second)
+    {
+        return first.Length > 0 && second.Length > 0 &&
+               string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(first)),
+                             Path.TrimEndingDirectorySeparator(Path.GetFullPath(second)),
+                             StringComparison.OrdinalIgnoreCase);
     }
 
     // The clean rows with the override rows laid over them by ID, new IDs added after them

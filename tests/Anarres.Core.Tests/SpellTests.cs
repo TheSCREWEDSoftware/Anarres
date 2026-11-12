@@ -122,7 +122,8 @@ public static class SpellTests
     {
         SpellRecord spell = NewSpell(out SpellLookups _);
         spell.Table.SetString(spell.Row, spell.Column("Name_Lang_enUS"), "Fireball");
-        spell.Table.SetString(spell.Row, spell.Column("Name_Lang_deDE"), "Feuerball");
+        // The client keeps German in the 4th text column, which AzerothCore names Name_Lang_frFR
+        spell.Table.SetString(spell.Row, spell.Column("Name_Lang_frFR"), "Feuerball");
         Assert.Equal("Feuerball", spell.Text("Name", "deDE"), "German");
         Assert.Equal("Fireball", spell.Text("Name", "frFR"), "French falls back");
     }

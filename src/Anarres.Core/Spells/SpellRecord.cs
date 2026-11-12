@@ -10,11 +10,52 @@ public readonly struct SpellRecord
     public const int REAGENT_COUNT = 8;
     public const string ENGLISH = "enUS";
 
+    // AzerothCore's names for the 16 text columns of each field; they don't match what the client keeps in them
     public static readonly string[] Locales =
     {
         "enUS", "enGB", "koKR", "frFR", "deDE", "enCN", "zhCN", "enTW", "zhTW", "esES", "esMX", "ruRU", "ptPT",
         "ptBR", "itIT", "Unk"
     };
+
+    // The language the 3.3.5a client keeps in each text column, by position (AzerothCore's LocaleConstant)
+    public static readonly string[] ClientLocales =
+    {
+        "enUS", "koKR", "frFR", "deDE", "zhCN", "zhTW", "esES", "esMX", "ruRU"
+    };
+
+    // Client locales, including those that share a column (enGB with enUS, enCN with zhCN, enTW with zhTW)
+    public static readonly string[] AllClientLocales =
+    {
+        "enUS", "enGB", "koKR", "frFR", "deDE", "zhCN", "enCN", "zhTW", "enTW", "esES", "esMX", "ruRU"
+    };
+
+    public const int TEXT_COLUMNS = 16;
+
+    // Which of the 16 text columns holds a locale's text; -1 for none
+    public static int Slot(string locale)
+    {
+        return locale switch
+        {
+            "enGB" => 0,
+            "enCN" => 4,
+            "enTW" => 5,
+            _ => Array.IndexOf(ClientLocales, locale)
+        };
+    }
+
+    // The language of a text column by position, as the client reads it
+    public static string SlotName(int slot)
+    {
+        return slot >= 0 && slot < ClientLocales.Length ? ClientLocales[slot] : "unused";
+    }
+
+    // The column of a field's text in a locale, such as Name in deDE (AzerothCore calls it Name_Lang_enCN)
+    public static int TextColumn(DbcDefinition definition, string field, string locale)
+    {
+        int first = definition.IndexOf(field + "_Lang_" + ENGLISH);
+        int slot = Slot(locale);
+        return first < 0 || slot < 0 ? -1 : first + slot;
+    }
 
     public SpellRecord(DbcTable table, int row)
     {
@@ -39,7 +80,7 @@ public readonly struct SpellRecord
     // Name, NameSubtext, Description or AuraDescription in a language; enUS when that language's text is empty
     public string Text(string field, string locale)
     {
-        int column = Table.Definition.IndexOf(field + "_Lang_" + locale);
+        int column = TextColumn(Table.Definition, field, locale);
         string text = column >= 0 ? Table.GetString(Row, column) : string.Empty;
         return text.Length > 0 || locale == ENGLISH ? text : S(field + "_Lang_" + ENGLISH);
     }

@@ -5,8 +5,8 @@ using Anarres.Core.Storage;
 
 namespace Anarres.Core.Export;
 
-// Skipped: AzerothCore's world database has no table for the file, so it wasn't imported there
-public sealed record ImportResult(string File, int Rows, bool Inferred, bool Skipped = false);
+// Skipped: not imported, because the world database has no table for it or the file couldn't be read (Problem)
+public sealed record ImportResult(string File, int Rows, bool Inferred, bool Skipped = false, string? Problem = null);
 
 public sealed record ExportResult(List<string> DbcFiles, string? ServerFolder, string? PatchPath);
 
@@ -33,8 +33,9 @@ public static class Deployment
         for (int i = 0; i < files.Count; ++i)
         {
             string file = Path.GetFileName(files[i]);
-            DbcTable table = DbcFile.Read(files[i], definitions);
-            results.Add(await ImportTableAsync(store, table, file, i, files.Count, progress, cancellation));
+            string path = files[i];
+            results.Add(await ImportTableAsync(store, () => DbcFile.Read(path, definitions), file, i, files.Count,
+                                               progress, cancellation));
         }
 
         return results;
@@ -60,8 +61,8 @@ public static class Deployment
             if (data == null)
                 continue;
             string file = Path.GetFileName(names[i]);
-            DbcTable table = DbcFile.Read(data, file, definitions);
-            results.Add(await ImportTableAsync(store, table, file, i, names.Count, progress, cancellation));
+            results.Add(await ImportTableAsync(store, () => DbcFile.Read(data, file, definitions), file, i,
+                                               names.Count, progress, cancellation));
         }
 
         return results;
@@ -287,14 +288,26 @@ public static class Deployment
         MpqWriter.Write(patchPath, files);
     }
 
-    private static async Task<ImportResult> ImportTableAsync(IDbcStore store, DbcTable table, string file, int index,
-                                                             int count, IProgress<(string File, double Done)>? progress,
+    // A file that can't be read, such as the empty ones the client ships, is skipped and the import goes on
+    private static async Task<ImportResult> ImportTableAsync(IDbcStore store, Func<DbcTable> read, string file,
+                                                             int index, int count,
+                                                             IProgress<(string File, double Done)>? progress,
                                                              CancellationToken cancellation)
     {
+        progress?.Report((file, (double)index / count));
+        DbcTable table;
+        try
+        {
+            table = read();
+        }
+        catch (InvalidDataException exception)
+        {
+            return new ImportResult(file, 0, Inferred: false, Skipped: true, Problem: exception.Message);
+        }
+
         if (store.Naming == TableNaming.AzerothCore && table.Definition.Table.Length == 0)
             return new ImportResult(file, 0, table.Definition.IsInferred, Skipped: true);
         IProgress<double> part = new Relay(done => progress?.Report((file, (index + done) / count)));
-        progress?.Report((file, (double)index / count));
         await store.ImportAsync(table, part, cancellation);
         return new ImportResult(file, table.Rows.Count, table.Definition.IsInferred);
     }
