@@ -7,7 +7,7 @@ updated, so Anarres keeps the data in one place while you edit it and writes bot
 ## Why a database
 
 Anarres keeps imported tables in a database, SQLite or MySQL, and writes `.dbc` files only when you export or
-apply. This is the approach of Stoneharry's DBC editing workflow:
+apply. This is the approach of Stoneharry's [DBC editing workflow](https://github.com/stoneharry/DBC-Editing-Workflow):
 
 - A `.dbc` is a packed binary table: records of fixed size and one shared block of text that every row points
   into. Changing one string moves the others, so tools that edit the file in place are easy to break, and two
@@ -19,7 +19,7 @@ apply. This is the approach of Stoneharry's DBC editing workflow:
 - The `.dbc` files written from the database are rebuilt in full each time, with a fresh text block, which is how
   the client and the worldserver expect them. An unchanged table comes out byte for byte the same as it went in.
 
-The DBC editor can still open a `.dbc` straight from disk, like WDBX Editor, for a quick look or a one-off fix.
+The DBC editor can still open a `.dbc` straight from disk, like [WDBX Editor](https://github.com/WowDevTools/WDBXEditor), for a quick look or a one-off fix.
 
 ## 1. Set up the project
 

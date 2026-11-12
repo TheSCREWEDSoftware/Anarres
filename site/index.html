@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anarres: a spell and DBC editor for AzerothCore</title>
+  <meta name="description" content="Anarres is a spell editor and DBC editor for AzerothCore (WoW 3.3.5a), for Windows and Linux, free and open source.">
+  <link rel="icon" href="anarres.png">
+  <style>
+    :root {
+      --background: #0f0d16;
+      --card: #18151f;
+      --border: #332c42;
+      --text: #ece8f4;
+      --muted: #9a92ab;
+      --accent: #c4a5ff;
+      --accent-strong: #8b5cf6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    main { max-width: 980px; margin: 0 auto; padding: 48px 20px 64px; }
+
+    header { text-align: center; margin-bottom: 40px; }
+    header img { width: 120px; height: 120px; }
+    h1 { font-size: 2.6rem; margin: 8px 0 4px; }
+    .tagline { color: var(--muted); font-size: 1.15rem; margin: 0 0 24px; }
+
+    .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .button.primary { background: var(--accent-strong); border-color: var(--accent-strong); }
+    .button:hover { border-color: var(--accent); }
+    .note { color: var(--muted); font-size: 0.9rem; margin-top: 12px; }
+
+    h2 { font-size: 1.5rem; margin: 48px 0 16px; }
+
+    .hero { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+    .card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    .card p { margin: 0; color: var(--muted); }
+
+    .steps { counter-reset: step; list-style: none; padding: 0; display: grid; gap: 12px; }
+    .steps li {
+      counter-increment: step;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px 14px 56px;
+      position: relative;
+      color: var(--muted);
+    }
+    .steps li strong { color: var(--text); }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 18px;
+      top: 14px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent-strong);
+      color: var(--text);
+      font-weight: 700;
+      text-align: center;
+      line-height: 26px;
+    }
+
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    figure { margin: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    figure img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      object-position: top left;
+      border-radius: 6px;
+      display: block;
+    }
+    figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
+
+    a { color: var(--accent); }
+    code { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+    footer { margin-top: 56px; color: var(--muted); font-size: 0.9rem; text-align: center; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="anarres.png" alt="Anarres icon: purple lightning bolts">
+    <h1>Anarres</h1>
+    <p class="tagline">A spell editor and DBC editor for AzerothCore (WoW 3.3.5a), for Windows and Linux. Free and
+      open source.</p>
+    <div class="buttons">
+      <a class="button primary" href="https://github.com/TheSCREWEDSoftware/Anarres/releases/latest">Download →</a>
+      <a class="button" href="https://github.com/TheSCREWEDSoftware/Anarres">View on GitHub →</a>
+    </div>
+    <p class="note">Windows (.zip) and Linux (.tar.gz), one file with nothing else to install.</p>
+  </header>
+
+  <a href="screenshots/spell-editor.png"><img class="hero" src="screenshots/spell-editor.png"
+       alt="Anarres: the spell list, and Blizzard's effects in the spell editor"></a>
+
+  <h2>What it does</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>A spell editor</h3>
+      <p>Laid out after Stoneharry's WoW Spell Editor: effects, auras and targets from named lists, attributes as
+        toggles, icons from the client, visuals, and a live tooltip preview.</p>
+    </div>
+    <div class="card">
+      <h3>A DBC editor</h3>
+      <p>Every table in a grid that stays smooth at Spell.dbc's 50,000 rows by 234 columns. Sort, filter, hide
+        columns, edit in place, CSV and SQL, and 240 layouts built in.</p>
+    </div>
+    <div class="card">
+      <h3>Notes on every field</h3>
+      <p>Like Keira3, each field says what it's for, such as "the global cooldown group", and Ctrl+F finds any
+        field or flag by name, column or SPELL_ATTR name.</p>
+    </div>
+    <div class="card">
+      <h3>Apply in one click</h3>
+      <p>Writes the edited tables to the worldserver, builds the client patch MPQ, empties the client's cache and
+        updates spell_dbc in your world database.</p>
+    </div>
+    <div class="card">
+      <h3>Only what changed</h3>
+      <p>Knows which tables you edited since import, so the patch and spell_dbc hold just your changes, never all
+        49,839 spells.</p>
+    </div>
+    <div class="card">
+      <h3>Your data, your way</h3>
+      <p>A SQLite project file, or MySQL and MariaDB to query and share. Big tables are kept on your PC and open in
+        a fraction of a second.</p>
+    </div>
+  </div>
+
+  <h2>Three steps</h2>
+  <ol class="steps">
+    <li><strong>Import</strong> clean .dbc files from AzerothCore's client data, your server or the WoW client.</li>
+    <li><strong>Edit</strong> spells and tables.</li>
+    <li><strong>Apply</strong> (F6), then restart the worldserver and the client.</li>
+  </ol>
+
+  <h2>Screenshots</h2>
+  <div class="gallery">
+    <figure>
+      <a href="screenshots/base-tab.png"><img src="screenshots/base-tab.png" alt="The Base tab" loading="lazy"></a>
+      <figcaption>Name, description and a live tooltip preview, with a note on every field</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/attributes.png"><img src="screenshots/attributes.png" alt="Attributes as toggles" loading="lazy"></a>
+      <figcaption>Attributes as toggles, one per bit</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/flags.png"><img src="screenshots/flags.png" alt="The bit list" loading="lazy"></a>
+      <figcaption>The bit list, with AzerothCore's names and notes</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/dbc-editor.png"><img src="screenshots/dbc-editor.png" alt="The DBC editor" loading="lazy"></a>
+      <figcaption>The DBC editor with Spell.dbc</figcaption>
+    </figure>
+  </div>
+
+  <footer>
+    Anarres is free software under the
+    <a href="https://github.com/TheSCREWEDSoftware/Anarres/blob/main/LICENSE">GNU AGPL 3.0</a>.
+    Made by <a href="https://thescrewedsoftware.github.io/">TheSCREWEDSoftware</a>, with its twin,
+    <a href="https://github.com/TheSCREWEDSoftware/Urras">Urras</a>.
+  </footer>
+</main>
+</body>
+</html>

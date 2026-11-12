@@ -30,7 +30,7 @@ Editing a ready-made theme makes a copy to change.
 ## Theme files
 
 Each theme is a JSON file in the `themes` folder beside the options. **Open themes folder** goes there. The format
-is Urras's, so a theme file works in both apps; colours one app doesn't know are left alone by the other.
+is [Urras](https://github.com/TheSCREWEDSoftware/Urras)'s, so a theme file works in both apps; colours one app doesn't know are left alone by the other.
 
 ```json
 {
