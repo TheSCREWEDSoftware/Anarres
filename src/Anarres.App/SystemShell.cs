@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Anarres.App;
 
-// Opens folders with the system's own file manager
+// Opens folders with the system's own file manager, and web pages in the browser
 public static class SystemShell
 {
     // Returns null when it opened, or what went wrong
@@ -22,6 +22,23 @@ public static class SystemShell
         }
         catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or IOException or
                                               UnauthorizedAccessException)
+        {
+            return exception.Message;
+        }
+    }
+
+    // Returns null when it opened, or what went wrong; only http and https addresses are opened
+    public static string? OpenUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || (uri.Scheme != Uri.UriSchemeHttps &&
+                                                                    uri.Scheme != Uri.UriSchemeHttp))
+            return "Not a web address: " + url;
+        try
+        {
+            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true })?.Dispose();
+            return null;
+        }
+        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
         {
             return exception.Message;
         }

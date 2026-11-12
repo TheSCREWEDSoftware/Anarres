@@ -132,6 +132,13 @@ public sealed class MainWindow : Window
 
     public Session Session => _session;
 
+    // The version from Directory.Build.props, without the commit .NET adds after a +
+    public static string AppVersion =>
+        (System.Reflection.Assembly.GetExecutingAssembly()
+               .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+               .FirstOrDefault() as System.Reflection.AssemblyInformationalVersionAttribute)?.InformationalVersion
+        .Split('+')[0] ?? "?";
+
     internal SpellEditorView SpellEditor => _spells;
 
     // Tests don't write options.json in the user's folder
@@ -222,6 +229,7 @@ public sealed class MainWindow : Window
         MenuItem tools = new MenuItem { Header = "_Tools" };
         tools.Items.Add(Item("_Setup...", () => RunSetupAsync(reload: true)));
         tools.Items.Add(new Separator());
+        tools.Items.Add(Item("Open the project in the _SQL tool", OpenInSqlToolAsync));
         tools.Items.Add(Item("Build _patch MPQ from .dbc files...", BuildPatchFromFilesAsync));
         tools.Items.Add(Item("_Open the export folder", () =>
         {
@@ -235,10 +243,12 @@ public sealed class MainWindow : Window
         view.Items.Add(Item("_Light", () => SetLookAsync(ThemeLook.Light)));
         view.Items.Add(Item("_System", () => SetLookAsync(ThemeLook.System)));
         MenuItem help = new MenuItem { Header = "_Help" };
-        help.Items.Add(Item("_About Anarres", () => Dialogs.MessageAsync(this, "About Anarres",
-            "Anarres 0.1.0\nA spell and DBC editor for AzerothCore (WoW 3.3.5a), on .NET and Avalonia.\n\n" +
-            "Layouts and names come from AzerothCore. The workflow follows Stoneharry's WoW Spell Editor and " +
-            "WDBX Editor.\n\nLicensed under the AGPL-3.0-or-later.")));
+        help.Items.Add(Item("_Anarres on GitHub", () =>
+        {
+            SystemShell.OpenUrl(AboutWindow.REPOSITORY);
+            return Task.CompletedTask;
+        }));
+        help.Items.Add(Item("_About Anarres", () => new AboutWindow().ShowDialog(this)));
         menu.Items.Add(file);
         menu.Items.Add(edit);
         menu.Items.Add(view);
@@ -559,6 +569,24 @@ public sealed class MainWindow : Window
 
         if (reload)
             await ReloadAsync();
+    }
+
+    private async Task OpenInSqlToolAsync()
+    {
+        string password = _session.MySqlPassword ?? _session.Settings.MySqlPassword;
+        string? problem = ExternalTools.OpenProject(_options.SqlTool, _session.Settings, password);
+        if (problem != null)
+            await Dialogs.MessageAsync(this, "SQL tool", problem);
+    }
+
+    // A file Anarres just wrote, opened in the text editor when Options says so
+    public void OpenWritten(string path)
+    {
+        if (!_options.OpenSqlAfterSaving || IsTest)
+            return;
+        string? problem = ExternalTools.OpenInEditor(_options.TextEditor, path);
+        if (problem != null)
+            SetStatus(problem);
     }
 
     private async Task OpenOptionsAsync(string section)
