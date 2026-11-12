@@ -34,6 +34,7 @@ public static class ThemeColours
     public const string GRID_HEADER = "GridHeader";
     public const string GRID_ALTERNATE = "GridAlternate";
     public const string CHANGED = "Changed";
+    public const string EDITED = "Edited";
 
     public static readonly IReadOnlyList<ThemeColour> All = new List<ThemeColour>
     {
@@ -55,7 +56,8 @@ public static class ThemeColours
         new ThemeColour(GRID_LINE, "Lines between cells in the table", "#22FFFFFF", "#1A000000"),
         new ThemeColour(GRID_HEADER, "Column headers in the table", "#20242B", "#F6F8FA"),
         new ThemeColour(GRID_ALTERNATE, "Every other row in the table", "#08FFFFFF", "#05000000"),
-        new ThemeColour(CHANGED, "Rows changed but not saved", "#33F2C14E", "#33F2C14E")
+        new ThemeColour(CHANGED, "Rows changed but not saved", "#F0883E", "#BC4C00"),
+        new ThemeColour(EDITED, "Rows changed since import, saved", "#DB61A2", "#BF3989")
     };
 
     public static string Colour(ThemeBase themeBase, string key)

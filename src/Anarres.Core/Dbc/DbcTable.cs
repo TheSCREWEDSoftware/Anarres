@@ -472,6 +472,33 @@ public sealed class DbcTable
         _replaced = false;
     }
 
+    // A row added since the last save
+    public bool IsRowAdded(int row)
+    {
+        return _addedRows.Contains(Rows[row]);
+    }
+
+    // A saved row with a cell edited since the last save
+    public bool IsRowEdited(int row)
+    {
+        return _editedCells.ContainsKey(Rows[row]);
+    }
+
+    public bool IsCellEdited(int row, int column)
+    {
+        return _savedValues.ContainsKey((Rows[row], column));
+    }
+
+    // Whether a cell holds the same value as a cell of another table with this layout; text by its words
+    public bool SameCell(int row, int column, DbcTable other, int otherRow)
+    {
+        if (column >= other.Definition.Columns.Count)
+            return false;
+        return Definition.Columns[column].Type == DbcColumnType.String
+                   ? GetString(row, column) == other.GetString(otherRow, column)
+                   : Rows[row][column] == other.Rows[otherRow][column];
+    }
+
     // Remembers a cell's saved value on its first edit, and forgets it once the cell is back to that value
     private void TrackCell(uint[] cells, int column, uint value)
     {

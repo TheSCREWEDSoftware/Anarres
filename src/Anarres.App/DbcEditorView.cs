@@ -97,6 +97,7 @@ public sealed class DbcEditorView : Grid
                 Spacing = 8,
                 Children =
                 {
+                    TableMark(table?.File),
                     new TextBlock { Text = table?.File ?? string.Empty, Width = 170,
                                     TextTrimming = TextTrimming.CharacterEllipsis },
                     Ui.Themed(new TextBlock
@@ -113,6 +114,7 @@ public sealed class DbcEditorView : Grid
             _session.NotifyChanged();
             ShowInfo();
             ShowTabs();
+            RefreshMarks();
         };
         _grid.EditRejected += message => _window.SetStatus(message);
         _grid.PasteRequested += Paste;
@@ -313,6 +315,51 @@ public sealed class DbcEditorView : Grid
     private List<StoredTable> _allTables = new List<StoredTable>();
     private readonly TextBox _tableSearch = Ui.Clearable(new TextBox { Watermark = "Search tables" });
 
+    // Tables edited since import, from the project; tables with unsaved changes come from the session
+    private HashSet<string> _editedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _unsavedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    // A stripe beside a table in the list: orange with unsaved changes, pink when edited since import
+    private Control TableMark(string? file)
+    {
+        Border stripe = new Border { Width = 4, Height = 18, CornerRadius = new CornerRadius(2) };
+        if (file != null && (_unsavedFiles.Contains(file) || _editedFiles.Contains(file)))
+        {
+            bool unsaved = _unsavedFiles.Contains(file);
+            Ui.Themed(stripe, Border.BackgroundProperty, unsaved ? ThemeColours.CHANGED : ThemeColours.EDITED);
+            ToolTip.SetTip(stripe, unsaved ? "Changes not saved yet" : "Edited since import");
+        }
+
+        return stripe;
+    }
+
+    // Redraws the list's stripes when a table's unsaved state changes
+    private void RefreshMarks()
+    {
+        HashSet<string> unsaved = new HashSet<string>(_session.ModifiedTables.Select(table => table.Definition.File),
+                                                      StringComparer.OrdinalIgnoreCase);
+        if (unsaved.SetEquals(_unsavedFiles))
+            return;
+        _unsavedFiles = unsaved;
+        ShowTableList();
+    }
+
+    private async Task LoadEditedAsync(IDbcStore store)
+    {
+        try
+        {
+            _editedFiles = new HashSet<string>((await store.EditedTablesAsync()).Select(table => table.File),
+                                               StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.Data.Common.DbException)
+        {
+            _editedFiles.Clear();
+        }
+
+        _unsavedFiles = new HashSet<string>(_session.ModifiedTables.Select(table => table.Definition.File),
+                                            StringComparer.OrdinalIgnoreCase);
+    }
+
     private void ShowTableList()
     {
         string text = _tableSearch.Text?.Trim() ?? string.Empty;
@@ -389,6 +436,7 @@ public sealed class DbcEditorView : Grid
             IDbcStore store = await _session.StoreAsync();
             List<StoredTable> tables = await store.ListTablesAsync();
             _allTables = tables;
+            await LoadEditedAsync(store);
             ShowTableList();
             if (tables.Count == 0)
                 _info.Text = "The project has no tables yet. Use Import to bring .dbc files in.";
@@ -406,6 +454,7 @@ public sealed class DbcEditorView : Grid
         string? selected = (_tables.SelectedItem as StoredTable)?.File;
         IDbcStore store = await _session.StoreAsync();
         _allTables = await store.ListTablesAsync();
+        await LoadEditedAsync(store);
         ShowTableList();
         _tables.SelectedItem = (_tables.ItemsSource as List<StoredTable>)
                                ?.FirstOrDefault(table => table.File == selected);
@@ -468,14 +517,19 @@ public sealed class DbcEditorView : Grid
         }
 
         _info.Margin = new Thickness(12, 0, 12, 6);
+        DockPanel infoRow = new DockPanel();
+        Control legend = Legend();
+        DockPanel.SetDock(legend, Dock.Right);
+        infoRow.Children.Add(legend);
+        infoRow.Children.Add(_info);
         DockPanel panel = new DockPanel();
         DockPanel.SetDock(_tabStrip, Dock.Top);
         panel.Children.Add(_tabStrip);
         DockPanel.SetDock(toolbar, Dock.Top);
-        DockPanel.SetDock(_info, Dock.Top);
+        DockPanel.SetDock(infoRow, Dock.Top);
         DockPanel.SetDock(_cell, Dock.Bottom);
         panel.Children.Add(toolbar);
-        panel.Children.Add(_info);
+        panel.Children.Add(infoRow);
         panel.Children.Add(_cell);
         panel.Children.Add(new Border { Margin = new Thickness(12, 0, 12, 4), Child = _grid, ClipToBounds = true });
         return panel;
@@ -511,9 +565,11 @@ public sealed class DbcEditorView : Grid
             _names.Forget();
             _filePath = null;
             _filter.Text = string.Empty;
+            _grid.Clean = null;
             _grid.Show(_table);
             ShowInfo();
             _window.SetStatus(string.Empty);
+            await ShowCleanAsync(_table);
         }
         catch (Exception exception) when (exception is InvalidOperationException or IOException or
                                               System.Data.Common.DbException)
@@ -537,6 +593,7 @@ public sealed class DbcEditorView : Grid
             _filePath = path;
             _tables.SelectedItem = null;
             _filter.Text = string.Empty;
+            _grid.Clean = null;
             _grid.Show(_table);
             ShowInfo();
         }
@@ -544,6 +601,70 @@ public sealed class DbcEditorView : Grid
                                               UnauthorizedAccessException)
         {
             await Dialogs.MessageAsync(_window, "Not opened", "The file couldn't be read: " + exception.Message);
+        }
+    }
+
+    // What the row colours mean, beside the table's details
+    private static Control Legend()
+    {
+        StackPanel legend = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            Margin = new Thickness(0, 0, 12, 6),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        foreach ((RowMark mark, string text, string tip) in new[]
+                 {
+                     (RowMark.New, "New", "Added and not saved yet"),
+                     (RowMark.Edited, "Changed", "Changed and not saved yet; the changed cells are brighter"),
+                     (RowMark.SavedNew, "Added", "Saved, and not in the clean file: added since import"),
+                     (RowMark.SavedEdited, "Edited", "Saved, and different from the clean file: changed since import")
+                 })
+        {
+            Border swatch = new Border { Width = 10, Height = 10, CornerRadius = new CornerRadius(2) };
+            Ui.Themed(swatch, Border.BackgroundProperty, RowLook.ColourKey(mark));
+            TextBlock label = new TextBlock
+            {
+                Text = text,
+                Classes = { "hint" },
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            StackPanel item = Ui.Horizontal(swatch, label);
+            item.Spacing = 4;
+            ToolTip.SetTip(item, tip);
+            legend.Children.Add(item);
+        }
+
+        return legend;
+    }
+
+    // The clean copy of a project table, read once, to mark what changed since import
+    private readonly Dictionary<string, DbcTable?> _cleanTables =
+        new Dictionary<string, DbcTable?>(StringComparer.OrdinalIgnoreCase);
+
+    private async Task ShowCleanAsync(DbcTable table)
+    {
+        string file = table.Definition.File;
+        if (!_cleanTables.TryGetValue(file, out DbcTable? clean))
+        {
+            try
+            {
+                clean = await Task.Run(() => DbcMerge.LoadSource(_session.Settings, file, _session.Definitions));
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException or
+                                                  UnauthorizedAccessException)
+            {
+                clean = null;
+            }
+
+            _cleanTables[file] = clean;
+        }
+
+        if (ReferenceEquals(_table, table))
+        {
+            _grid.Clean = clean;
+            _grid.Refresh();
         }
     }
 

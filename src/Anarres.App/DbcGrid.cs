@@ -76,6 +76,42 @@ public sealed class DbcGrid : Grid
 
     public DbcTable? Table => _table;
 
+    // The clean copy of the table, to mark rows added or changed since import; null marks only unsaved edits
+    public DbcTable? Clean { get; set; }
+
+    // How a row differs: unsaved edits first, then what the saved project has that the clean file doesn't
+    internal RowMark Mark(DbcTable table, int row)
+    {
+        if (table.IsRowAdded(row))
+            return RowMark.New;
+        if (table.IsRowEdited(row))
+            return RowMark.Edited;
+        if (Clean == null || ReferenceEquals(Clean, table) || Clean.Definition.Columns.Count !=
+            table.Definition.Columns.Count)
+            return RowMark.None;
+        int clean = Clean.FindRow(table.Key(row));
+        if (clean < 0)
+            return RowMark.SavedNew;
+        for (int column = 0; column < table.Definition.Columns.Count; ++column)
+        {
+            if (!table.SameCell(row, column, Clean, clean))
+                return RowMark.SavedEdited;
+        }
+
+        return RowMark.None;
+    }
+
+    internal bool IsCellMarked(DbcTable table, int row, int column, RowMark mark)
+    {
+        return mark switch
+        {
+            RowMark.Edited => table.IsCellEdited(row, column),
+            RowMark.SavedEdited => Clean!.FindRow(table.Key(row)) is var clean and >= 0 &&
+                                   !table.SameCell(row, column, Clean, clean),
+            _ => false
+        };
+    }
+
     public double CellFontSize { get; private set; } = DEFAULT_FONT_SIZE;
 
     public double RowHeight => CellFontSize + ROW_PADDING;
@@ -133,6 +169,7 @@ public sealed class DbcGrid : Grid
     }
 
     private const double NAMED_WIDTH = 280;
+    private const double MARK_STRIPE = 4;
 
     // Whether a column has names, judged by its first row (some lists depend on the row)
     private bool IsNamed(DbcTable table, int column)
@@ -603,7 +640,7 @@ public sealed class DbcGrid : Grid
             IBrush muted = ThemeBrushes.MutedText;
             IBrush header = ThemeBrushes.Get(ThemeColours.GRID_HEADER);
             IBrush alternate = ThemeBrushes.Get(ThemeColours.GRID_ALTERNATE);
-            IBrush changed = ThemeBrushes.Get(ThemeColours.CHANGED);
+            RowLook look = new RowLook();
             Color accent = ThemeBrushes.ColourOf(ThemeColours.ACCENT);
             IBrush selectedRow = new SolidColorBrush(Color.FromArgb(0x30, accent.R, accent.G, accent.B));
             IBrush selectedCell = new SolidColorBrush(Color.FromArgb(0x70, accent.R, accent.G, accent.B));
@@ -625,10 +662,11 @@ public sealed class DbcGrid : Grid
                     int row = _grid._rows[index];
                     double top = HEADER_HEIGHT + index * _grid.RowHeight - offsetY;
                     Rect rowRect = new Rect(0, top, Bounds.Width, _grid.RowHeight);
+                    RowMark mark = _grid.Mark(table, row);
                     if (_grid.InRange(index))
                         context.FillRectangle(selectedRow, rowRect);
-                    else if (table.ChangedKeys.Contains(table.Key(row)))
-                        context.FillRectangle(changed, rowRect);
+                    else if (mark != RowMark.None)
+                        context.FillRectangle(look.Row(mark), rowRect);
                     else if (index % 2 == 1)
                         context.FillRectangle(alternate, rowRect);
 
@@ -640,6 +678,8 @@ public sealed class DbcGrid : Grid
                         Rect cell = new Rect(left, top, width, _grid.RowHeight);
                         if (index == _grid.SelectedIndex && column == _grid.SelectedColumn)
                             context.FillRectangle(selectedCell, cell);
+                        else if (mark != RowMark.None && _grid.IsCellMarked(table, row, column, mark))
+                            context.FillRectangle(look.Cell(mark), cell);
                         DrawText(context, _grid.Display(table, row, column), cell, text, _typeface,
                                  table.Definition.Columns[column].Type != DbcColumnType.String);
                         context.DrawLine(line, new Point(left + width - 0.5, top), new Point(left + width - 0.5,
@@ -647,6 +687,8 @@ public sealed class DbcGrid : Grid
                         left += width;
                     }
 
+                    if (mark != RowMark.None)
+                        context.FillRectangle(look.Stripe(mark), new Rect(0, top, MARK_STRIPE, _grid.RowHeight));
                     double bottom = top + _grid.RowHeight - 0.5;
                     context.DrawLine(line, new Point(0, bottom), new Point(Bounds.Width, bottom));
                 }
@@ -974,5 +1016,50 @@ public sealed class DbcGrid : Grid
             _grid.BeginEdit(e.Text);
             e.Handled = true;
         }
+    }
+}
+
+// What a row is: added or changed and not saved yet, or added or changed since import and saved
+internal enum RowMark
+{
+    None,
+    New,
+    Edited,
+    SavedNew,
+    SavedEdited
+}
+
+// The theme's colours for each kind of row: a light wash for the row, more for its changed cells, a solid stripe
+internal sealed class RowLook
+{
+    private const byte ROW_ALPHA = 0x26;
+    private const byte CELL_ALPHA = 0x55;
+    private readonly Dictionary<(RowMark, byte), IBrush> _brushes = new Dictionary<(RowMark, byte), IBrush>();
+
+    public static string ColourKey(RowMark mark)
+    {
+        return mark switch
+        {
+            RowMark.New => ThemeColours.ATTENTION,
+            RowMark.Edited => ThemeColours.CHANGED,
+            RowMark.SavedNew => ThemeColours.ADDED,
+            _ => ThemeColours.EDITED
+        };
+    }
+
+    public IBrush Row(RowMark mark) => Brush(mark, ROW_ALPHA);
+
+    public IBrush Cell(RowMark mark) => Brush(mark, CELL_ALPHA);
+
+    public IBrush Stripe(RowMark mark) => Brush(mark, byte.MaxValue);
+
+    private IBrush Brush(RowMark mark, byte alpha)
+    {
+        if (_brushes.TryGetValue((mark, alpha), out IBrush? brush))
+            return brush;
+        Color colour = ThemeBrushes.ColourOf(ColourKey(mark));
+        brush = new SolidColorBrush(Color.FromArgb(alpha, colour.R, colour.G, colour.B));
+        _brushes[(mark, alpha)] = brush;
+        return brush;
     }
 }
