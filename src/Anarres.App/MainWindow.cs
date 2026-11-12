@@ -75,7 +75,8 @@ public sealed class MainWindow : Window
         if (OperatingSystem.IsWindows())
         {
             ExtendClientAreaToDecorationsHint = true;
-            ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.PreferSystemChrome;
+            // Avalonia's own minimise, maximise and close buttons follow the theme; Windows' turn white on hover
+            ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
             ExtendClientAreaTitleBarHeightHint = TITLE_BAR_HEIGHT;
             // Maximised, Windows puts the window's edges off-screen; the content moves in to stay visible
             PropertyChanged += (_, change) =>
