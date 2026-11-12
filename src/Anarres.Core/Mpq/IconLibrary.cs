@@ -1,6 +1,6 @@
 namespace Anarres.Core.Mpq;
 
-// Spell icons from the client's MPQs, decoded once and kept; empty when no WoW Data folder is set
+// Spell icons and other files from the client's MPQs; empty when no WoW Data folder is set
 public sealed class IconLibrary : IDisposable
 {
     private const string EXTENSION = ".blp";
@@ -43,6 +43,48 @@ public sealed class IconLibrary : IDisposable
 
             _cache[name] = image;
             return image;
+        }
+    }
+
+    // Any file from the client, for models and their textures; null when no archive has it
+    public byte[]? ReadFile(string name)
+    {
+        if (_archives == null)
+            return null;
+        lock (_lock)
+        {
+            try
+            {
+                return _archives.TryRead(name);
+            }
+            catch (Exception exception) when (exception is InvalidDataException or NotSupportedException or
+                                                  IOException)
+            {
+                return null;
+            }
+        }
+    }
+
+    public bool Contains(string name)
+    {
+        if (_archives == null)
+            return false;
+        lock (_lock)
+            return _archives.Archives.Any(archive => archive.Contains(name));
+    }
+
+    // Every file the archives list that ends with a suffix (such as .m2), sorted and without repeats
+    public List<string> ListFiles(string suffix)
+    {
+        if (_archives == null)
+            return new List<string>();
+        lock (_lock)
+        {
+            return _archives.Archives.SelectMany(archive => archive.ListFiles())
+                            .Where(name => name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .Order(StringComparer.OrdinalIgnoreCase)
+                            .ToList();
         }
     }
 

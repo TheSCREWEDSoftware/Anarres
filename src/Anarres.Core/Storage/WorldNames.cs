@@ -23,4 +23,27 @@ public static class WorldNames
             names[Convert.ToUInt32(reader.GetValue(0))] = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
         return names;
     }
+
+    // The display an entry is drawn with (a creature's first model), and an item's InventoryType; null if missing
+    public static async Task<(uint Display, uint Slot)?> DisplayAsync(MySqlSettings world, string table, uint entry,
+                                                                     CancellationToken cancellation = default)
+    {
+        string query = table switch
+        {
+            CREATURES => "SELECT `CreatureDisplayID`, 0 FROM `creature_template_model` WHERE `CreatureID` = @entry " +
+                         "ORDER BY `Idx` LIMIT 1",
+            GAME_OBJECTS => "SELECT `displayId`, 0 FROM `gameobject_template` WHERE `entry` = @entry",
+            ITEMS => "SELECT `displayid`, `InventoryType` FROM `item_template` WHERE `entry` = @entry",
+            _ => throw new ArgumentException("No displays in " + table + ".")
+        };
+        await using MySqlConnection connection = new MySqlConnection(world.ConnectionString());
+        await connection.OpenAsync(cancellation);
+        await using MySqlCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        command.Parameters.AddWithValue("@entry", entry);
+        await using MySqlDataReader reader = await command.ExecuteReaderAsync(cancellation);
+        if (!await reader.ReadAsync(cancellation))
+            return null;
+        return (Convert.ToUInt32(reader.GetValue(0)), Convert.ToUInt32(reader.GetValue(1)));
+    }
 }
