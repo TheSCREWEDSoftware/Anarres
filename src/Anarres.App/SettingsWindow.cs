@@ -10,6 +10,12 @@ namespace Anarres.App;
 // Project settings: where the data lives (SQLite file or MySQL) and the folders for import, export and deploy
 public sealed class SettingsWindow : Window
 {
+    // What the Clean DBC folder is for, here and in the setup window
+    public const string CLEAN_FOLDER_HINT =
+        "Optional: unmodified .dbc files, used to tell what you changed (spell_dbc rows, changed-only SQL, edited " +
+        "tables). Left empty, Anarres uses the server's own files, keeping a copy the first time Apply replaces " +
+        "one, then the client's MPQs without your patch. Set it when those already hold earlier edits.";
+
     private const double WINDOW_WIDTH = 760;
     private const double WINDOW_HEIGHT = 720;
 
@@ -44,7 +50,7 @@ public sealed class SettingsWindow : Window
     };
     private readonly TextBox _source = new TextBox();
     private readonly TextBox _client = new TextBox();
-    private readonly TextBox _locale = new TextBox { Width = 80 };
+    private readonly LocalePicker _locale;
     private readonly TextBox _export = new TextBox();
     private readonly TextBox _server = new TextBox();
     private readonly TextBox _patch = new TextBox { Width = 200 };
@@ -95,7 +101,8 @@ public sealed class SettingsWindow : Window
         _naming.SelectedIndex = settings.MySqlNaming == TableNaming.AzerothCore ? 1 : 0;
         _source.Text = settings.SourceDbcFolder;
         _client.Text = settings.ClientDataFolder;
-        _locale.Text = settings.Locale;
+        _locale = new LocalePicker(settings.Locale);
+        _locale.Detect(settings.ClientDataFolder);
         _export.Text = settings.ExportFolder;
         _server.Text = settings.ServerDbcFolder;
         _patch.Text = settings.PatchName;
@@ -114,7 +121,8 @@ public sealed class SettingsWindow : Window
         _worldDatabase.Text = settings.WorldDatabase;
         _server.TextChanged += (_, _) => ShowResolved();
         _client.TextChanged += (_, _) => ShowResolved();
-        _locale.TextChanged += (_, _) => ShowResolved();
+        _locale.Changed += (_, _) => ShowResolved();
+        _client.TextChanged += (_, _) => _locale.Detect(_client.Text ?? string.Empty);
         _patch.TextChanged += (_, _) => ShowResolved();
         _patchInLocale.IsCheckedChanged += (_, _) => ShowResolved();
         _sqlite.IsChecked = settings.Store == StoreKind.Sqlite;
@@ -149,8 +157,7 @@ public sealed class SettingsWindow : Window
                                    _sqlite, Ui.Row("Project file", _sqlitePath, browseSqlite), _mysql, _mysqlPanel));
         body.Children.Add(Ui.Group("Import",
                                    Ui.Row("Clean DBC folder", Ui.FolderPicker(this, _source, "Clean DBC folder")),
-                                   Ui.Hint("Unmodified 3.3.5a .dbc files, such as the dbc folder of AzerothCore's " +
-                                           "client data, or an extracted DBFilesClient folder."),
+                                   Ui.Hint(CLEAN_FOLDER_HINT),
                                    Ui.Row("Locale", _locale)));
         body.Children.Add(Ui.Group("Server and client",
                                    Ui.Row("Server data folder", Ui.FolderPicker(this, _server, "Server data folder")),
@@ -225,7 +232,7 @@ public sealed class SettingsWindow : Window
             MySqlNaming = _naming.SelectedIndex == 1 ? TableNaming.AzerothCore : TableNaming.DbcName,
             SourceDbcFolder = (_source.Text ?? string.Empty).Trim(),
             ClientDataFolder = (_client.Text ?? string.Empty).Trim(),
-            Locale = (_locale.Text ?? ProjectSettings.DEFAULT_LOCALE).Trim(),
+            Locale = _locale.Locale,
             ExportFolder = (_export.Text ?? string.Empty).Trim(),
             ServerDbcFolder = (_server.Text ?? string.Empty).Trim(),
             PatchName = string.IsNullOrWhiteSpace(_patch.Text) ? ProjectSettings.DEFAULT_PATCH_NAME
@@ -257,7 +264,7 @@ public sealed class SettingsWindow : Window
         ProjectSettings probe = new ProjectSettings
         {
             ClientDataFolder = _client.Text ?? string.Empty,
-            Locale = (_locale.Text ?? ProjectSettings.DEFAULT_LOCALE).Trim(),
+            Locale = _locale.Locale,
             PatchName = string.IsNullOrWhiteSpace(_patch.Text) ? ProjectSettings.DEFAULT_PATCH_NAME
                                                                : _patch.Text.Trim(),
             PatchInLocaleFolder = _patchInLocale.IsChecked == true

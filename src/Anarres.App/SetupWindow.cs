@@ -124,8 +124,7 @@ public sealed class SetupWindow : Window
                                    _sqlite, Ui.Row("Project file", _sqlitePath, browse), _mysql, _mysqlPanel));
         body.Children.Add(Ui.Group("2. Clean files to start from",
                                    Ui.Row("Clean DBC folder", Ui.FolderPicker(this, _source, "Clean DBC folder")),
-                                   Ui.Hint("Unmodified 3.3.5a .dbc files, such as the dbc folder of AzerothCore's " +
-                                           "client data. Leave it empty to read them from the WoW client below."),
+                                   Ui.Hint(SettingsWindow.CLEAN_FOLDER_HINT),
                                    Ui.Row("WoW client folder", Ui.FolderPicker(this, _client, "WoW client folder")),
                                    Ui.Hint("The folder with Wow.exe, or its Data folder; Apply builds the patch MPQ " +
                                            "there.")));

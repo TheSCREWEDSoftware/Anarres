@@ -33,7 +33,7 @@ public sealed class ImportWindow : Window
                                                                  GroupName = "from" };
     private readonly TextBox _folder = new TextBox();
     private readonly TextBox _client = new TextBox();
-    private readonly TextBox _locale = new TextBox { Width = 80 };
+    private readonly LocalePicker _locale;
     private readonly TextBox _filter = new TextBox { Watermark = "Filter", Width = 220 };
     private readonly StackPanel _files = new StackPanel { Spacing = 0 };
     private readonly ProgressBar _progress = new ProgressBar { Minimum = 0, Maximum = 1, Height = 6 };
@@ -50,7 +50,9 @@ public sealed class ImportWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         _folder.Text = session.Settings.SourceDbcFolder;
         _client.Text = session.Settings.ClientDataFolder;
-        _locale.Text = session.Settings.Locale;
+        _locale = new LocalePicker(session.Settings.Locale);
+        _locale.Detect(session.Settings.ClientDataFolder);
+        _client.TextChanged += (_, _) => _locale.Detect(_client.Text ?? string.Empty);
         _fromFolder.IsChecked = true;
 
         Button list = Ui.AsyncButton("List files", ListAsync);
@@ -73,6 +75,7 @@ public sealed class ImportWindow : Window
         StackPanel top = new StackPanel { Margin = new Thickness(20, 16, 20, 0), Spacing = 4 };
         top.Children.Add(_fromFolder);
         top.Children.Add(Ui.Row("Folder", Ui.FolderPicker(this, _folder, "Folder of .dbc files")));
+        top.Children.Add(Ui.Hint("A folder of .dbc files, or the worldserver's Data folder (its dbc folder is used)."));
         top.Children.Add(_fromClient);
         top.Children.Add(Ui.Row("WoW client folder", Ui.FolderPicker(this, _client, "WoW client folder")));
         top.Children.Add(Ui.Row("Locale", _locale));
@@ -119,7 +122,7 @@ public sealed class ImportWindow : Window
         {
             if (_fromFolder.IsChecked == true)
             {
-                string folder = (_folder.Text ?? string.Empty).Trim();
+                string folder = ProjectSettings.ResolveServerDbc((_folder.Text ?? string.Empty).Trim());
                 if (Directory.Exists(folder))
                     names = Directory.EnumerateFiles(folder, "*.dbc", Files.AnyCase).Select(Path.GetFileName)
                                      .OfType<string>().Order(StringComparer.OrdinalIgnoreCase).ToList();
@@ -127,7 +130,7 @@ public sealed class ImportWindow : Window
             else
             {
                 string data = ProjectSettings.ResolveClientData(_client.Text ?? string.Empty);
-                string locale = (_locale.Text ?? string.Empty).Trim();
+                string locale = _locale.Locale;
                 if (Directory.Exists(data))
                     names = await Task.Run(() =>
                     {
@@ -195,7 +198,7 @@ public sealed class ImportWindow : Window
             List<ImportResult> results;
             if (_fromFolder.IsChecked == true)
             {
-                string folder = (_folder.Text ?? string.Empty).Trim();
+                string folder = ProjectSettings.ResolveServerDbc((_folder.Text ?? string.Empty).Trim());
                 _session.Settings.SourceDbcFolder = folder;
                 results = await Task.Run(() => Deployment.ImportFolderAsync(store, folder, _session.Definitions,
                                                                              chosen, progress));
@@ -203,7 +206,7 @@ public sealed class ImportWindow : Window
             else
             {
                 string data = ProjectSettings.ResolveClientData(_client.Text ?? string.Empty);
-                string locale = (_locale.Text ?? string.Empty).Trim();
+                string locale = _locale.Locale;
                 _session.Settings.ClientDataFolder = (_client.Text ?? string.Empty).Trim();
                 _session.Settings.Locale = locale;
                 results = await Task.Run(() => Deployment.ImportClientAsync(store, data, locale, _session.Definitions,
