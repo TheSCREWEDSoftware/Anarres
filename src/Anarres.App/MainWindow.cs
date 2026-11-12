@@ -19,8 +19,6 @@ namespace Anarres.App;
 public sealed class MainWindow : Window
 {
     private const double TITLE_BAR_HEIGHT = 40;
-    private const double SWITCH_RADIUS = 6;
-    private const double SWITCH_PADDING = 2;
     // The maximise button's square, and two overlapping squares once maximised
     private const string MAXIMISE_GLYPH = "M0.5,0.5 H9.5 V9.5 H0.5 Z";
     private const string RESTORE_GLYPH = "M2.5,0.5 H9.5 V7.5 M0.5,2.5 H7.5 V9.5 H0.5 Z";
@@ -42,8 +40,22 @@ public sealed class MainWindow : Window
     };
     private readonly TextBlock _windowTitle = new TextBlock { Text = "Anarres", Classes = { "windowTitle" },
                                                               VerticalAlignment = VerticalAlignment.Center };
-    private readonly ToggleButton _spellTab = new ToggleButton { Content = "Spell Editor", Classes = { "subtle" } };
-    private readonly ToggleButton _tableTab = new ToggleButton { Content = "DBC Editor", Classes = { "subtle" } };
+    // The editor switch: a label each side of a light switch whose knob sits on the open editor's side
+    private readonly Button _spellTab = new Button { Content = "Spell Editor", Classes = { "subtle" } };
+    private readonly Button _tableTab = new Button { Content = "DBC Editor", Classes = { "subtle" } };
+    private readonly Border _switchKnob = new Border
+    {
+        Width = SWITCH_KNOB,
+        Height = SWITCH_KNOB,
+        CornerRadius = new CornerRadius(SWITCH_KNOB / 2),
+        HorizontalAlignment = HorizontalAlignment.Left,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(SWITCH_GAP, 0)
+    };
+    private const double SWITCH_KNOB = 14;
+    private const double SWITCH_GAP = 3;
+    private const double SWITCH_WIDTH = 40;
+    private const double SWITCH_HEIGHT = 20;
     private readonly Grid _root = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto") };
     private const int STATUS_SECONDS = 12;
 
@@ -411,18 +423,28 @@ public sealed class MainWindow : Window
                               "as set in Project settings, acore_world");
         ToolTip.SetTip(import, "Bring .dbc files into the project from a folder or the client's MPQs");
         ToolTip.SetTip(export, "Write .dbc files, copy them to the server and build the client patch MPQ");
-        // A two-way switch: one track with both editors, the chosen one lit
-        _spellTab.CornerRadius = new CornerRadius(SWITCH_RADIUS);
-        _tableTab.CornerRadius = new CornerRadius(SWITCH_RADIUS);
-        StackPanel segments = Ui.Horizontal(_spellTab, _tableTab);
-        segments.Spacing = 0;
-        Border tabs = Ui.Themed(new Border
+        // Spell Editor ( o  ) DBC Editor: click either name, or the switch to flip it
+        Ui.Themed(_switchKnob, Border.BackgroundProperty, ThemeColours.ACCENT_TEXT);
+        Border track = Ui.Themed(new Border
         {
-            CornerRadius = new CornerRadius(SWITCH_RADIUS + SWITCH_PADDING),
-            Padding = new Thickness(SWITCH_PADDING),
+            Width = SWITCH_WIDTH,
+            Height = SWITCH_HEIGHT,
+            CornerRadius = new CornerRadius(SWITCH_HEIGHT / 2),
             VerticalAlignment = VerticalAlignment.Center,
-            Child = segments
-        }, Border.BackgroundProperty, ThemeColours.RAISED);
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+            Child = _switchKnob
+        }, Border.BackgroundProperty, ThemeColours.ACCENT);
+        ToolTip.SetTip(track, "Switch between the Spell Editor and the DBC Editor");
+        track.PointerPressed += async (_, _) =>
+        {
+            if (_content.Content == _spells)
+                await ShowTablesAsync();
+            else
+                await ShowSpellsAsync();
+        };
+        StackPanel switcher = Ui.Horizontal(_spellTab, track, _tableTab);
+        switcher.Spacing = 2;
+        Border tabs = new Border { VerticalAlignment = VerticalAlignment.Center, Child = switcher };
         StackPanel actions = Ui.Horizontal(import, export, apply);
         actions.VerticalAlignment = VerticalAlignment.Center;
 
@@ -486,10 +508,19 @@ public sealed class MainWindow : Window
         _windowTitle.Text = title;
     }
 
+    // The knob on the open editor's side, its name in full text and the other dimmed
+    private void ShowSwitch(bool spells)
+    {
+        _switchKnob.HorizontalAlignment = spells ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+        _spellTab.FontWeight = spells ? FontWeight.SemiBold : FontWeight.Normal;
+        _tableTab.FontWeight = spells ? FontWeight.Normal : FontWeight.SemiBold;
+        Ui.Themed(_spellTab, Button.ForegroundProperty, spells ? ThemeColours.TEXT : ThemeColours.MUTED_TEXT);
+        Ui.Themed(_tableTab, Button.ForegroundProperty, spells ? ThemeColours.MUTED_TEXT : ThemeColours.TEXT);
+    }
+
     private async Task ShowSpellsAsync()
     {
-        _spellTab.IsChecked = true;
-        _tableTab.IsChecked = false;
+        ShowSwitch(spells: true);
         _content.Content = _spells;
         if (_spells.Spells == null)
             await _spells.LoadAsync();
@@ -511,8 +542,7 @@ public sealed class MainWindow : Window
 
     private async Task ShowTablesAsync()
     {
-        _spellTab.IsChecked = false;
-        _tableTab.IsChecked = true;
+        ShowSwitch(spells: false);
         _content.Content = _tables;
         await _tables.RefreshListAsync();
     }
