@@ -119,6 +119,8 @@ public static class WindowTests
         window.Show();
         await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
         DbcDefinition spell = DbcDefinitions.Default.Find(SpellRecord.FILE)!;
+        DbcTable spells = window.SpellEditor.Spells!;
+        int row = Math.Max(0, spells.FindRow(133));
         List<Window> dialogs = new List<Window>
         {
             new SettingsWindow(project.Settings),
@@ -129,7 +131,13 @@ public static class WindowTests
             new SetupWindow(project.Settings, showAgain: true),
             new FlagsDialog("Attributes", SpellEnums.Get("Attributes"), 0x10000),
             new OptionsWindow(new AppOptions(), OptionsWindow.GENERAL),
-            new ThemeEditorWindow(Theme.BuiltIn(ThemeBase.Light), new ThemeStore(project.Folder))
+            new ThemeEditorWindow(Theme.BuiltIn(ThemeBase.Light), new ThemeStore(project.Folder)),
+            new CompareWindow(spells, spells, row, window.Session.Loaded),
+            new TemplateWindow(),
+            new FindReplaceWindow(spells, "school:fire"),
+            new UsedByWindow(133, "Fireball", SpellReferences.Find(spells, row)),
+            new DiffWindow("old.dbc", spells, "new.dbc", spells),
+            new PatchesWindow(project.Settings)
         };
         foreach (Window dialog in dialogs)
         {
