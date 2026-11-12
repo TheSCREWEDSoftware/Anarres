@@ -45,6 +45,9 @@ public sealed class MySqlDbcStore : SqlDbcStore
 
     protected override string TextType => "MEDIUMTEXT";
 
+    protected override string CacheKey => "mysql:" + _settings.Host + ":" + _settings.Port + "/" +
+                                          _settings.Database + "/" + Naming;
+
     // createDatabase makes the database first when it doesn't exist yet
     public static async Task<MySqlDbcStore> OpenAsync(MySqlSettings settings, TableNaming naming,
                                                       bool createDatabase = false,
@@ -117,6 +120,23 @@ public sealed class MySqlDbcStore : SqlDbcStore
             default:
                 return raw;
         }
+    }
+
+    // CHECKSUM TABLE sums the rows on the server and sends back one number, so nothing big crosses the network
+    protected override async Task<string?> CurrentStampAsync(string file, string table,
+                                                             CancellationToken cancellation)
+    {
+        await using DbCommand command = Connection.CreateCommand();
+        command.CommandText = "CHECKSUM TABLE " + Quote(table);
+        await using DbDataReader reader = await command.ExecuteReaderAsync(cancellation);
+        if (!await reader.ReadAsync(cancellation) || reader.IsDBNull(1))
+            return null;
+        return Convert.ToString(reader.GetValue(1), System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    protected override async Task<string> ImportStampAsync(string file, string table, CancellationToken cancellation)
+    {
+        return await CurrentStampAsync(file, table, cancellation) ?? Guid.NewGuid().ToString("N");
     }
 
     // RENAME TABLE swaps both names at once, so readers never see the table missing

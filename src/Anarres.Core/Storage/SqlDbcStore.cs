@@ -7,6 +7,9 @@ namespace Anarres.Core.Storage;
 public abstract class SqlDbcStore : IDbcStore
 {
     public const string META_TABLE = "anarres_definitions";
+    // A token per table taken at import and its current one; they differ once the table is edited
+    public const string STAMP_TABLE = "anarres_stamps";
+    private const string EDITED_STAMP = "edited";
     public const string ROW_COLUMN = "_row";
     public const string ID_COLUMN = "ID";
 
@@ -27,7 +30,18 @@ public abstract class SqlDbcStore : IDbcStore
 
     public TableNaming Naming { get; }
 
+    public DbcCache? Cache { get; set; }
+
     protected DbConnection Connection { get; }
+
+    // Names the database for the cache: the file's path, or the server and database
+    protected abstract string CacheKey { get; }
+
+    // A token that changes whenever the table's rows do, or null when the database can't tell
+    protected abstract Task<string?> CurrentStampAsync(string file, string table, CancellationToken cancellation);
+
+    // Starts keeping track of a freshly imported table and returns its token
+    protected abstract Task<string> ImportStampAsync(string file, string table, CancellationToken cancellation);
 
     // How many rows go into one INSERT; SQLite runs one prepared row at a time instead
     protected abstract int RowsPerInsert(int columns);
@@ -100,6 +114,20 @@ public abstract class SqlDbcStore : IDbcStore
         return LockedAsync(async () =>
         {
             await SaveChangesCoreAsync(table, cancellation);
+            return true;
+        }, cancellation);
+    }
+
+    public Task<List<EditedTable>> EditedTablesAsync(CancellationToken cancellation = default)
+    {
+        return LockedAsync(() => EditedTablesCoreAsync(cancellation), cancellation);
+    }
+
+    public Task MarkEditedAsync(string file, bool edited, CancellationToken cancellation = default)
+    {
+        return LockedAsync(async () =>
+        {
+            await MarkEditedCoreAsync(file, edited, cancellation);
             return true;
         }, cancellation);
     }
@@ -178,6 +206,7 @@ public abstract class SqlDbcStore : IDbcStore
                                   cancellation);
             await replace.CommitAsync(cancellation);
             table.AcceptChanges();
+            await KeepAsync(table, name, cancellation);
             progress?.Report(1);
             return;
         }
@@ -205,12 +234,15 @@ public abstract class SqlDbcStore : IDbcStore
 
         if (Naming == TableNaming.DbcName)
         {
+            string stamp = await ImportStampAsync(definition.File, name, cancellation);
             await using DbTransaction meta = await Connection.BeginTransactionAsync(cancellation);
             await SaveDefinitionAsync(definition, name, meta, cancellation);
+            await SaveStampAsync(definition.File, stamp, meta, cancellation);
             await meta.CommitAsync(cancellation);
         }
 
         table.AcceptChanges();
+        await KeepAsync(table, name, cancellation);
         progress?.Report(1);
     }
 
@@ -227,6 +259,13 @@ public abstract class SqlDbcStore : IDbcStore
         List<string> existing = await ColumnsAsync(name, cancellation);
         bool rowColumn = existing.Contains(ROW_COLUMN, StringComparer.OrdinalIgnoreCase);
         await CheckColumnsAsync(definition, name, cancellation);
+        string? stamp = Cache == null ? null : await CurrentStampAsync(definition.File, name, cancellation);
+        if (stamp != null && Cache!.TryRead(CacheKey, definition, stamp) is { } kept)
+        {
+            progress?.Report(1);
+            return kept;
+        }
+
         long total = Convert.ToInt64(await ScalarAsync("SELECT COUNT(*) FROM " + Quote(name), cancellation));
 
         List<(string Name, DbcColumnType Type, int Cell)> columns = SqlColumns(definition);
@@ -254,6 +293,8 @@ public abstract class SqlDbcStore : IDbcStore
                 progress?.Report((double)read / total);
         }
 
+        if (stamp != null && DbcCache.IsWorthKeeping(table))
+            Cache!.Write(CacheKey, table, stamp);
         progress?.Report(1);
         return table;
     }
@@ -273,6 +314,7 @@ public abstract class SqlDbcStore : IDbcStore
                                   replace: false, rewrite, null, cancellation);
             await rewrite.CommitAsync(cancellation);
             table.AcceptChanges();
+            await KeepAsync(table, name, cancellation);
             return;
         }
 
@@ -282,6 +324,7 @@ public abstract class SqlDbcStore : IDbcStore
         await InsertRowsAsync(table, rows, name, rowColumn: false, replace: true, transaction, null, cancellation);
         await transaction.CommitAsync(cancellation);
         table.AcceptChanges();
+        await KeepAsync(table, name, cancellation);
     }
 
     private async Task UpsertRowsCoreAsync(DbcTable table, IReadOnlyList<int> rows, CancellationToken cancellation)
@@ -299,6 +342,103 @@ public abstract class SqlDbcStore : IDbcStore
         await using DbTransaction transaction = await Connection.BeginTransactionAsync(cancellation);
         await InsertRowsAsync(table, rows, name, rowColumn: false, replace: true, transaction, null, cancellation);
         await transaction.CommitAsync(cancellation);
+        // Only some rows were written, so the stored table may differ from this one; it's read afresh next time
+        Cache?.Forget(CacheKey, table.Definition.File);
+    }
+
+    // After a write the table matches the database, so the kept copy is refreshed instead of read again later
+    private async Task KeepAsync(DbcTable table, string name, CancellationToken cancellation)
+    {
+        if (Cache == null)
+            return;
+        string? stamp = DbcCache.IsWorthKeeping(table)
+                            ? await CurrentStampAsync(table.Definition.File, name, cancellation)
+                            : null;
+        if (stamp == null)
+            Cache.Forget(CacheKey, table.Definition.File);
+        else
+            Cache.Write(CacheKey, table, stamp);
+    }
+
+    private async Task<List<EditedTable>> EditedTablesCoreAsync(CancellationToken cancellation)
+    {
+        List<EditedTable> edited = new List<EditedTable>();
+        foreach (StoredTable stored in await ListTablesCoreAsync(cancellation))
+        {
+            // AzerothCore's tables hold only the rows that differ from the client's files
+            if (Naming == TableNaming.AzerothCore)
+            {
+                if (stored.Rows > 0)
+                    edited.Add(new EditedTable(stored.File, Known: true));
+                continue;
+            }
+
+            string? imported = await ImportedStampAsync(stored.File, cancellation);
+            string? current = await CurrentStampAsync(stored.File, stored.TableName, cancellation);
+            if (imported == null || current == null)
+                edited.Add(new EditedTable(stored.File, Known: false));
+            else if (imported != current)
+                edited.Add(new EditedTable(stored.File, Known: true));
+        }
+
+        return edited;
+    }
+
+    // Unedited takes the current token as the imported one; edited stores one no table ever has
+    private async Task MarkEditedCoreAsync(string file, bool edited, CancellationToken cancellation)
+    {
+        if (Naming != TableNaming.DbcName)
+            return;
+        DbcDefinition? definition = await StoredDefinitionAsync(file, cancellation);
+        if (definition == null)
+            return;
+        string? current = await CurrentStampAsync(definition.File, TableName(definition), cancellation);
+        string imported = edited || current == null ? EDITED_STAMP : current;
+        await CreateStampTableAsync(null, cancellation);
+        object? rows = await ScalarAsync("SELECT COUNT(*) FROM " + Quote(STAMP_TABLE) + " WHERE " + Quote("file") +
+                                         " = @file", cancellation, ("@file", definition.File));
+        await using DbCommand command = Connection.CreateCommand();
+        command.CommandText = Convert.ToInt64(rows) > 0
+                                  ? "UPDATE " + Quote(STAMP_TABLE) + " SET " + Quote("imported") + " = @imported " +
+                                    "WHERE " + Quote("file") + " = @file"
+                                  : "INSERT INTO " + Quote(STAMP_TABLE) + " (" + Quote("file") + ", " +
+                                    Quote("imported") + ") VALUES (@file, @imported)";
+        AddParameter(command, "@file", definition.File);
+        AddParameter(command, "@imported", imported);
+        await command.ExecuteNonQueryAsync(cancellation);
+    }
+
+    protected async Task<string?> ImportedStampAsync(string file, CancellationToken cancellation)
+    {
+        if (!await TableExistsAsync(STAMP_TABLE, cancellation))
+            return null;
+        object? value = await ScalarAsync("SELECT " + Quote("imported") + " FROM " + Quote(STAMP_TABLE) +
+                                          " WHERE " + Quote("file") + " = @file", cancellation, ("@file", file));
+        return value is null or DBNull
+                   ? null
+                   : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    protected Task CreateStampTableAsync(DbTransaction? transaction, CancellationToken cancellation)
+    {
+        return ExecuteAsync("CREATE TABLE IF NOT EXISTS " + Quote(STAMP_TABLE) + " (" + Quote("file") +
+                            " VARCHAR(128) NOT NULL PRIMARY KEY, " + Quote("imported") + " VARCHAR(64) NULL, " +
+                            Quote("current") + " VARCHAR(64) NULL)", transaction, cancellation);
+    }
+
+    // imported is null for a table whose import wasn't tracked, which then always counts as edited
+    protected async Task SaveStampAsync(string file, string? imported, DbTransaction? transaction,
+                                        CancellationToken cancellation)
+    {
+        await CreateStampTableAsync(transaction, cancellation);
+        await using DbCommand command = Connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "REPLACE INTO " + Quote(STAMP_TABLE) + " (" + Quote("file") + ", " +
+                              Quote("imported") + ", " + Quote("current") + ") VALUES (@file, @imported, @current)";
+        AddParameter(command, "@file", file);
+        AddParameter(command, "@imported", (object?)imported ?? DBNull.Value);
+        AddParameter(command, "@current", (object?)imported ?? Guid.NewGuid().ToString("N"));
+        await command.ExecuteNonQueryAsync(cancellation);
     }
 
     public void Dispose()
@@ -524,7 +664,7 @@ public abstract class SqlDbcStore : IDbcStore
         }
     }
 
-    private async Task<List<DbcDefinition>> StoredDefinitionsAsync(CancellationToken cancellation)
+    protected async Task<List<DbcDefinition>> StoredDefinitionsAsync(CancellationToken cancellation)
     {
         List<DbcDefinition> definitions = new List<DbcDefinition>();
         if (Naming != TableNaming.DbcName || !await TableExistsAsync(META_TABLE, cancellation))

@@ -11,6 +11,9 @@ public enum TableNaming
 
 public sealed record StoredTable(string File, string TableName, long Rows);
 
+// A table edited since import; Known is false when it was imported before Anarres kept track
+public sealed record EditedTable(string File, bool Known);
+
 // Where imported DBC data lives while it's edited: a local SQLite project file or a MySQL/MariaDB database
 public interface IDbcStore : IDisposable
 {
@@ -18,6 +21,9 @@ public interface IDbcStore : IDisposable
     string Description { get; }
 
     TableNaming Naming { get; }
+
+    // Where big tables are kept on this PC between loads; null loads everything from the database
+    DbcCache? Cache { get; set; }
 
     Task<List<StoredTable>> ListTablesAsync(CancellationToken cancellation = default);
 
@@ -31,6 +37,12 @@ public interface IDbcStore : IDisposable
 
     // Writes only the rows changed or removed since the table was loaded, then marks the table saved
     Task SaveChangesAsync(DbcTable table, CancellationToken cancellation = default);
+
+    // Tables edited since they were imported; ones imported before Anarres kept track count as edited
+    Task<List<EditedTable>> EditedTablesAsync(CancellationToken cancellation = default);
+
+    // Records whether a table differs from its clean file, after comparing them
+    Task MarkEditedAsync(string file, bool edited, CancellationToken cancellation = default);
 
     // Writes just these rows, for sending a few spells to AzerothCore's world database
     Task UpsertRowsAsync(DbcTable table, IReadOnlyList<int> rows, CancellationToken cancellation = default);

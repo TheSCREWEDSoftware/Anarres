@@ -20,6 +20,8 @@ public sealed class SqliteDbcStore : SqlDbcStore
 
     protected override string TextType => "TEXT";
 
+    protected override string CacheKey => "sqlite:" + Path.GetFullPath(_path);
+
     public static async Task<SqliteDbcStore> OpenAsync(string path, CancellationToken cancellation = default)
     {
         string? folder = Path.GetDirectoryName(Path.GetFullPath(path));
@@ -32,7 +34,56 @@ public sealed class SqliteDbcStore : SqlDbcStore
         // Write-ahead logging keeps big imports fast and the file whole if Anarres or the computer stops mid-save
         await store.ExecuteAsync("PRAGMA journal_mode = WAL", null, cancellation);
         await store.ExecuteAsync("PRAGMA synchronous = NORMAL", null, cancellation);
+        await store.TrackOlderTablesAsync(cancellation);
         return store;
+    }
+
+    protected override async Task<string?> CurrentStampAsync(string file, string table,
+                                                             CancellationToken cancellation)
+    {
+        if (!await TableExistsAsync(STAMP_TABLE, cancellation))
+            return null;
+        object? value = await ScalarAsync("SELECT " + Quote("current") + " FROM " + Quote(STAMP_TABLE) + " WHERE " +
+                                          Quote("file") + " = @file", cancellation, ("@file", file));
+        return value as string;
+    }
+
+    protected override async Task<string> ImportStampAsync(string file, string table, CancellationToken cancellation)
+    {
+        await CreateStampTableAsync(null, cancellation);
+        await TrackAsync(file, table, cancellation);
+        return Guid.NewGuid().ToString("N");
+    }
+
+    // Triggers give the table a new token on every change, including edits made with other SQLite tools
+    private async Task TrackAsync(string file, string table, CancellationToken cancellation)
+    {
+        string update = "UPDATE " + Quote(STAMP_TABLE) + " SET " + Quote("current") + " = lower(hex(randomblob(8))) " +
+                        "WHERE " + Quote("file") + " = '" + file.Replace("'", "''") + "';";
+        foreach (string action in new[] { "INSERT", "UPDATE", "DELETE" })
+        {
+            string trigger = Quote("anarres_" + table + "_" + action.ToLowerInvariant());
+            await ExecuteAsync("CREATE TRIGGER IF NOT EXISTS " + trigger + " AFTER " + action + " ON " +
+                               Quote(table) + " BEGIN " + update + " END", null, cancellation);
+        }
+    }
+
+    // Projects made before tables were tracked: their tables start being tracked, but count as edited
+    private async Task TrackOlderTablesAsync(CancellationToken cancellation)
+    {
+        if (!await TableExistsAsync(META_TABLE, cancellation))
+            return;
+        await CreateStampTableAsync(null, cancellation);
+        foreach (DbcDefinition definition in await StoredDefinitionsAsync(cancellation))
+        {
+            object? tracked = await ScalarAsync("SELECT COUNT(*) FROM " + Quote(STAMP_TABLE) + " WHERE " +
+                                                Quote("file") + " = @file", cancellation, ("@file", definition.File));
+            string table = TableName(definition);
+            if (Convert.ToInt64(tracked) > 0 || !await TableExistsAsync(table, cancellation))
+                continue;
+            await TrackAsync(definition.File, table, cancellation);
+            await SaveStampAsync(definition.File, null, null, cancellation);
+        }
     }
 
     protected override int RowsPerInsert(int columns)

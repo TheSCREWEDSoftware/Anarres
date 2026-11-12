@@ -79,6 +79,9 @@ public sealed class AppOptions
 
     public bool RememberWindow { get; set; } = true;
 
+    // Big tables such as Spell.dbc are kept on this PC between runs, so they open in a fraction of the time
+    public bool KeepTableCache { get; set; } = true;
+
     // Unset until the window has been closed once
     public double? WindowX { get; set; }
 

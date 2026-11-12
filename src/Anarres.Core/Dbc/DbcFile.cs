@@ -33,7 +33,23 @@ public static class DbcFile
         DbcDefinition definition = known != null && Fits(known, header)
                                        ? known
                                        : DbcInference.Infer(fileName, header, records, strings);
+        return ReadRecords(definition, header, records, strings);
+    }
 
+    // Reads with exactly this layout, as the table cache does; a file that doesn't fit it is refused
+    public static DbcTable Read(byte[] data, DbcDefinition definition)
+    {
+        Header header = ReadHeader(data);
+        int stringsStart = HEADER_SIZE + header.RecordCount * header.RecordSize;
+        if (stringsStart + header.StringBlockSize > data.Length || !Fits(definition, header))
+            throw new InvalidDataException(definition.File + " doesn't match its layout.");
+        return ReadRecords(definition, header, data.AsSpan(HEADER_SIZE, header.RecordCount * header.RecordSize),
+                           data.AsSpan(stringsStart, header.StringBlockSize));
+    }
+
+    private static DbcTable ReadRecords(DbcDefinition definition, Header header, ReadOnlySpan<byte> records,
+                                        ReadOnlySpan<byte> strings)
+    {
         DbcTable table = new DbcTable(definition);
         Dictionary<int, uint> stringsByOffset = new Dictionary<int, uint> { [0] = 0 };
         List<DbcColumn> columns = definition.Columns;
