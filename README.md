@@ -147,6 +147,8 @@ Both run in temporary folders, so they never touch your settings or projects.
 It opens at every start until you tick *Don't show this again*; **Tools > Setup** brings it back. Everything in it is
 also in **File > Project settings**.
 
+<img src="docs/screenshots/setup.png" alt="Screenshot: Set up Anarres" width="720">
+
 ## Features
 
 <details>
@@ -183,6 +185,63 @@ Laid out after Stoneharry's [WoW Spell Editor](https://github.com/stoneharry/WoW
 - New, Copy and Delete spells; Save, Revert, Undo and Redo (Ctrl+Z, Ctrl+Y).
 - A Skill tab for the spell's SkillLineAbility rows, and the `trainer_spell` SQL that lets a trainer teach it.
 
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/list-hover.png" alt="Screenshot: the spell list and a hover card"><br>
+      The spell list with school colours, and the card that shows when you hover a spell
+    </td>
+    <td>
+      <img src="docs/screenshots/spell-editor.png" alt="Screenshot: the Base tab"><br>
+      The Base tab: the description beside its preview, at any level and with any talents
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/talents.png" alt="Screenshot: the Talents tab"><br>
+      The Talents tab: every talent and aura that changes Frostbolt, and what it changes
+    </td>
+    <td>
+      <img src="docs/screenshots/affected-spells.png" alt="Screenshot: affected spells"><br>
+      Affected spells under an effect: the 21 spells Improved Frostbolt changes
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/attributes.png" alt="Screenshot: bit masks as switches"><br>
+      Bit masks as switches, each with its bit value, and the whole value in hex
+    </td>
+    <td>
+      <img src="docs/screenshots/enum-list.png" alt="Screenshot: a named list"><br>
+      Named lists such as <code>27 - PERSISTENT AREA AURA</code>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/skill.png" alt="Screenshot: the Skill tab"><br>
+      The Skill tab: the cost in gold, silver and copper, and the trainer SQL in colour
+    </td>
+    <td>
+      <img src="docs/screenshots/visual.png" alt="Screenshot: the Visual tab"><br>
+      The Visual tab: the kits played at each stage, with Own copy for any of them
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/compact-list.png" alt="Screenshot: the compact spell list"><br>
+      The compact spell list
+    </td>
+    <td>
+      <img src="docs/screenshots/effects.png" alt="Screenshot: the Effects tab"><br>
+      The Effects tab, with a note on every field
+    </td>
+  </tr>
+</table>
+
+Items show in their quality's colour with their icon when the world database can be reached; these screenshots
+were taken without one.
+
 </details>
 
 <details>
@@ -200,6 +259,9 @@ Drawn from your client's own files (its patches and custom models included); not
 - Animations from the model (and its `.anim` files), animated textures and colours, and particle emitters: the
   sparks, smoke and glows that make up most spell effects. Drag to turn, use the wheel to zoom, double-click to reset.
 - Not drawn yet: ribbons (trails), buildings (WMO) and dressed character models.
+
+
+No screenshot yet: the 3D view draws from a client's own models, and these screenshots were taken without a client.
 
 </details>
 
@@ -220,6 +282,30 @@ All in the **Spell...** menu above the editor.
   type, periodic auras with no period, and fields set on an empty effect. Apply runs the same check and asks before
   going on when something looks wrong.
 
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/compare.png" alt="Screenshot: Compare with clean"><br>
+      Compare with clean: each changed field, with Revert for one or all
+    </td>
+    <td>
+      <img src="docs/screenshots/used-by.png" alt="Screenshot: Used by"><br>
+      Used by: what triggers, teaches or changes Frostbolt
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/template.png" alt="Screenshot: New from a template"><br>
+      New from a template
+    </td>
+    <td>
+      <img src="docs/screenshots/find-replace.png" alt="Screenshot: Find and replace"><br>
+      Find and replace across spells, previewed before anything changes
+    </td>
+  </tr>
+</table>
+
 </details>
 
 <details>
@@ -233,6 +319,20 @@ All in the **Spell...** menu above the editor.
 - **Ctrl+F** in a spell finds a field or flag by its label, column, notes or AzerothCore name (`school`,
   `cooldown`, `range`, `passive`, `SPELL_ATTR0_PASSIVE`), opens its tab and shows it. Ctrl+F again goes to the
   spell search.
+
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/field-finder.png" alt="Screenshot: Ctrl+F finding cooldown fields"><br>
+      Ctrl+F finds "cooldown" across fields, flags and tabs
+    </td>
+    <td>
+      <img src="docs/screenshots/effects.png" alt="Screenshot: the Effects tab"><br>
+      A <b>!</b> beside every field says what the column does
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -259,6 +359,30 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 - 240 file layouts built in; anything else gets one guessed from its data.
 - **Tools > Table links...** maps which tables point at which: pick a table to see the tables and columns that
   point at it and the ones it points at, open any of them, or save every link as a Mermaid diagram.
+
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/dbc-spell.png" alt="Screenshot: Spell.dbc in the DBC editor"><br>
+      Spell.dbc with <b>Open in Spell Editor</b>, tabs and Close all
+    </td>
+    <td>
+      <img src="docs/screenshots/dbc-editor.png" alt="Screenshot: the DBC editor"><br>
+      The searchable table list, and SpellIcon.dbc with its text column wide enough to read
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/table-links.png" alt="Screenshot: Table links"><br>
+      Table links: what points at Spell.dbc, and what it points at
+    </td>
+    <td>
+      <img src="docs/screenshots/columns.png" alt="Screenshot: renaming columns"><br>
+      Renaming a layout's columns
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -288,6 +412,40 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
   patch hides a file in yours.
 - `anarres-cli` does all of it from scripts and build servers.
 
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/import.png" alt="Screenshot: the Import window"><br>
+      Import from the client with every locale, and the note that it takes longer
+    </td>
+    <td>
+      <img src="docs/screenshots/import-progress.png" alt="Screenshot: an import in progress"><br>
+      The second bar following Spell.dbc as it imports
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/localisation.png" alt="Screenshot: the Localisation tab"><br>
+      The Localisation tab: the client's German text previewed in red
+    </td>
+    <td>
+      <img src="docs/screenshots/export.png" alt="Screenshot: the Export window"><br>
+      Export: only the tables edited since import, and the client patch
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/dbc-diff.png" alt="Screenshot: comparing two .dbc files"><br>
+      Comparing two copies of Spell.dbc: every changed field of every row
+    </td>
+    <td>
+      <img src="docs/screenshots/compare.png" alt="Screenshot: Compare with clean"><br>
+      Compare with clean, from the spell editor
+    </td>
+  </tr>
+</table>
+
 </details>
 
 <details>
@@ -302,6 +460,20 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
   - *AzerothCore names* (`spell_dbc`...) to work in `acore_world`'s own override tables.
 - Big tables such as Spell.dbc are kept on this PC between runs and open in about 0.2 seconds instead of 1 to 2;
   the copy is used only while the database still matches it.
+
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/project-settings.png" alt="Screenshot: Project settings"><br>
+      Project settings: SQLite or MySQL, the clean files, the client and the server
+    </td>
+    <td>
+      <img src="docs/screenshots/options-general.png" alt="Screenshot: Options, General"><br>
+      Options: the table cache, what clicking X does, and asking before exiting
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -318,6 +490,30 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 - Close to the tray instead of quitting, and confirm before exiting; both off by default.
 - **View > Write a performance log** records how long loading, drawing and the 3D view take, for bug reports.
 - Unexpected errors go to `crash.log` instead of closing Anarres.
+
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/options-appearance.png" alt="Screenshot: Options, Appearance"><br>
+      Themes with a live preview, and text size and font for every theme or just one
+    </td>
+    <td>
+      <img src="docs/screenshots/theme-editor.png" alt="Screenshot: the theme editor"><br>
+      Editing the ready-made Frost theme; Restore defaults brings back its colours
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/options-spell-editor.png" alt="Screenshot: Options, Spell Editor"><br>
+      Spell Editor options: language, list layout and the tooltip preview
+    </td>
+    <td>
+      <img src="docs/screenshots/options-dbc-editor.png" alt="Screenshot: Options, DBC Editor"><br>
+      DBC Editor options: preview tabs, hex columns and names in cells
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -360,7 +556,7 @@ the layouts.
 The screenshots are 1920 × 1080 and show a project imported from clean 3.3.5a `.dbc` files with no client, so
 there are no spell icons; with your client's folder set, the list, header and talents show the game's icons.
 
-<img src="docs/screenshots/spell-editor.png" alt="Screenshot: the spell editor's Base tab"><br>
+<img src="docs/screenshots/spell-editor.png" alt="Screenshot: the Base tab"><br>
 The Base tab: Blizzard's description beside its live preview, with the level slider, a typed level and a checkbox
 for each talent that changes it
 
@@ -371,7 +567,7 @@ for each talent that changes it
       The Talents tab: the 52 talents and 20 other auras that change Frostbolt, and what each one changes
     </td>
     <td>
-      <img src="docs/screenshots/attributes.png" alt="Screenshot: attributes as switches"><br>
+      <img src="docs/screenshots/attributes.png" alt="Screenshot: bit masks as switches"><br>
       Attributes as switches, with each bit's value and the whole value in hex
     </td>
   </tr>

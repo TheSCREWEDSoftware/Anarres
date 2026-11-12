@@ -1834,8 +1834,10 @@ public sealed class SpellEditorView : Grid
         SpellRecord spell = new SpellRecord(_spells!, row);
         string name = spell.Text("Name", _locale);
         string rank = spell.Text("NameSubtext", _locale);
-        string description = SpellText.Render(spell, spell.Text("Description", _locale), _lookups);
-        string aura = SpellText.Render(spell, spell.Text("AuraDescription", _locale), _lookups);
+        // At the Base tab's level, so the card and the preview give the same numbers
+        TooltipContext context = new TooltipContext { Level = (int)_level.Value };
+        string description = SpellText.Render(spell, spell.Text("Description", _locale), _lookups, context);
+        string aura = SpellText.Render(spell, spell.Text("AuraDescription", _locale), _lookups, context);
         return (name.Length == 0 ? "(no name)" : name) + (rank.Length > 0 ? " (" + rank + ")" : string.Empty) +
                "\nSpell " + id + "  -  " + SpellEnums.Get(SpellEnums.SCHOOL).Describe(spell.U("SchoolMask")) +
                "  -  " + CastTime(spell.U("CastingTimeIndex")) +
