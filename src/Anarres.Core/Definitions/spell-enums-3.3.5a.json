@@ -3515,8 +3515,8 @@
         {
           "Value": 110,
           "Name": "TARGET_DEST_UNK_110",
-          "Label": "Dest Unk 110",
-          "Description": "spell"
+          "Label": "Unit Cone Entry",
+          "Description": "spell (TrinityCore 3.3.5 names it TARGET_UNIT_CONE_ENTRY_110.)"
         },
         {
           "Value": 111,
@@ -3533,193 +3533,193 @@
           "Value": 1,
           "Name": "SPELL_ATTR0_PROC_FAILURE_BURNS_CHARGE",
           "Label": "Proc Failure Burns Charge",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR0_USES_RANGED_SLOT",
           "Label": "Treat as ranged attack",
-          "Description": "Use ammo, ranged attack range modifiers, ranged haste, etc."
+          "Description": "Use ammo, ranged attack range modifiers, ranged haste, etc. The 3.3.5a client reads this bit."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR0_ON_NEXT_SWING_NO_DAMAGE",
           "Label": "On next melee (type 1)",
-          "Description": "Both \"on next swing\" attributes have identical handling in server & client"
+          "Description": "Both \"on next swing\" attributes have identical handling in server & client The 3.3.5a client reads this bit."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR0_DO_NOT_LOG_IMMUNE_MISSES",
           "Label": "Replenishment (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR0_IS_ABILITY",
           "Label": "Treat as ability",
-          "Description": "Cannot be reflected, not affected by cast speed modifiers, etc."
+          "Description": "Cannot be reflected, not affected by cast speed modifiers, etc. The 3.3.5a client reads this bit."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR0_IS_TRADESKILL",
           "Label": "Trade skill recipe",
-          "Description": "Displayed in recipe list, not affected by cast speed modifiers"
+          "Description": "Displayed in recipe list, not affected by cast speed modifiers The 3.3.5a client reads this bit."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR0_PASSIVE",
           "Label": "Passive spell",
-          "Description": "Spell is automatically cast on self by core"
+          "Description": "Spell is automatically cast on self by core The 3.3.5a client reads this bit."
         },
         {
           "Value": 128,
           "Name": "SPELL_ATTR0_DO_NOT_DISPLAY",
           "Label": "Hidden in UI (client only)",
-          "Description": "Not visible in spellbook or aura bar (Spellbook, Aura Icon, Combat Log)"
+          "Description": "Not visible in spellbook or aura bar (Spellbook, Aura Icon, Combat Log) The 3.3.5a client reads this bit."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR0_DO_NOT_LOG",
           "Label": "Hidden in combat log (client only)",
-          "Description": "Spell will not appear in combat logs"
+          "Description": "Spell will not appear in combat logs The 3.3.5a client reads this bit."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR0_HELD_ITEM_ONLY",
           "Label": "Auto-target mainhand item (client only)",
-          "Description": "Client will automatically select main-hand item as cast target"
+          "Description": "Client will automatically select main-hand item as cast target The 3.3.5a client reads this bit."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR0_ON_NEXT_SWING",
           "Label": "On next melee (type 2)",
-          "Description": "Both \"on next swing\" attributes have identical handling in server & client"
+          "Description": "Both \"on next swing\" attributes have identical handling in server & client The 3.3.5a client reads this bit."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR0_WEARER_CASTS_PROC_TRIGGER",
-          "Label": "Unknown attribute 11",
-          "Description": ""
+          "Label": "Wearer Casts Proc Trigger",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR0_SERVER_ONLY",
-          "Label": "Unused attribute 12",
-          "Description": "not set in 3.3.5a"
+          "Label": "Server Only",
+          "Description": "not set in 3.3.5a The 3.3.5a client reads this bit."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR0_ALLOW_ITEM_SPELL_IN_PVP",
           "Label": "Only usable during nighttime",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR0_ONLY_INDOORS",
           "Label": "Only usable indoors",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR0_ONLY_OUTDOORS",
           "Label": "Only usable outdoors",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR0_NOT_SHAPESHIFTED",
           "Label": "Not usable while shapeshifted",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR0_ONLY_STEALTHED",
           "Label": "Only usable in stealth",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR0_DO_NOT_SHEATH",
           "Label": "Don't shealthe weapons (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR0_SCALES_WITH_CREATURE_LEVEL",
           "Label": "Scale with caster level",
-          "Description": "For non-player casts, scale impact and power cost with caster's level"
+          "Description": "For non-player casts, scale impact and power cost with caster's level The 3.3.5a client reads this bit."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT",
           "Label": "Stop attacking after cast",
-          "Description": "After casting this, the current auto-attack will be interrupted"
+          "Description": "After casting this, the current auto-attack will be interrupted The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR0_NO_ACTIVE_DEFENSE",
           "Label": "Prevent physical avoidance",
-          "Description": "Spell cannot be dodged, parried or blocked"
+          "Description": "Spell cannot be dodged, parried or blocked The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR0_TRACK_TARGET_IN_CAST_PLAYER_ONLY",
           "Label": "Automatically face target during cast (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD",
           "Label": "Can be cast while dead",
-          "Description": "Spells without this flag cannot be cast by dead units in non-triggered contexts"
+          "Description": "Spells without this flag cannot be cast by dead units in non-triggered contexts The 3.3.5a client reads this bit."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR0_ALLOW_WHILE_MOUNTED",
           "Label": "Can be cast while mounted",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR0_COOLDOWN_ON_EVENT",
           "Label": "Cooldown starts on expiry",
-          "Description": "Spell is unusable while already active, and cooldown does not begin until the effects have worn off"
+          "Description": "Spell is unusable while already active, and cooldown does not begin until the effects have worn off The 3.3.5a client reads this bit."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR0_AURA_IS_DEBUFF",
           "Label": "Is negative spell",
-          "Description": "Forces the spell to be treated as a negative spell"
+          "Description": "Forces the spell to be treated as a negative spell The 3.3.5a client reads this bit."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR0_ALLOW_WHILE_SITTING",
           "Label": "Can be cast while sitting",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR0_NOT_IN_COMBAT_ONLY_PEACEFUL",
           "Label": "Cannot be used in combat",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR0_NO_IMMUNITIES",
           "Label": "Pierce invulnerability",
-          "Description": "Allows spell to pierce invulnerability, unless the invulnerability spell also has this attribute"
+          "Description": "Allows spell to pierce invulnerability, unless the invulnerability spell also has this attribute The 3.3.5a client reads this bit."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR0_HEARTBEAT_RESIST",
           "Label": "Periodic resistance checks",
-          "Description": "Periodically re-rolls against resistance to potentially expire aura early"
+          "Description": "Periodically re-rolls against resistance to potentially expire aura early The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR0_NO_AURA_CANCEL",
           "Label": "Aura cannot be cancelled",
-          "Description": "Prevents the player from voluntarily canceling a positive aura"
+          "Description": "Prevents the player from voluntarily canceling a positive aura The 3.3.5a client never reads this bit; only the server can act on it."
         }
       ]
     },
@@ -3730,193 +3730,193 @@
           "Value": 1,
           "Name": "SPELL_ATTR1_DISMISS_PET_FIRST",
           "Label": "Dismiss Pet on cast",
-          "Description": "Without this attribute, summoning spells will fail if caster already has a pet"
+          "Description": "Without this attribute, summoning spells will fail if caster already has a pet The 3.3.5a client reads this bit."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR1_USE_ALL_MANA",
           "Label": "Drain all power",
-          "Description": "Ignores listed power cost and drains entire pool instead"
+          "Description": "Ignores listed power cost and drains entire pool instead The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR1_IS_CHANNELED",
           "Label": "Channeled (type 1)",
-          "Description": "Both \"channeled\" attributes have identical handling in server & client"
+          "Description": "Both \"channeled\" attributes have identical handling in server & client The 3.3.5a client reads this bit."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR1_NO_REDIRECTION",
           "Label": "Ignore redirection effects",
-          "Description": "Spell will not be attracted by SPELL_MAGNET auras (Grounding Totem)"
+          "Description": "Spell will not be attracted by SPELL_MAGNET auras (Grounding Totem) The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR1_NO_SKILL_INCREASE",
-          "Label": "Unknown attribute 4",
-          "Description": "stealth and whirlwind"
+          "Label": "No Skill Increase",
+          "Description": "stealth and whirlwind The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR1_ALLOW_WHILE_STEALTHED",
           "Label": "Does not break stealth",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR1_IS_SELF_CHANNELED",
           "Label": "Channeled (type 2)",
-          "Description": "Both \"channeled\" attributes have identical handling in server & client"
+          "Description": "Both \"channeled\" attributes have identical handling in server & client The 3.3.5a client reads this bit."
         },
         {
           "Value": 128,
           "Name": "SPELL_ATTR1_NO_REFLECTION",
           "Label": "Ignore reflection effects",
-          "Description": "Spell will pierce through Spell Reflection and similar"
+          "Description": "Spell will pierce through Spell Reflection and similar The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR1_ONLY_PEACEFUL_TARGETS",
           "Label": "Target cannot be in combat",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR1_INITIATE_COMBAT",
           "Label": "Enables Auto-Attack (client only)",
-          "Description": "Caster will begin auto-attacking the target on cast"
+          "Description": "Caster will begin auto-attacking the target on cast The 3.3.5a client reads this bit."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR1_NO_THREAT",
           "Label": "Does not generate threat",
-          "Description": "Also does not cause target to engage"
+          "Description": "Also does not cause target to engage The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR1_AURA_UNIQUE",
           "Label": "Aura will not refresh its duration when recast",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR1_FAILURE_BREAKS_STEALTH",
           "Label": "Pickpocket (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR1_TOGGLE_FAR_SIGHT",
           "Label": "Farsight aura (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR1_TRACK_TARGET_IN_CHANNEL",
           "Label": "Track target while channeling",
-          "Description": "While channeling, adjust facing to face target"
+          "Description": "While channeling, adjust facing to face target The 3.3.5a client reads this bit."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR1_IMMUNITY_PURGES_EFFECT",
           "Label": "Immunity cancels preapplied auras",
-          "Description": "For immunity spells, cancel all auras that this spell would make you immune to when the spell is applied"
+          "Description": "For immunity spells, cancel all auras that this spell would make you immune to when the spell is applied The 3.3.5a client reads this bit."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR1_IMMUNITY_TO_HOSTILE_AND_FRIENDLY_EFFECTS",
           "Label": "Immunity to Hostile & Friendly Effects",
-          "Description": "Immunity applied by this aura will also be checked for friendly spells (school immunity only) - used by Cyclone for example to cause friendly spells and healing over time to be immune"
+          "Description": "Immunity applied by this aura will also be checked for friendly spells (school immunity only) - used by Cyclone for example to cause friendly spells and healing over time to be immune The 3.3.5a client reads this bit."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR1_NO_AUTOCAST_AI",
           "Label": "Cannot be autocast by pet",
-          "Description": "(AI)"
+          "Description": "(AI) The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR1_PREVENTS_ANIM",
           "Label": "NYI, auras apply UNIT_FLAG_PREVENT_EMOTES_FROM_CHAT_TEXT",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR1_EXCLUDE_CASTER",
           "Label": "Cannot be self-cast",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR1_FINISHING_MOVE_DAMAGE",
           "Label": "Requires combo points (type 1)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR1_THREAT_ONLY_ON_MISS",
-          "Label": "Unknown attribute 21",
-          "Description": ""
+          "Label": "Threat Only On Miss",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR1_FINISHING_MOVE_DURATION",
           "Label": "Requires combo points (type 2)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR1_IGNORE_OWNERS_DEATH",
           "Label": "Unknwon attribute 23",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR1_SPECIAL_SKILLUP",
           "Label": "Fishing (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR1_AURA_STAYS_AFTER_COMBAT",
           "Label": "Aura stays after combat",
-          "Description": "Aura will not be removed when the unit leaves combat"
+          "Description": "Aura will not be removed when the unit leaves combat The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR1_REQUIRE_ALL_TARGETS",
-          "Label": "Unknown attribute 26",
-          "Description": "Related to [target=focus] and [target=mouseover] macros?"
+          "Label": "Require All Targets",
+          "Description": "Related to [target=focus] and [target=mouseover] macros? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR1_DISCOUNT_POWER_ON_MISS",
-          "Label": "Unknown attribute 27",
-          "Description": "Melee spell?"
+          "Label": "Discount Power On Miss",
+          "Description": "Melee spell? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR1_NO_AURA_ICON",
           "Label": "Hide in aura bar (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR1_NAME_IN_CHANNEL_BAR",
           "Label": "Show spell name during channel (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR1_COMBO_ON_BLOCK",
           "Label": "Enable at dodge",
-          "Description": "(Mainline: Dispel All Stacks)"
+          "Description": "(Mainline: Dispel All Stacks) The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR1_CAST_WHEN_LEARNED",
-          "Label": "Unknown attribute 31",
-          "Description": ""
+          "Label": "Cast When Learned",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         }
       ]
     },
@@ -3927,193 +3927,193 @@
           "Value": 1,
           "Name": "SPELL_ATTR2_ALLOW_DEAD_TARGET",
           "Label": "Can target dead players or corpses",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR2_NO_SHAPESHIFT_UI",
-          "Label": "Unknown attribute 1",
-          "Description": "vanish, shadowform, Ghost Wolf and other"
+          "Label": "No Shapeshift UI",
+          "Description": "vanish, shadowform, Ghost Wolf and other The 3.3.5a client reads this bit."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR2_IGNORE_LINE_OF_SIGHT",
           "Label": "Ignore Line of Sight",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR2_ALLOW_LOW_LEVEL_BUFF",
           "Label": "Ignore aura scaling",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR2_USE_SHAPESHIFT_BAR",
           "Label": "Show in stance bar (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR2_AUTO_REPEAT",
           "Label": "Ranged auto-attack spell",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR2_CANNOT_CAST_ON_TAPPED",
           "Label": "Cannot target others' tapped units",
-          "Description": "Can only target untapped units, or those tapped by caster"
+          "Description": "Can only target untapped units, or those tapped by caster The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 128,
           "Name": "SPELL_ATTR2_DO_NOT_REPORT_SPELL_FAILURE",
-          "Label": "Unknown attribute 7",
-          "Description": ""
+          "Label": "Do Not Report Spell Failure",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR2_INCLUDE_IN_ADVANCED_COMBAT_LOG",
-          "Label": "Unused attribute 8",
-          "Description": "not set in 3.3.5a"
+          "Label": "Include In Advanced Combat Log",
+          "Description": "not set in 3.3.5a The 3.3.5a client reads this bit."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR2_ALWAYS_CAST_AS_UNIT",
-          "Label": "Unknown attribute 9",
-          "Description": ""
+          "Label": "Always Cast As Unit",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR2_SPECIAL_TAMING_FLAG",
-          "Label": "Unknown attribute 10",
-          "Description": "Related to taming?"
+          "Label": "Special Taming Flag",
+          "Description": "Related to taming? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR2_NO_TARGET_PER_SECOND_COST",
           "Label": "Health Funnel",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR2_CHAIN_FROM_CASTER",
           "Label": "Chain from caster",
-          "Description": "Cleave, Heart Strike, Maul, Sunder Armor, Swipe"
+          "Description": "Cleave, Heart Strike, Maul, Sunder Armor, Swipe The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR2_ENCHANT_OWN_ITEM_ONLY",
           "Label": "Enchant persists when entering arena",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR2_ALLOW_WHILE_INVISIBLE",
-          "Label": "Unknown attribute 14",
-          "Description": ""
+          "Label": "Allow While Invisible",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR2_DO_NOT_CONSUME_IF_GAINED_DURING_CAST",
-          "Label": "Unused attribute 15",
-          "Description": "not set in 3.3.5a"
+          "Label": "Do Not Consume If Gained During Cast",
+          "Description": "not set in 3.3.5a The 3.3.5a client reads this bit."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR2_NO_ACTIVE_PETS",
           "Label": "Tame Beast",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR2_DO_NOT_RESET_COMBAT_TIMERS",
           "Label": "Don't reset swing timer",
-          "Description": "Does not reset melee/ranged autoattack timer on cast"
+          "Description": "Does not reset melee/ranged autoattack timer on cast The 3.3.5a client reads this bit."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR2_NO_JUMP_WHILE_CAST_PENDING",
           "Label": "Requires dead pet",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED",
           "Label": "Also allow outside shapeshift (caster form)",
-          "Description": "Even if Stances are nonzero, allow spell to be cast outside of shapeshift (though not in a different shapeshift)"
+          "Description": "Even if Stances are nonzero, allow spell to be cast outside of shapeshift (though not in a different shapeshift) The 3.3.5a client reads this bit."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR2_INITIATE_COMBAT_POST_CAST",
           "Label": "(Enables Auto-Attack)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR2_FAIL_ON_ALL_TARGETS_IMMUNE",
           "Label": "Damage reduction ability",
-          "Description": "Causes BG flags to be dropped if combined with ATTR1_DISPEL_AURAS_ON_IMMUNITY"
+          "Description": "Causes BG flags to be dropped if combined with ATTR1_DISPEL_AURAS_ON_IMMUNITY The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR2_NO_INITIAL_THREAD",
-          "Label": "Unknown attribute 22",
-          "Description": "Ambush, Backstab, Cheap Shot, Death Grip, Garrote, Judgements, Mutilate, Pounce, Ravage, Shiv, Shred"
+          "Label": "No Initial Thread",
+          "Description": "Ambush, Backstab, Cheap Shot, Death Grip, Garrote, Judgements, Mutilate, Pounce, Ravage, Shiv, Shred The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR2_PROC_COOLDOWN_ON_FAILURE",
           "Label": "Proc Cooldown On Failure",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR2_ITEM_CAST_WITH_OWNER_SKILL",
-          "Label": "Unknown attribute 24",
-          "Description": ""
+          "Label": "Item Cast With Owner Skill",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR2_DONT_BLOCK_MANA_REGEN",
-          "Label": "Unknown attribute 25",
-          "Description": ""
+          "Label": "Don't Block Mana Regen",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR2_NO_SCHOOL_IMMUNITIES",
           "Label": "Pierce aura application immunities",
-          "Description": "Allow aura to be applied despite target being immune to new aura applications"
+          "Description": "Allow aura to be applied despite target being immune to new aura applications The 3.3.5a client reads this bit."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR2_IGNORE_WEAPONSKILL",
-          "Label": "Unknown attribute 27",
-          "Description": ""
+          "Label": "Ignore Weaponskill",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR2_NOT_AN_ACTION",
-          "Label": "Unknown attribute 28",
-          "Description": ""
+          "Label": "Not An Action",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR2_CANT_CRIT",
           "Label": "Cannot critically strike",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR2_ACTIVE_THREAT",
           "Label": "Allow triggered spell to trigger (type 1)",
-          "Description": "Without this attribute, any triggered spell will be unable to trigger other auras' procs"
+          "Description": "Without this attribute, any triggered spell will be unable to trigger other auras' procs The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR2_RETAIN_ITEM_CAST",
           "Label": "Food buff (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         }
       ]
     },
@@ -4123,194 +4123,194 @@
         {
           "Value": 1,
           "Name": "SPELL_ATTR3_PVP_ENABLING",
-          "Label": "Unknown attribute 0",
-          "Description": ""
+          "Label": "PvP Enabling",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR3_NO_PROC_EQUIP_REQUIREMENT",
           "Label": "Ignores subclass mask check when checking proc",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR3_NO_CASTING_BAR_TEXT",
-          "Label": "Unknown attribute 2",
-          "Description": ""
+          "Label": "No Casting Bar Text",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR3_COMPLETELY_BLOCKED",
           "Label": "Blockable spell",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR3_NO_RES_TIMER",
           "Label": "Ignore resurrection timer",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR3_NO_DURABILITY_LOSS",
-          "Label": "Unknown attribute 5",
-          "Description": ""
+          "Label": "No Durability Loss",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR3_NO_AVOIDANCE",
-          "Label": "Unknown attribute 6",
-          "Description": ""
+          "Label": "No Avoidance",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 128,
           "Name": "SPELL_ATTR3_DOT_STACKING_RULE",
           "Label": "Stack separately for each caster",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR3_ONLY_ON_PLAYER",
           "Label": "Can only target players",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR3_NOT_A_PROC",
           "Label": "Allow triggered spell to trigger (type 2)",
-          "Description": "Without this attribute, any triggered spell will be unable to trigger other auras' procs"
+          "Description": "Without this attribute, any triggered spell will be unable to trigger other auras' procs The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON",
           "Label": "Require main hand weapon",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR3_ONLY_BATTLEGROUNDS",
           "Label": "Can only be cast in battleground",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR3_ONLY_ON_GHOSTS",
           "Label": "Can only target ghost players",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR3_HIDE_CHANNEL_BAR",
           "Label": "Do not display channel bar (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR3_HIDE_IN_RAID_FILTER",
           "Label": "Honorless Target",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR3_NORMAL_RANGED_ATTACK",
-          "Label": "Unknown attribute 15",
-          "Description": "Auto Shoot, Shoot, Throw - ranged normal attack attribute?"
+          "Label": "Normal Ranged Attack",
+          "Description": "Auto Shoot, Shoot, Throw - ranged normal attack attribute? The 3.3.5a client reads this bit."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR3_SUPPRESS_CASTER_PROCS",
           "Label": "Cannot trigger procs",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR3_SUPPRESS_TARGET_PROCS",
           "Label": "No initial aggro",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR3_ALWAYS_HIT",
           "Label": "Ignore hit result",
-          "Description": "Spell cannot miss, or be dodged/parried/blocked"
+          "Description": "Spell cannot miss, or be dodged/parried/blocked The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR3_INSTANT_TARGET_PROCS",
           "Label": "Cannot trigger spells during aura proc",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD",
           "Label": "Persists through death",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR3_ONLY_PROC_OUTDOORS",
-          "Label": "Unused attribute 21",
-          "Description": "Not set in 3.3.5a"
+          "Label": "Only Proc Outdoors",
+          "Description": "Not set in 3.3.5a The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR3_CASTING_CANCELS_AUTOREPEAT",
-          "Label": "Unused attribute 22",
-          "Description": "Not set in 3.3.5a"
+          "Label": "Casting Cancels Autorepeat",
+          "Description": "Not set in 3.3.5a The 3.3.5a client reads this bit."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR3_NO_DAMAGE_HISTORY",
-          "Label": "Unknown attribute 23",
-          "Description": ""
+          "Label": "No Damage History",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR3_REQUIRES_OFF_HAND_WEAPON",
           "Label": "Requires offhand weapon",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR3_TREAT_AS_PERIODIC",
           "Label": "Treat as periodic effect",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR3_CAN_PROC_FROM_PROCS",
           "Label": "Can trigger from triggered spells",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR3_ONLY_PROC_ON_CASTER",
           "Label": "Drain Soul",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR3_IGNORE_CASTER_AND_TARGET_RESTRICTIONS",
-          "Label": "Unknown attribute 28",
-          "Description": ""
+          "Label": "Ignore Caster And Target Restrictions",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR3_IGNORE_CASTER_MODIFIERS",
           "Label": "Damage dealt is unaffected by modifiers",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR3_DO_NOT_DISPLAY_RANGE",
           "Label": "Do not show range in tooltip (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR3_NOT_ON_AOE_IMMUNE",
-          "Label": "Unknown attribute 31",
-          "Description": ""
+          "Label": "Not On AoE Immune",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         }
       ]
     },
@@ -4321,193 +4321,193 @@
           "Value": 1,
           "Name": "SPELL_ATTR4_NO_CAST_LOG",
           "Label": "Cannot be resisted",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR4_CLASS_TRIGGER_ONLY_ON_TARGET",
           "Label": "Only proc on self-cast",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR4_AURA_EXPIRES_OFFLINE",
           "Label": "Buff expires while offline",
-          "Description": "Debuffs (except Resurrection Sickness) will automatically do this"
+          "Description": "Debuffs (except Resurrection Sickness) will automatically do this The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR4_NO_HELPFUL_THREAT",
-          "Label": "Unknown attribute 3",
-          "Description": ""
+          "Label": "No Helpful Threat",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR4_NO_HARMFUL_THREAT",
           "Label": "Treat as delayed spell",
-          "Description": "This will no longer cause guards to attack on use??"
+          "Description": "This will no longer cause guards to attack on use?? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR4_ALLOW_CLIENT_TARGETING",
-          "Label": "Unknown attribute 5",
-          "Description": ""
+          "Label": "Allow Client Targeting",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR4_CANNOT_BE_STOLEN",
           "Label": "Aura cannot be stolen",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 128,
           "Name": "SPELL_ATTR4_ALLOW_CAST_WHILE_CASTING",
           "Label": "Can be cast while casting",
-          "Description": "Ignores already in-progress cast and still casts"
+          "Description": "Ignores already in-progress cast and still casts The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR4_IGNORE_DAMAGE_TAKEN_MODIFIERS",
           "Label": "Deals fixed damage",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR4_COMBAT_FEEDBACK_WHEN_USABLE",
           "Label": "Spell is initially disabled (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR4_WEAPON_SPEED_COST_SCALING",
           "Label": "Attack speed modifies cost",
-          "Description": "Adds 10 to power cost for each 1s of weapon speed"
+          "Description": "Adds 10 to power cost for each 1s of weapon speed The 3.3.5a client reads this bit."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR4_NO_PARTIAL_IMMUNITY",
-          "Label": "Unknown attribute 11",
-          "Description": ""
+          "Label": "No Partial Immunity",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR4_AURA_IS_BUFF",
-          "Label": "Unknown attribute 12",
-          "Description": ""
+          "Label": "Aura Is Buff",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR4_DO_NOT_LOG_CASTER",
-          "Label": "Unknown attribute 13",
-          "Description": ""
+          "Label": "Do Not Log Caster",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR4_DAMAGE_DOESNT_BREAK_AURAS",
           "Label": "Damage does not break auras",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR4_NOT_IN_SPELLBOOK",
-          "Label": "Unknown attribute 15",
-          "Description": ""
+          "Label": "Not In Spellbook",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR4_NOT_IN_ARENA_OR_RATED_BATTLEGROUND",
           "Label": "Not usable in arena",
-          "Description": "Makes spell unusable despite CD <= 10min"
+          "Description": "Makes spell unusable despite CD <= 10min The 3.3.5a client reads this bit."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR4_IGNORE_DEFAULT_ARENA_RESTRICTIONS",
           "Label": "Usable in arena",
-          "Description": "Makes spell usable despite CD > 10min"
+          "Description": "Makes spell usable despite CD > 10min The 3.3.5a client reads this bit."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR4_BOUNCY_CHAIN_MISSILES",
           "Label": "Chain area targets",
-          "Description": "[NYI] Hits area targets over time instead of all at once"
+          "Description": "[NYI] Hits area targets over time instead of all at once The 3.3.5a client reads this bit."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR4_ALLOW_PROC_WHILE_SITTING",
-          "Label": "Unknown attribute 19",
-          "Description": "proc dalayed, after damage or don't proc on absorb?"
+          "Label": "Allow Proc While Sitting",
+          "Description": "proc dalayed, after damage or don't proc on absorb? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR4_AURA_NEVER_BOUNCES",
           "Label": "Allow self-cast to override stronger aura (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR4_ALLOW_ENETRING_ARENA",
           "Label": "Keep when entering arena",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR4_PROC_SUPPRESS_SWING_ANIM",
-          "Label": "Unknown attribute 22",
-          "Description": "Seal of Command (42058,57770) and Gymer's Smash 55426"
+          "Label": "Proc Suppress Swing Anim",
+          "Description": "Seal of Command (42058,57770) and Gymer's Smash 55426 The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR4_SUPPRESS_WEAPON_PROCS",
           "Label": "Cannot trigger item spells",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR4_AUTO_RANGED_COMBAT",
-          "Label": "Unknown attribute 24",
-          "Description": "Shoot-type spell?"
+          "Label": "Auto Ranged Combat",
+          "Description": "Shoot-type spell? The 3.3.5a client reads this bit."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR4_OWNER_POWER_SCALING",
           "Label": "Pet Scaling aura",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR4_ONLY_FLYING_AREAS",
           "Label": "Only in Outland/Northrend",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR4_FORCE_DISPLAY_CASTBAR",
           "Label": "Inherit critical chance from triggering aura",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR4_IGNORE_COMBAT_TIMERS",
-          "Label": "Unknown attribute 28",
-          "Description": "Aimed Shot"
+          "Label": "Ignore Combat Timers",
+          "Description": "Aimed Shot The 3.3.5a client reads this bit."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR4_AURA_BOUNCE_FAILS_SPELL",
-          "Label": "Unknown attribute 29",
-          "Description": ""
+          "Label": "Aura Bounce Fails Spell",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR4_OBSOLETE",
-          "Label": "Unknown attribute 30",
-          "Description": ""
+          "Label": "Obsolete",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR4_USE_FACING_FROM_SPELL",
-          "Label": "Unknown attribute 31",
-          "Description": "Polymorph (chicken) 228 and Sonic Boom (38052,38488)"
+          "Label": "Use Facing From Spell",
+          "Description": "Polymorph (chicken) 228 and Sonic Boom (38052,38488) The 3.3.5a client never reads this bit; only the server can act on it."
         }
       ]
     },
@@ -4518,193 +4518,193 @@
           "Value": 1,
           "Name": "SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL",
           "Label": "Can be channeled while moving/casting",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR5_NO_REAGENT_COST_WITH_AURA",
           "Label": "No reagents during arena preparation",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR5_REMOVE_ENTERING_ARENA",
           "Label": "Remove when entering arena",
-          "Description": "Force this aura to be removed on entering arena, regardless of other properties"
+          "Description": "Force this aura to be removed on entering arena, regardless of other properties The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR5_ALLOW_WHILE_STUNNED",
           "Label": "Usable while stunned",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR5_TRIGGERS_CHANNELING",
-          "Label": "Unknown attribute 4",
-          "Description": ""
+          "Label": "Triggers Channeling",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR5_LIMIT_N",
           "Label": "Single-target aura",
-          "Description": "Remove previous application to another unit if applied"
+          "Description": "Remove previous application to another unit if applied The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR5_IGNORE_AREA_EFFECT_PVP_CHECK",
-          "Label": "Unknown attribute 6",
-          "Description": ""
+          "Label": "Ignore Area Effect PvP Check",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 128,
           "Name": "SPELL_ATTR5_NOT_ON_PLAYER",
           "Label": "Cannot target players",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR5_NOT_ON_PLAYER_CONTROLLED_NPC",
           "Label": "Cannot target player controlled units but can target players",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR5_EXTRA_INITIAL_PERIOD",
           "Label": "Immediately do periodic tick on apply",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR5_DO_NOT_DISPLAY_DURATION",
           "Label": "Do not send aura duration to client",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR5_IMPLIED_TARGETING",
           "Label": "Auto-target target of target (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR5_MELEE_CHAIN_TARGETING",
-          "Label": "Unknown attribute 12",
-          "Description": "Cleave related?"
+          "Label": "Melee Chain Targeting",
+          "Description": "Cleave related? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR5_SPELL_HASTE_AFFECTS_PERIODIC",
           "Label": "Duration scales with Haste Rating",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR5_NOT_AVALIABLE_WHILE_CHARMED",
           "Label": "Charmed units cannot cast this spell",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR5_TREAT_AS_AREA_EFFECT",
-          "Label": "Unknown attribute 15",
-          "Description": "Related to multi-target spells?"
+          "Label": "Treat As Area Effect",
+          "Description": "Related to multi-target spells? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR5_AURA_AFFECTS_NOT_JUST_REQ_EQUIPPED_ITEM",
           "Label": "DESCRIPTION this allows spells with EquippedItemClass to affect spells from other items if the required item is equipped",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR5_ALLOW_WHILE_FLEEING",
           "Label": "Usable while feared",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR5_ALLOW_WHILE_CONFUSED",
           "Label": "Usable while confused",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR5_AI_DOESNT_FACE_TARGET",
           "Label": "Do not auto-turn while casting",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR5_DO_NOT_ATTEMPT_A_PET_RESUMMON_WHEN_DISMOUNTING",
-          "Label": "Unknown attribute 20",
-          "Description": ""
+          "Label": "Do Not Attempt A Pet Resummon When Dismounting",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR5_IGNORE_TARGET_REQUIREMENTS",
-          "Label": "Unknown attribute 21",
-          "Description": ""
+          "Label": "Ignore Target Requirements",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR5_NOT_ON_TRIVIAL",
-          "Label": "Unknown attribute 22",
-          "Description": ""
+          "Label": "Not On Trivial",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR5_NO_PARTIAL_RESISTS",
-          "Label": "Unknown attribute 23",
-          "Description": ""
+          "Label": "No Partial Resists",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR5_IGNORE_CASTER_REQUIREMENETS",
-          "Label": "Unknown attribute 24",
-          "Description": ""
+          "Label": "Ignore Caster Requiremenets",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR5_ALWAYS_LINE_OF_SIGHT",
-          "Label": "Unknown attribute 25",
-          "Description": ""
+          "Label": "Always Line Of Sight",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR5_ALWAYS_AOE_LINE_OF_SIGHT",
           "Label": "Ignore line of sight checks",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR5_NO_CASTER_AURA_ICON",
           "Label": "Don't show aura if self-cast (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR5_NO_TARGET_AURA_ICON",
           "Label": "Don't show aura unless self-cast (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR5_AURA_UNIQUE_PER_CASTER",
-          "Label": "Unknown attribute 29",
-          "Description": ""
+          "Label": "Aura Unique Per Caster",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR5_ALWAYS_SHOW_GROUND_TEXTURE",
-          "Label": "Unknown attribute 30",
-          "Description": ""
+          "Label": "Always Show Ground Texture",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR5_ADD_MELEE_HIT_RATING",
-          "Label": "Unknown attribute 31",
-          "Description": "Forces nearby enemies to attack caster?"
+          "Label": "Add Melee Hit Rating",
+          "Description": "Forces nearby enemies to attack caster? The 3.3.5a client never reads this bit; only the server can act on it."
         }
       ]
     },
@@ -4715,193 +4715,193 @@
           "Value": 1,
           "Name": "SPELL_ATTR6_NO_COOLDOWN_ON_TOOLTIP",
           "Label": "Don't display cooldown (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR6_DO_NOT_RESET_COOLDOWN_IN_ARENA",
           "Label": "Only usable in arena",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR6_NOT_AN_ATTACK",
           "Label": "Ignore all preventing caster auras",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR6_CAN_ASSIST_IMMUNE_PC",
           "Label": "Ignore immunity flags when assisting",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR6_IGNORE_FOR_MOD_TIME_RATE",
-          "Label": "Unknown attribute 4",
-          "Description": ""
+          "Label": "Ignore For Mod Time Rate",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR6_DO_NOT_CONSUME_RESOURCES",
           "Label": "Don't consume proc charges",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR6_FLOATING_COMBAT_TEXT_ON_CAST",
           "Label": "Generate spell_cast event instead of aura_start (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 128,
           "Name": "SPELL_ATTR6_AURA_IS_WEAPON_PROC",
-          "Label": "Unknown attribute 7",
-          "Description": ""
+          "Label": "Aura Is Weapon Proc",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR6_DO_NOT_CHAIN_TO_CROWD_CONTROLLED_TARGETS",
           "Label": "Do not implicitly target in CC",
-          "Description": "Implicit targeting (chaining and area targeting) will not impact crowd controlled targets"
+          "Description": "Implicit targeting (chaining and area targeting) will not impact crowd controlled targets The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR6_ALLOW_ON_CHARMED_TARGETS",
-          "Label": "Unknown attribute 9",
-          "Description": ""
+          "Label": "Allow On Charmed Targets",
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR6_NO_AURA_LOG",
           "Label": "Can target possessed friends",
-          "Description": "[NYI]"
+          "Description": "[NYI] The 3.3.5a client reads this bit."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR6_NOT_IN_RAID_INSTANCES",
           "Label": "Unusable in raid instances",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR6_ALLOW_WHILE_RIDING_VEHICLE",
           "Label": "Castable while caster is on vehicle",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR6_IGNORE_PHASE_SHIFT",
           "Label": "Can target invisible units",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR6_AI_PRIMARY_RANGED_ATTACK",
-          "Label": "Unknown attribute 14",
-          "Description": ""
+          "Label": "Ai Primary Ranged Attack",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR6_NO_PUSHBACK",
           "Label": "Not affected by pushback",
-          "Description": "Casts/Channels will not affected by pushback"
+          "Description": "Casts/Channels will not affected by pushback The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR6_NO_JUMP_PATHING",
-          "Label": "Unknown attribute 16",
-          "Description": ""
+          "Label": "No Jump Pathing",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR6_ALLOW_EQUIP_WHILE_CASTING",
-          "Label": "Unknown attribute 17",
-          "Description": "Mount related?"
+          "Label": "Allow Equip While Casting",
+          "Description": "Mount related? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR6_ORIGINATE_FROM_CONTROLLER",
           "Label": "Spell is cast by charmer",
-          "Description": "Client will prevent casting if not possessed, charmer will be caster for all intents and purposes"
+          "Description": "Client will prevent casting if not possessed, charmer will be caster for all intents and purposes The 3.3.5a client reads this bit."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR6_DELAY_COMBAT_TIMER_DURING_CAST",
-          "Label": "Unknown attribute 19",
-          "Description": "only 47488, 50782"
+          "Label": "Delay Combat Timer During Cast",
+          "Description": "only 47488, 50782 The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR6_AURA_ICON_ONLY_FOR_CASTER",
           "Label": "Only visible to caster (client only) (LIMIT 10)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR6_SHOW_MECHANIC_AS_COMBAT_TEXT",
           "Label": "Client UI target effects (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR6_ABSORB_CANNOT_BE_IGNORED",
-          "Label": "Unknown attribute 22",
-          "Description": "only 72054"
+          "Label": "Absorb Cannot Be Ignored",
+          "Description": "only 72054 The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR6_TAPS_IMMEDIATELY",
-          "Label": "Unknown attribute 23",
-          "Description": ""
+          "Label": "Taps Immediately",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR6_CAN_TARGET_UNTARGETABLE",
           "Label": "Can target untargetable units",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR6_DOESNT_RESET_SWING_TIMER_IF_INSTANT",
           "Label": "Do not reset swing timer if cast time is instant",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR6_VEHICLE_IMMUNITY_CATEGORY",
-          "Label": "Unknown attribute 26",
-          "Description": "Player castable buff?"
+          "Label": "Vehicle Immunity Category",
+          "Description": "Player castable buff? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR6_IGNORE_HEALTH_MODIFIERS",
           "Label": "Limit applicable %healing modifiers",
-          "Description": "This prevents certain healing modifiers from applying - see implementation if you really care about details"
+          "Description": "This prevents certain healing modifiers from applying - see implementation if you really care about details The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR6_DO_NOT_SELECT_TARGET_WITH_INITIATES_COMBAT",
-          "Label": "Unknown attribute 28",
-          "Description": "Death grip?"
+          "Label": "Do Not Select Target With Initiates Combat",
+          "Description": "Death grip? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR6_IGNORE_CASTER_DAMAGE_MODIFIERS",
           "Label": "Limit applicable %damage modifiers",
-          "Description": "This prevents certain damage modifiers from applying - see implementation if you really care about details"
+          "Description": "This prevents certain damage modifiers from applying - see implementation if you really care about details The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR6_DISABLE_TIED_EFFECT_POINTS",
-          "Label": "Unknown attribute 30",
-          "Description": ""
+          "Label": "Disable Tied Effect Points",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR6_NO_CATEGORY_COOLDOWN_MODS",
           "Label": "Ignore cooldown modifiers for category cooldown",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         }
       ]
     },
@@ -4911,188 +4911,188 @@
         {
           "Value": 1,
           "Name": "SPELL_ATTR7_ALLOW_SPELL_REFLECTION",
-          "Label": "Unknown attribute 0",
-          "Description": "Shaman's new spells (Call of the ...), Feign Death."
+          "Label": "Allow Spell Reflection",
+          "Description": "Shaman's new spells (Call of the ...), Feign Death. The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2,
           "Name": "SPELL_ATTR7_NO_TARGET_DURATION_MOD",
           "Label": "Ignore duration modifiers",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4,
           "Name": "SPELL_ATTR7_DISABLE_AURA_WHILE_DEAD",
           "Label": "Reactivate at resurrect (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 8,
           "Name": "SPELL_ATTR7_DEBUG_SPELL",
           "Label": "Is cheat spell",
-          "Description": "Cannot cast if caster doesn't have UnitFlag2 & UNIT_FLAG2_ALLOW_CHEAT_SPELLS"
+          "Description": "Cannot cast if caster doesn't have UnitFlag2 & UNIT_FLAG2_ALLOW_CHEAT_SPELLS The 3.3.5a client reads this bit."
         },
         {
           "Value": 16,
           "Name": "SPELL_ATTR7_TREAT_AS_RAID_BUFF",
-          "Label": "Unknown attribute 4",
-          "Description": "Soulstone related?"
+          "Label": "Treat As Raid Buff",
+          "Description": "Soulstone related? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32,
           "Name": "SPELL_ATTR7_CAN_BE_MULTI_CAST",
           "Label": "Summons player-owned totem",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 64,
           "Name": "SPELL_ATTR7_DONT_CAUSE_SPELL_PUSHBACK",
           "Label": "Damage dealt by this does not cause spell pushback",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 256,
           "Name": "SPELL_ATTR7_HORDE_SPECIFIC_SPELL",
           "Label": "Horde only",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 512,
           "Name": "SPELL_ATTR7_ALLIANCE_SPECIFIC_SPELL",
           "Label": "Alliance only",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1024,
           "Name": "SPELL_ATTR7_DISPEL_REMOVES_CHARGES",
           "Label": "Dispel/Spellsteal remove individual charges",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2048,
           "Name": "SPELL_ATTR7_CAN_CAUSE_INTERRUPT",
           "Label": "Only interrupt non-player casting",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 4096,
           "Name": "SPELL_ATTR7_CAN_CAUSE_SILENCE",
-          "Label": "Unused attribute 12",
-          "Description": "Not set in 3.3.5a."
+          "Label": "Can Cause Silence",
+          "Description": "Not set in 3.3.5a. The 3.3.5a client reads this bit."
         },
         {
           "Value": 8192,
           "Name": "SPELL_ATTR7_NO_UI_NOT_INTERRUPTIBLE",
-          "Label": "Unused attribute 13",
-          "Description": "Not set in 3.3.5a."
+          "Label": "No UI Not Interruptible",
+          "Description": "Not set in 3.3.5a. The 3.3.5a client reads this bit."
         },
         {
           "Value": 16384,
           "Name": "SPELL_ATTR7_RECAST_ON_RESUMMON",
-          "Label": "Unknown attribute 14",
-          "Description": "Only 52150 (Raise Dead - Pet) spell."
+          "Label": "Recast On Resummon",
+          "Description": "Only 52150 (Raise Dead - Pet) spell. The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 32768,
           "Name": "SPELL_ATTR7_RESET_SWING_TIMER_AT_SPELL_START",
-          "Label": "Unknown attribute 15",
-          "Description": "Exorcism - guaranteed crit vs families?"
+          "Label": "Reset Swing Timer At Spell Start",
+          "Description": "Exorcism - guaranteed crit vs families? The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 65536,
           "Name": "SPELL_ATTR7_ONLY_IN_SPELLBOOK_UNTIL_LEARNED",
           "Label": "Can restore secondary power",
-          "Description": "Only spells with this attribute can replenish a non-active power type"
+          "Description": "Only spells with this attribute can replenish a non-active power type The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 131072,
           "Name": "SPELL_ATTR7_DO_NOT_LOG_PVP_KILL",
-          "Label": "Unknown attribute 17",
-          "Description": "Only 27965 (Suicide) spell."
+          "Label": "Do Not Log PvP Kill",
+          "Description": "Only 27965 (Suicide) spell. The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 262144,
           "Name": "SPELL_ATTR7_ATTACK_ON_CHARGE_TO_UNIT",
           "Label": "Has charge effect",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 524288,
           "Name": "SPELL_ATTR7_REPORT_SPELL_FAILURE_TO_UNIT_TARGET",
           "Label": "Is zone teleport",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 1048576,
           "Name": "SPELL_ATTR7_NO_CLIENT_FAIL_WHILE_STUNNED_FLEEING_CONFUSED",
-          "Label": "Unknown attribute 20",
-          "Description": "Invulnerability related?"
+          "Label": "No Client Fail While Stunned Fleeing Confused",
+          "Description": "Invulnerability related? The 3.3.5a client reads this bit."
         },
         {
           "Value": 2097152,
           "Name": "SPELL_ATTR7_RETAIN_COOLDOWN_THROUGH_LOAD",
-          "Label": "Unused attribute 21@Attr7 DESCRPIPTION Not set in 3.3.5a",
-          "Description": ""
+          "Label": "Retain Cooldown Through Load",
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 4194304,
           "Name": "SPELL_ATTR7_IGNORES_COLD_WEATHER_FLYING_REQUIREMENT",
           "Label": "Ignore cold weather flying restriction",
-          "Description": "Set for loaner mounts, allows them to be used despite lacking required flight skill"
+          "Description": "Set for loaner mounts, allows them to be used despite lacking required flight skill The 3.3.5a client reads this bit."
         },
         {
           "Value": 8388608,
           "Name": "SPELL_ATTR7_NO_ATTACK_DODGE",
           "Label": "Spell cannot be dodged 23",
-          "Description": "Motivate, Mutilate, Shattering Throw"
+          "Description": "Motivate, Mutilate, Shattering Throw The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 16777216,
           "Name": "SPELL_ATTR7_NO_ATTACK_PARRY",
           "Label": "Spell cannot be parried 24",
-          "Description": "Motivate, Mutilate, Perform Speech, Shattering Throw"
+          "Description": "Motivate, Mutilate, Perform Speech, Shattering Throw The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 33554432,
           "Name": "SPELL_ATTR7_NO_ATTACK_MISS",
           "Label": "Spell cannot be missed 25",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 67108864,
           "Name": "SPELL_ATTR7_TREAT_AS_NPC_AOE",
           "Label": "Treat as NPC AoE",
-          "Description": ""
+          "Description": "The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 134217728,
           "Name": "SPELL_ATTR7_BYPASS_NO_RESURRECTION_AURA",
           "Label": "Bypasses the prevent resurrection aura",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 268435456,
           "Name": "SPELL_ATTR7_DO_NOT_COUNT_FOR_PVP_SCOREBOARD",
           "Label": "Consolidate in raid buff frame (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         },
         {
           "Value": 536870912,
           "Name": "SPELL_ATTR7_REFLECTION_ONLY_DEFENDS",
-          "Label": "Unknown attribute 29",
-          "Description": "only 69028, 71237"
+          "Label": "Reflection Only Defends",
+          "Description": "only 69028, 71237 The 3.3.5a client reads this bit."
         },
         {
           "Value": 1073741824,
           "Name": "SPELL_ATTR7_CAN_PROC_FROM_SUPPRESSED_TARGET_PROCS",
-          "Label": "Unknown attribute 30",
-          "Description": "Burning Determination, Divine Sacrifice, Earth Shield, Prayer of Mending"
+          "Label": "Can Proc From Suppressed Target Procs",
+          "Description": "Burning Determination, Divine Sacrifice, Earth Shield, Prayer of Mending The 3.3.5a client never reads this bit; only the server can act on it."
         },
         {
           "Value": 2147483648,
           "Name": "SPELL_ATTR7_ALWAYS_CAST_LOG",
           "Label": "Client indicator (client only)",
-          "Description": ""
+          "Description": "The 3.3.5a client reads this bit."
         }
       ]
     },
