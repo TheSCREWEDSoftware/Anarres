@@ -87,6 +87,9 @@ public sealed class AppOptions
     // A .sql file opens in the text editor once it's saved
     public bool OpenSqlAfterSaving { get; set; }
 
+    // The DBC editor writes names beside values in cells too; hovering a cell always lists them
+    public bool NamesInCells { get; set; }
+
     // The setup window opens at start until "Don't show this again" is ticked
     public bool ShowSetup { get; set; } = true;
 

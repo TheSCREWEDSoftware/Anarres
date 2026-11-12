@@ -95,14 +95,18 @@ public sealed class DbcGrid : Grid
     // The named list behind a cell (races, schools, attribute bits...), or null for a plain number
     public Func<DbcTable, int, int, EnumTable?>? Names { get; set; }
 
-    // How a cell is drawn: as the table writes it, or in hex for flag columns, then its names in brackets
+    // Names in brackets beside values; off by default, since hovering a cell lists them more readably
+    public bool NamesInCells { get; set; }
+
+    // How a cell is drawn: as the table writes it, or in hex for flag columns, then its names when asked for
     private string Display(DbcTable table, int row, int column)
     {
         DbcColumn definition = table.Definition.Columns[column];
         string text = FlagsInHex && DbcColumnTypes.IsInteger(definition.Type) && IsFlagColumn(definition.Name)
                           ? "0x" + table.GetRaw(row, column).ToString("X8", CultureInfo.InvariantCulture)
                           : table.GetText(row, column);
-        if (!DbcColumnTypes.IsInteger(definition.Type) || Names?.Invoke(table, column, row) is not { } names)
+        if (!NamesInCells || !DbcColumnTypes.IsInteger(definition.Type) ||
+            Names?.Invoke(table, column, row) is not { } names)
             return text;
         string named = names.Names(table.GetInt(row, column));
         return named.Length == 0 ? text : text + " (" + named + ")";
@@ -160,7 +164,8 @@ public sealed class DbcGrid : Grid
             // Columns with names beside their values start wide enough to read a few of them
             _widths = table?.Definition.Columns.Select((column, index) =>
                           column.Type == DbcColumnType.String ? STRING_WIDTH
-                          : Names?.Invoke(table, index, -1) != null || IsNamed(table, index) ? NAMED_WIDTH
+                          : NamesInCells && (Names?.Invoke(table, index, -1) != null || IsNamed(table, index))
+                              ? NAMED_WIDTH
                           : NUMBER_WIDTH).ToArray()
                       ?? Array.Empty<double>();
             _order = Enumerable.Range(0, _widths.Length).ToList();

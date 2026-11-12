@@ -46,6 +46,10 @@ public sealed class OptionsWindow : Window
         Content = "Hide columns that are zero or empty in every row"
     };
     private readonly CheckBox _hex = new CheckBox { Content = "Show Flags, Mask and Attributes columns in hex" };
+    private readonly CheckBox _namesInCells = new CheckBox
+    {
+        Content = "Write names beside values in cells, such as 6 (Orc, Dwarf); hovering a cell always lists them"
+    };
     private readonly ComboBox _start = new ComboBox { ItemsSource = StartNames, Width = 240 };
     private readonly CheckBox _confirm = new CheckBox { Content = "Ask before deleting spells and rows" };
     private readonly CheckBox _confirmApply = new CheckBox { Content = "Show what Apply will do and ask first" };
@@ -88,6 +92,7 @@ public sealed class OptionsWindow : Window
         _reopen.IsChecked = _options.ReopenLastSpell;
         _hideEmpty.IsChecked = _options.HideEmptyColumns;
         _hex.IsChecked = _options.FlagsInHex;
+        _namesInCells.IsChecked = _options.NamesInCells;
         _start.SelectedIndex = (int)_options.StartIn;
         _confirm.IsChecked = _options.ConfirmDeletes;
         _confirmApply.IsChecked = _options.ConfirmApply;
@@ -106,7 +111,7 @@ public sealed class OptionsWindow : Window
                               _rank, _preview2, _reopen);
         _pages[TABLES] = Page(Ui.Title("DBC Editor"),
                               Ui.Row("Grid text size", _gridFontSize),
-                              _hideEmpty, _hex,
+                              _hideEmpty, _hex, _namesInCells,
                               Ui.Hint("Hex is only how the grid shows the numbers; type them either way."));
         _editor.Use(_options.TextEditor);
         _sqlTool.Use(_options.SqlTool);
@@ -366,6 +371,7 @@ public sealed class OptionsWindow : Window
         options.ReopenLastSpell = _reopen.IsChecked == true;
         options.HideEmptyColumns = _hideEmpty.IsChecked == true;
         options.FlagsInHex = _hex.IsChecked == true;
+        options.NamesInCells = _namesInCells.IsChecked == true;
         options.StartIn = (StartEditor)Math.Max(0, _start.SelectedIndex);
         options.ConfirmDeletes = _confirm.IsChecked == true;
         options.ConfirmApply = _confirmApply.IsChecked == true;

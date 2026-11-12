@@ -102,6 +102,7 @@ public sealed class DbcEditorView : Grid
     {
         ConfirmDeletes = options.ConfirmDeletes;
         _grid.FlagsInHex = options.FlagsInHex;
+        _grid.NamesInCells = options.NamesInCells;
         _grid.HideEmptyByDefault = options.HideEmptyColumns;
         _grid.UseFontSize(options.GridFontSize);
     }

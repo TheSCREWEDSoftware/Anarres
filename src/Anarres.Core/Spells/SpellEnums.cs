@@ -52,24 +52,25 @@ public sealed class EnumTable
         return Values.FirstOrDefault(entry => entry.Value == value)?.Label ?? string.Empty;
     }
 
-    // One line per set bit, "2 - Orc", for a tooltip; a plain value gives its one line
+    // One line per set bit, "Orc (2)", for a tooltip; a plain value gives its one line
     public string Lines(long value)
     {
         if (!Flags)
         {
             EnumValue? found = Values.FirstOrDefault(entry => entry.Value == value);
-            return value.ToString(CultureInfo.InvariantCulture) + " - " + (found?.Label ?? "Unknown");
+            return (found?.Label ?? "Unknown") + " (" + value.ToString(CultureInfo.InvariantCulture) + ")";
         }
 
         List<string> lines = Values.Where(entry => (value & entry.Value) != 0)
-                                   .Select(entry => entry.Value.ToString(CultureInfo.InvariantCulture) + " - " +
-                                                    entry.Label).ToList();
+                                   .Select(entry => entry.Label + " (" +
+                                                    entry.Value.ToString(CultureInfo.InvariantCulture) + ")")
+                                   .ToList();
         long known = Values.Aggregate(0L, (mask, entry) => mask | entry.Value);
         for (int bit = 0; bit < 64; ++bit)
         {
             long mask = 1L << bit;
             if ((value & ~known & mask) != 0)
-                lines.Add(mask.ToString(CultureInfo.InvariantCulture) + " - Unknown bit " + bit);
+                lines.Add("Unknown bit " + bit + " (" + mask.ToString(CultureInfo.InvariantCulture) + ")");
         }
 
         return lines.Count == 0 ? "None" : string.Join("\n", lines);
