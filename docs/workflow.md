@@ -57,6 +57,14 @@ Open **File > Project settings**.
 Spell.dbc and the tables the spell editor shows values from (cast times, durations, ranges, radii, icons,
 description variables). Importing replaces the project's copy of each ticked table.
 
+- Each table is saved as soon as it's imported, so an import that stops keeps what it did. *Skip tables already
+  in the project* (on by default) makes the next Import carry on with the rest.
+- Empty or unreadable files, such as the client's own empty `CharVariations.dbc`, are skipped and listed at the end.
+- The window says what language the files are in. Each text field has 16 columns and the client fills in the one
+  for its locale, so the filled column tells it (from ChrRaces, ChrClasses or Spell). AzerothCore's `spell_dbc`
+  names those columns after a later list (`Name_Lang_enGB` is where the 3.3.5a client keeps Korean), so the
+  Localisation tab labels each by the language the client reads from it.
+
 Import once; the project keeps the data from then on.
 
 ## 3. Edit
