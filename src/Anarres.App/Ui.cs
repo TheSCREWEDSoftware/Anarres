@@ -74,6 +74,32 @@ public static class Ui
         });
     }
 
+    // A small x inside a search box that empties it; shown only while there's text
+    public static TextBox Clearable(TextBox box)
+    {
+        Button clear = new Button
+        {
+            Content = "x",
+            Padding = new Thickness(6, 0),
+            Margin = new Thickness(0, 0, 4, 0),
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsVisible = !string.IsNullOrEmpty(box.Text),
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+        };
+        ToolTip.SetTip(clear, "Clear");
+        clear.Click += (_, _) =>
+        {
+            box.Text = string.Empty;
+            box.Focus();
+        };
+        box.TextChanged += (_, _) => clear.IsVisible = !string.IsNullOrEmpty(box.Text);
+        box.InnerRightContent = clear;
+        return box;
+    }
+
     public const double BADGE_SIZE = 16;
 
     // A small round "!" that explains a field when hovered, like Keira3's column notes

@@ -16,7 +16,7 @@ public sealed class IconPickerWindow : Window
     private const double ICON_SIZE = 36;
 
     private readonly ListBox _list = new ListBox();
-    private readonly TextBox _filter = new TextBox { Watermark = "Filter by ID or texture name" };
+    private readonly TextBox _filter = Ui.Clearable(new TextBox { Watermark = "Filter by ID or texture name" });
     private readonly List<IconItem> _all;
 
     public IconPickerWindow(IconImages images, uint current)

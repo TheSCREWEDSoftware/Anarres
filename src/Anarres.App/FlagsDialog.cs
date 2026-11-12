@@ -20,7 +20,7 @@ public sealed class FlagsDialog : Window
     private readonly TextBlock _total = new TextBlock { FontWeight = FontWeight.SemiBold };
     private readonly List<(ToggleSwitch Switch, TextBlock Value, uint Mask)> _rows =
         new List<(ToggleSwitch, TextBlock, uint)>();
-    private readonly TextBox _filter = new TextBox { Watermark = "Filter", Width = 240 };
+    private readonly TextBox _filter = Ui.Clearable(new TextBox { Watermark = "Filter", Width = 240 });
     private readonly CheckBox _onlySet = new CheckBox { Content = "Only set bits" };
     private readonly List<(Control Row, string Text, uint Mask)> _filterable = new List<(Control, string, uint)>();
     private uint _value;

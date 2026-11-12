@@ -36,7 +36,7 @@ public sealed class ImportWindow : Window
     private readonly TextBox _folder = new TextBox();
     private readonly TextBox _client = new TextBox();
     private readonly LocalePicker _locale;
-    private readonly TextBox _filter = new TextBox { Watermark = "Filter", Width = 220 };
+    private readonly TextBox _filter = Ui.Clearable(new TextBox { Watermark = "Filter", Width = 220 });
     private readonly StackPanel _files = new StackPanel { Spacing = 0 };
     private readonly ProgressBar _progress = new ProgressBar { Minimum = 0, Maximum = 1, Height = 6 };
     private readonly TextBlock _status = new TextBlock { Classes = { "hint" } };
