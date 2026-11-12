@@ -125,11 +125,12 @@ public sealed class FieldFinder
 
     private static string? Label(Control control)
     {
+        // A flag's row: its switch, its bit value, then its name
+        if (control is Panel bit && bit.Classes.Contains(FlagToggles.BIT_CLASS))
+            return bit.Children.OfType<TextBlock>().LastOrDefault()?.Text;
         if (control is not StackPanel { Orientation: Avalonia.Layout.Orientation.Horizontal } panel ||
             panel.Children.Count < 2)
             return null;
-        if (panel.Classes.Contains(FlagToggles.BIT_CLASS))
-            return (panel.Children[1] as TextBlock)?.Text;
         return panel.Children[0] is TextBlock { Text.Length: > 0 } label ? label.Text : null;
     }
 

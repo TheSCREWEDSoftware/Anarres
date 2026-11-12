@@ -187,15 +187,24 @@ public sealed class EnumField : IField
         Combo = new ComboBox
         {
             Width = COMBO_WIDTH,
-            ItemsSource = _items.Select(Text).ToList(),
+            ItemsSource = _items.Select(Text).Append(OTHER).ToList(),
             MaxDropDownHeight = 420
         };
         Value = new CellField(binding, column, Ui.FIELD_WIDTH);
+        ToolTip.SetTip(Value.Box, "A value that isn't in the list");
         _binding.Add(this);
         Combo.SelectionChanged += (_, _) =>
         {
             if (_refreshing || Combo.SelectedIndex < 0 || !_binding.IsBound)
                 return;
+            // The last entry opens a box for a value that isn't in the list
+            if (Combo.SelectedIndex >= _items.Count)
+            {
+                Value.Box.IsVisible = true;
+                Value.Box.Focus();
+                return;
+            }
+
             int index = _binding.Column(_column);
             if (index < 0)
                 return;
@@ -233,13 +242,19 @@ public sealed class EnumField : IField
         _refreshing = true;
         Combo.IsEnabled = _binding.IsBound;
         long current = Current;
-        Combo.SelectedIndex = _items.FindIndex(item => item.Value == current);
+        int found = _items.FindIndex(item => item.Value == current);
+        // The number box only shows for a value the list doesn't have
+        Combo.SelectedIndex = found >= 0 || !_binding.IsBound ? found : _items.Count;
+        Value.Box.IsVisible = found < 0 && _binding.IsBound;
         _refreshing = false;
     }
 
+    private const string OTHER = "Other value...";
+
+    // "13 - POTION": the value, then its name in capitals so it stands apart from the number
     private static string Text(EnumValue value)
     {
-        return value.Value.ToString(CultureInfo.InvariantCulture) + "  " + value.Label;
+        return value.Value.ToString(CultureInfo.InvariantCulture) + " - " + value.Label.ToUpperInvariant();
     }
 }
 
@@ -473,7 +488,8 @@ public sealed class AllFieldsView
 public sealed class FlagToggles : IField
 {
     public const string BIT_CLASS = "flag-bit";
-    private const double ITEM_WIDTH = 330;
+    private const double ITEM_WIDTH = 380;
+    private const double VALUE_GAP = 14;
     private const int BITS = 32;
 
     private readonly RecordBinding _binding;
@@ -507,16 +523,22 @@ public sealed class FlagToggles : IField
                 Text = label,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                Width = ITEM_WIDTH - 64
+                Margin = new Thickness(6, 0, 6, 0)
             };
-            StackPanel item = new StackPanel
+            // The bit's value, so a total such as 587 can be worked out from the switches (1 + 2 + 8 + 64 + 512)
+            TextBlock value = new TextBlock
             {
-                Orientation = Orientation.Horizontal,
-                Spacing = 6,
-                Width = ITEM_WIDTH,
-                Classes = { BIT_CLASS },
-                Children = { toggle, text }
+                Text = mask.ToString(CultureInfo.InvariantCulture),
+                Classes = { "hint" },
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, VALUE_GAP, 0)
             };
+            DockPanel item = new DockPanel { Width = ITEM_WIDTH, Classes = { BIT_CLASS } };
+            DockPanel.SetDock(toggle, Dock.Left);
+            DockPanel.SetDock(value, Dock.Right);
+            item.Children.Add(toggle);
+            item.Children.Add(value);
+            item.Children.Add(text);
             string details = entry == null ? string.Empty
                              : "\n\n" + entry.Name + (entry.Description.Length > 0 ? ": " + entry.Description : "");
             ToolTip.SetTip(item, label + details + "\n\nBit " + bit + " (" +
