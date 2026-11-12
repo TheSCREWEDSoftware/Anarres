@@ -101,8 +101,8 @@ void CheckFiles(IEnumerable<string> paths, bool staged)
 {
     foreach (string path in paths.Where(FileRules.IsChecked))
     {
-        // Staged mode checks what will be committed, not what is in the working folder
-        byte[]? bytes = staged ? GitBytes("show", ":" + path)
+        // Staged mode checks what will be committed, as a checkout writes it (.bat files get CRLF on the way out)
+        byte[]? bytes = staged ? GitBytes("cat-file", "--filters", ":" + path)
                                : File.Exists(Path.Combine(root, path)) ? File.ReadAllBytes(Path.Combine(root, path))
                                                                          : null;
         if (bytes != null)
