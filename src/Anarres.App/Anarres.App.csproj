@@ -7,7 +7,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Anarres</AssemblyName>
     <RootNamespace>Anarres.App</RootNamespace>
-    <Version>0.1.0</Version>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
     <!-- The icon of Anarres.exe in Explorer and the taskbar; Assets/anarres.svg is its source -->

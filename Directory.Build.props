@@ -1,5 +1,10 @@
 <Project>
 
+  <!-- The version of Anarres and anarres-cli; the Release workflow publishes v<this> and refuses one already out -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
   <!-- .NET has no RelWithDebInfo: Release is optimised and, with the settings below, still has full debug symbols,
        so it plays that role. It is the default when no configuration is given (dotnet build, run and test);
        pass -c Debug for an unoptimised build. -->

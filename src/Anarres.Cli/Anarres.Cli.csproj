@@ -7,7 +7,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>anarres-cli</AssemblyName>
     <RootNamespace>Anarres.Cli</RootNamespace>
-    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

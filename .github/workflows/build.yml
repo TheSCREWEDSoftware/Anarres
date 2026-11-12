@@ -1,9 +1,11 @@
 name: Build and test
 
+# Runs on pushes and pull requests, and as the first step of the Release workflow
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 jobs:
   build:
@@ -13,7 +15,7 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: actions/setup-dotnet@v4

@@ -1,93 +1,108 @@
 name: Release
 
-# Pushing a version tag (git tag v0.2.0, then git push origin v0.2.0) tests Anarres, builds ready-to-run downloads
-# for Windows and Linux, and publishes them as a GitHub release with notes made from the changes.
+# Run by hand (Actions > Release > Run workflow): builds and tests first, then publishes ready-to-run Windows, Linux
+# and macOS downloads as v<Version> from Directory.Build.props, with notes made from the changes since the last one
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: Mark it as a pre-release (a test build for testers, not a finished version)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Core tests
-        run: dotnet run --project tests/Anarres.Core.Tests -c Release
-
-      - name: Interface tests (Avalonia headless)
-        run: dotnet run --project tests/Anarres.App.Tests -c Release
-
   build:
-    needs: test
+    uses: ./.github/workflows/build.yml
+
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: read
+        run: |
+          version=$(sed -n 's|.*<Version>\([0-9.]*[^<]*\)</Version>.*|\1|p' Directory.Build.props | head -n 1)
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Stop if this version was already released
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.read.outputs.version }}" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::v${{ steps.read.outputs.version }} is already out; raise <Version> in Directory.Build.props"
+            exit 1
+          fi
+
+  package:
+    needs: [build, version]
     strategy:
+      fail-fast: true
       matrix:
         include:
           - os: windows-latest
             runtime: win-x64
+            platform: windows
           - os: ubuntu-latest
             runtime: linux-x64
+            platform: linux
+          - os: macos-latest
+            runtime: osx-arm64
+            platform: macos
     runs-on: ${{ matrix.os }}
+    env:
+      PACKAGE: Anarres-${{ needs.version.outputs.version }}-${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
-      # One self-contained file per system, the app and the command-line tool: .NET included
+      # One self-contained file each for the app and the command-line tool: .NET included, nothing to install
       - name: Publish
         shell: bash
         run: |
           dotnet publish src/Anarres.App -c Release -r ${{ matrix.runtime }} --self-contained \
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:Version=${GITHUB_REF_NAME#v} -o publish
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "$PACKAGE"
           dotnet publish src/Anarres.Cli -c Release -r ${{ matrix.runtime }} --self-contained \
-            -p:PublishSingleFile=true -p:Version=${GITHUB_REF_NAME#v} -o publish
+            -p:PublishSingleFile=true -o "$PACKAGE"
 
-      - name: Package (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: >-
-          Compress-Archive -Path publish/*.exe
-          -DestinationPath "Anarres-$env:GITHUB_REF_NAME-${{ matrix.runtime }}.zip"
+      - name: Package
+        shell: bash
+        run: |
+          cp README.md LICENSE "$PACKAGE/"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            7z a "$PACKAGE.zip" "$PACKAGE"
+          else
+            tar -czf "$PACKAGE.tar.gz" "$PACKAGE"
+          fi
 
-      - name: Package (Linux)
-        if: runner.os == 'Linux'
-        run: tar -czf "Anarres-${GITHUB_REF_NAME}-${{ matrix.runtime }}.tar.gz" -C publish --exclude='*.pdb' .
-
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
-          name: anarres-${{ matrix.runtime }}
+          name: ${{ env.PACKAGE }}
           path: |
-            Anarres-*.zip
-            Anarres-*.tar.gz
+            ${{ env.PACKAGE }}.zip
+            ${{ env.PACKAGE }}.tar.gz
+          if-no-files-found: error
 
   release:
-    needs: build
+    needs: [version, package]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
-          path: downloads
+          path: packages
           merge-multiple: true
-
-      # A tag with a hyphen (v0.2.0-beta.1) is marked as a pre-release
-      - name: Publish the release
+      - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           prerelease=""
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
-          gh release create "$GITHUB_REF_NAME" downloads/* --title "Anarres ${GITHUB_REF_NAME#v}" --generate-notes \
-            $prerelease
+          if [ "${{ inputs.prerelease }}" = "true" ]; then prerelease="--prerelease"; fi
+          gh release create "v$VERSION" packages/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Anarres $VERSION" --generate-notes $prerelease
