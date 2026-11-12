@@ -68,7 +68,8 @@ Ctrl+, opens the options.
 
 ## 4. Export and deploy
 
-**Export** writes the ticked tables as `.dbc` files, then, when ticked:
+**Export** writes `.dbc` files: by default only the tables edited since they were imported (marked *edited* in
+the list), or the ticked ones when that option is off. Then, when ticked:
 
 - copies them to the server's `dbc` folder: restart the worldserver;
 - packs them into the patch MPQ in the WoW Data folder: restart the client (and clear its `Cache` folder when spell
@@ -77,6 +78,22 @@ Ctrl+, opens the options.
 For a few spells, the spell editor's **SQL...** writes the shown spell, or every spell that differs from the clean
 Spell.dbc, for `spell_dbc`; **Send to world DB...** writes a spell straight into `acore_world.spell_dbc`. The client
 still needs the patch to know the spells.
+
+### Only what changed
+
+- **Tables**: Anarres knows which tables were edited since import, so Export and Apply write just those, and the
+  patch MPQ holds just those. A SQLite project keeps a token per table that triggers change on every edit, even one
+  made in another SQLite tool; MySQL uses `CHECKSUM TABLE`. **Check against clean files** compares every table with
+  its clean file, so a table whose edits were undone stops counting. Projects imported before this was tracked are
+  compared once, then remembered.
+- **Inside a table**: a `.dbc` file has no way to hold only some rows, so the client always needs the whole
+  Spell.dbc in its patch. The server is different: AzerothCore's `spell_dbc` overrides only the rows it holds, so
+  SQL for it should hold only the changed spells (**SQL... > changed**, `anarres-cli sql Spell --changed`, or
+  Apply's world database step). Stoneharry's editor writes every spell; putting all 49,839 rows in `spell_dbc`
+  makes the worldserver load them all on every start and override every spell in the `.dbc` files.
+- **SQL speed**: SQL files are written as `INSERT`s of 200 rows each. A full spell_dbc file (47 MB) runs in about
+  4 seconds on a local MariaDB; splitting it into more files or wrapping it in one transaction made no measurable
+  difference, so only the size matters, and changed-only files are a few kilobytes.
 
 With *AzerothCore names*, the world tables hold only the rows that differ, so Export lays them over the clean
 file from the Clean DBC folder or the client's MPQs; without one it refuses, rather than write a `.dbc` with only
@@ -87,14 +104,26 @@ those rows.
 **Apply** (F6) saves, then puts the changes where the server and client read them, as chosen under **Apply** in
 Project settings:
 
-- the tables ticked in the last export (Spell.dbc to start with) are written and copied to the server's `dbc`
-  folder, keeping the server's own copy of each file the first time (in the export folder's `server-backup`);
+- the tables edited since import (or, with that option off, the ones ticked in the last export) are written and
+  copied to the server's `dbc` folder, keeping the server's own copy of each file the first time (in the export
+  folder's `server-backup`);
 - the client patch is built in the WoW `Data` folder;
 - optionally, the client's `Cache` folder is emptied, so WoW doesn't show old spell text;
 - optionally, rows that differ from the clean files go into `acore_world`'s `_dbc` tables.
 
 It lists what it will do first (an option turns that off), and says when the worldserver or WoW is running and
 needs a restart.
+
+## Quicker loading
+
+Spell.dbc has 49,839 rows of 234 columns, so reading it from a database takes a while: about 2 seconds from a
+SQLite project and 1.2 seconds from a local MariaDB (longer from one on another machine). Anarres keeps a copy of
+each big table on this PC as a `.dbc` file, which opens in about 0.2 seconds, and uses it only while the database's
+token or checksum for the table still matches; after any edit, including one made in another tool, the database is
+read again and the copy refreshed. Saving refreshes the copy too, so the next start is quick.
+
+The copies live in the `cache` folder beside `settings.json`. **Options > General** turns this off and clears them;
+`anarres-cli --no-cache` skips them for one run.
 
 ## Automating it
 
@@ -108,6 +137,8 @@ anarres-cli export --mysql localhost:3306/acore_dbc_extracted --user acore --pas
 anarres-cli sql Spell --ids 90000 --out spell_90000.sql
 anarres-cli sql Spell --changed --source "C:\client-data\dbc" --out changed.sql
 anarres-cli apply
+anarres-cli edited
+anarres-cli export --edited --server --patch
 anarres-cli list
 ```
 

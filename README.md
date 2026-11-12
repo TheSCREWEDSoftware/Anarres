@@ -64,7 +64,10 @@ The data lives in a database between import and export, as in Stoneharry's workf
 binary tables that don't take well to editing in place, while SQL can be searched, compared with the clean files,
 bulk-edited and shared. [docs/workflow.md](docs/workflow.md) explains why.
 
-Unchanged tables export byte for byte the same as the files they came from.
+Unchanged tables export byte for byte the same as the files they came from. Export and Apply write only the tables
+edited since import, so the patch holds just those, and SQL for `spell_dbc` can hold only the changed spells.
+Big tables such as Spell.dbc are kept on this PC between runs and open in about 0.2 seconds instead of 1 to 2; the
+copy is used only while the database still matches it. See [docs/workflow.md](docs/workflow.md#only-what-changed).
 
 ### Where the data lives
 
@@ -85,6 +88,7 @@ Unchanged tables export byte for byte the same as the files they came from.
 anarres-cli import "C:\client-data\dbc" --only Spell,SpellIcon
 anarres-cli export --server --patch
 anarres-cli apply
+anarres-cli export --edited --patch
 anarres-cli sql Spell --ids 90000,90001 --out custom_spells.sql
 anarres-cli sql Spell --changed --out changed_spells.sql
 anarres-cli patch patch-A.MPQ Spell.dbc SpellIcon.dbc
