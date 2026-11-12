@@ -76,7 +76,7 @@ public static class Ui
 
     public const double BADGE_SIZE = 16;
 
-    // A small round "?" that explains a field when hovered, like Keira3's column notes
+    // A small round "!" that explains a field when hovered, like Keira3's column notes
     public static Control InfoBadge(string tip)
     {
         Border badge = new Border
@@ -89,14 +89,7 @@ public static class Ui
             Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Help),
             Background = Brushes.Transparent,
             Classes = { "info" },
-            Child = Themed(new TextBlock
-            {
-                Text = "?",
-                FontSize = 10,
-                FontWeight = FontWeight.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }, TextBlock.ForegroundProperty, ThemeColours.ACCENT)
+            Child = Themed(new InfoGlyph(), InfoGlyph.ForegroundProperty, ThemeColours.ACCENT)
         };
         Themed(badge, Border.BorderBrushProperty, ThemeColours.ACCENT);
         ToolTip.SetTip(badge, tip);
@@ -112,7 +105,15 @@ public static class Ui
             panel.Children[0] is not TextBlock label || double.IsNaN(label.Width))
             return row;
         label.Width = Math.Max(40, label.Width - BADGE_SIZE - panel.Spacing);
-        panel.Children.Insert(1, described ? InfoBadge(tip) : new Control { Width = BADGE_SIZE });
+        Control badge = described ? InfoBadge(tip) : new Control { Width = BADGE_SIZE };
+        // A label lifted to the top of a tall row takes its badge along, level with the text
+        if (label.VerticalAlignment == VerticalAlignment.Top)
+        {
+            badge.VerticalAlignment = VerticalAlignment.Top;
+            badge.Margin = new Thickness(0, label.Margin.Top + 2, 0, 0);
+        }
+
+        panel.Children.Insert(1, badge);
         return row;
     }
 
