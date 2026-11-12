@@ -22,11 +22,12 @@ public sealed class DbcEditorView : Grid
     private readonly Session _session;
     private readonly ListBox _tables = new ListBox();
     private readonly DbcGrid _grid = new DbcGrid();
-    private readonly TextBox _filter = new TextBox
+    private readonly ValueNames _names;
+    private readonly TextBox _filter = Ui.Clearable(new TextBox
     {
         Watermark = "Filter: an ID, text, or Column=value",
         Width = 300
-    };
+    });
     private readonly TextBlock _info = new TextBlock
     {
         Classes = { "label" },
@@ -43,6 +44,8 @@ public sealed class DbcEditorView : Grid
     {
         _window = window;
         _session = session;
+        _names = new ValueNames(session);
+        _grid.Names = _names.For;
         ColumnDefinitions = new ColumnDefinitions("Auto,8,*");
         _filterTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(FILTER_DELAY_MS) };
         _filterTimer.Tick += (_, _) =>
@@ -254,6 +257,8 @@ public sealed class DbcEditorView : Grid
         {
             _window.SetStatus("Loading " + file + "...");
             _table = await _session.LoadAsync(file);
+            await _session.LoadNamingTablesAsync();
+            _names.Forget();
             _filePath = null;
             _filter.Text = string.Empty;
             _grid.Show(_table);

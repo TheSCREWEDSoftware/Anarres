@@ -38,6 +38,42 @@ public sealed class EnumTable
         EnumValue? found = Values.FirstOrDefault(entry => entry.Value == value);
         return (found?.Label ?? "Unknown") + " (" + value.ToString(CultureInfo.InvariantCulture) + ")";
     }
+
+    // Just the names, for beside a value: "Orc, Dwarf", or the one name; empty for 0 or an unnamed value
+    public string Names(long value)
+    {
+        if (Flags)
+        {
+            long known = Values.Aggregate(0L, (mask, entry) => mask | entry.Value);
+            if (value != 0 && Values.Count > 1 && (value & known) == known)
+                return "All";
+            return value == 0 ? string.Empty : Describe(value);
+        }
+        return Values.FirstOrDefault(entry => entry.Value == value)?.Label ?? string.Empty;
+    }
+
+    // One line per set bit, "2 - Orc", for a tooltip; a plain value gives its one line
+    public string Lines(long value)
+    {
+        if (!Flags)
+        {
+            EnumValue? found = Values.FirstOrDefault(entry => entry.Value == value);
+            return value.ToString(CultureInfo.InvariantCulture) + " - " + (found?.Label ?? "Unknown");
+        }
+
+        List<string> lines = Values.Where(entry => (value & entry.Value) != 0)
+                                   .Select(entry => entry.Value.ToString(CultureInfo.InvariantCulture) + " - " +
+                                                    entry.Label).ToList();
+        long known = Values.Aggregate(0L, (mask, entry) => mask | entry.Value);
+        for (int bit = 0; bit < 64; ++bit)
+        {
+            long mask = 1L << bit;
+            if ((value & ~known & mask) != 0)
+                lines.Add(mask.ToString(CultureInfo.InvariantCulture) + " - Unknown bit " + bit);
+        }
+
+        return lines.Count == 0 ? "None" : string.Join("\n", lines);
+    }
 }
 
 // The names AzerothCore gives spell effects, auras, targets, attribute bits and the rest

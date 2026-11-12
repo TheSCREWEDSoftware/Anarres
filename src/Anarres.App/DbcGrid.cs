@@ -92,13 +92,39 @@ public sealed class DbcGrid : Grid
         _surface.InvalidateVisual();
     }
 
-    // How a cell is drawn: as the table writes it, or in hex for flag columns
+    // The named list behind a cell (races, schools, attribute bits...), or null for a plain number
+    public Func<DbcTable, int, int, EnumTable?>? Names { get; set; }
+
+    // How a cell is drawn: as the table writes it, or in hex for flag columns, then its names in brackets
     private string Display(DbcTable table, int row, int column)
     {
         DbcColumn definition = table.Definition.Columns[column];
-        if (FlagsInHex && DbcColumnTypes.IsInteger(definition.Type) && IsFlagColumn(definition.Name))
-            return "0x" + table.GetRaw(row, column).ToString("X8", CultureInfo.InvariantCulture);
-        return table.GetText(row, column);
+        string text = FlagsInHex && DbcColumnTypes.IsInteger(definition.Type) && IsFlagColumn(definition.Name)
+                          ? "0x" + table.GetRaw(row, column).ToString("X8", CultureInfo.InvariantCulture)
+                          : table.GetText(row, column);
+        if (!DbcColumnTypes.IsInteger(definition.Type) || Names?.Invoke(table, column, row) is not { } names)
+            return text;
+        string named = names.Names(table.GetInt(row, column));
+        return named.Length == 0 ? text : text + " (" + named + ")";
+    }
+
+    // A cell's value, one named bit or value per line, for its tooltip
+    private string? CellTip(int row, int column)
+    {
+        if (_table == null || !DbcColumnTypes.IsInteger(_table.Definition.Columns[column].Type) ||
+            Names?.Invoke(_table, column, row) is not { } names)
+            return null;
+        long value = names.Flags ? _table.GetRaw(row, column) : _table.GetInt(row, column);
+        return _table.Definition.Columns[column].Name + " = " + value.ToString(CultureInfo.InvariantCulture) +
+               "\n\n" + names.Lines(value);
+    }
+
+    private const double NAMED_WIDTH = 280;
+
+    // Whether a column has names, judged by its first row (some lists depend on the row)
+    private bool IsNamed(DbcTable table, int column)
+    {
+        return table.Rows.Count > 0 && Names?.Invoke(table, column, 0) != null;
     }
 
     private static bool IsFlagColumn(string name)
@@ -131,9 +157,11 @@ public sealed class DbcGrid : Grid
         _baseRows = rows ?? (table == null ? new List<int>() : Enumerable.Range(0, table.Rows.Count).ToList());
         if (!sameTable)
         {
-            _widths = table?.Definition.Columns.Select(column => column.Type == DbcColumnType.String
-                                                                     ? STRING_WIDTH
-                                                                     : NUMBER_WIDTH).ToArray()
+            // Columns with names beside their values start wide enough to read a few of them
+            _widths = table?.Definition.Columns.Select((column, index) =>
+                          column.Type == DbcColumnType.String ? STRING_WIDTH
+                          : Names?.Invoke(table, index, -1) != null || IsNamed(table, index) ? NAMED_WIDTH
+                          : NUMBER_WIDTH).ToArray()
                       ?? Array.Empty<double>();
             _order = Enumerable.Range(0, _widths.Length).ToList();
             _sortColumn = -1;
@@ -439,6 +467,7 @@ public sealed class DbcGrid : Grid
         private double _resizeStart;
         private double _resizeWidth;
         private int _tipColumn = -1;
+        private (int Row, int Column) _tipCell = (-1, -1);
 
         public Surface(DbcGrid grid)
         {
@@ -616,7 +645,10 @@ public sealed class DbcGrid : Grid
 
             Cursor = _grid.ResizeColumn(point) >= 0 ? new Cursor(StandardCursorType.SizeWestEast) : Cursor.Default;
             (int index, int column) = _grid.HitTest(point);
-            ShowHeaderTip(index < 0 ? column : -1);
+            if (index >= 0 && index < _grid._rows.Count && column >= 0)
+                ShowCellTip(_grid._rows[index], column);
+            else
+                ShowHeaderTip(index < 0 ? column : -1);
         }
 
         protected override void OnPointerExited(PointerEventArgs e)
@@ -625,12 +657,28 @@ public sealed class DbcGrid : Grid
             ShowHeaderTip(-1);
         }
 
+        // Hovering a named cell lists its values, one per line
+        private void ShowCellTip(int row, int column)
+        {
+            (int Row, int Column) cell = (row, column);
+            if (cell == _tipCell)
+                return;
+            _tipCell = cell;
+            _tipColumn = -1;
+            ToolTip.SetIsOpen(this, false);
+            string? tip = _grid.CellTip(row, column);
+            ToolTip.SetTip(this, tip);
+            if (tip != null)
+                ToolTip.SetIsOpen(this, true);
+        }
+
         // Hovering a header explains the column: what it's for, its type and its name in the file
         private void ShowHeaderTip(int column)
         {
             if (column == _tipColumn)
                 return;
             _tipColumn = column;
+            _tipCell = (-1, -1);
             ToolTip.SetIsOpen(this, false);
             if (column < 0 || _grid._table == null)
             {
