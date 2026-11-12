@@ -39,6 +39,14 @@ public sealed class EnumTable
         return (found?.Label ?? "Unknown") + " (" + value.ToString(CultureInfo.InvariantCulture) + ")";
     }
 
+    // The bit number of a one-bit value; a value of several bits is shown as itself
+    private static string Bit(long value)
+    {
+        return value > 0 && (value & (value - 1)) == 0
+                   ? System.Numerics.BitOperations.Log2((ulong)value).ToString(CultureInfo.InvariantCulture)
+                   : value.ToString(CultureInfo.InvariantCulture);
+    }
+
     // Just the names, for beside a value: "Orc, Dwarf", or the one name; empty for 0 or an unnamed value
     public string Names(long value)
     {
@@ -52,17 +60,17 @@ public sealed class EnumTable
         return Values.FirstOrDefault(entry => entry.Value == value)?.Label ?? string.Empty;
     }
 
-    // One line per set bit, "Orc (2)", for a tooltip; a plain value gives its one line
+    // One line per set bit, "1 - Orc (2)": bit, name, then the bit's value; a plain value gives "2 - Orc"
     public string Lines(long value)
     {
         if (!Flags)
         {
             EnumValue? found = Values.FirstOrDefault(entry => entry.Value == value);
-            return (found?.Label ?? "Unknown") + " (" + value.ToString(CultureInfo.InvariantCulture) + ")";
+            return value.ToString(CultureInfo.InvariantCulture) + " - " + (found?.Label ?? "Unknown");
         }
 
         List<string> lines = Values.Where(entry => (value & entry.Value) != 0)
-                                   .Select(entry => entry.Label + " (" +
+                                   .Select(entry => Bit(entry.Value) + " - " + entry.Label + " (" +
                                                     entry.Value.ToString(CultureInfo.InvariantCulture) + ")")
                                    .ToList();
         long known = Values.Aggregate(0L, (mask, entry) => mask | entry.Value);
@@ -70,7 +78,7 @@ public sealed class EnumTable
         {
             long mask = 1L << bit;
             if ((value & ~known & mask) != 0)
-                lines.Add("Unknown bit " + bit + " (" + mask.ToString(CultureInfo.InvariantCulture) + ")");
+                lines.Add(bit + " - Unknown bit (" + mask.ToString(CultureInfo.InvariantCulture) + ")");
         }
 
         return lines.Count == 0 ? "None" : string.Join("\n", lines);

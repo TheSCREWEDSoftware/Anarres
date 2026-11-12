@@ -35,6 +35,26 @@ public sealed class SpellEditorView : Grid
     private readonly TextBlock _count = new TextBlock { Classes = { "hint" }, Margin = new Thickness(4, 4, 0, 0) };
     private readonly TextBlock _title = new TextBlock { FontSize = 20, FontWeight = FontWeight.SemiBold };
     private readonly TextBlock _subtitle = new TextBlock { Classes = { "label" } };
+    // The school in its combat text colour, as on the list's strip, and how many talents change the spell
+    private readonly Border _schoolBadge = new Border
+    {
+        CornerRadius = new CornerRadius(BADGE_RADIUS),
+        Padding = new Thickness(8, 1),
+        BorderThickness = new Thickness(1),
+        VerticalAlignment = VerticalAlignment.Center,
+        Child = new TextBlock { FontSize = 12, FontWeight = FontWeight.SemiBold }
+    };
+    private readonly Button _talentBadge = new Button
+    {
+        CornerRadius = new CornerRadius(BADGE_RADIUS),
+        Padding = new Thickness(8, 1),
+        FontSize = 12,
+        MinHeight = 0,
+        VerticalAlignment = VerticalAlignment.Center,
+        IsVisible = false
+    };
+    private const double BADGE_RADIUS = 9;
+    private const byte BADGE_FILL_ALPHA = 0x33;
     private readonly TextBlock _unsaved = new TextBlock { Text = "Unsaved changes", IsVisible = false,
                                                           VerticalAlignment = VerticalAlignment.Center };
     private readonly ContentControl _editor = new ContentControl();
@@ -291,7 +311,13 @@ public sealed class SpellEditorView : Grid
                               "worldserver.\n\nThe client still needs the patch MPQ (Apply, F6) to show new or " +
                               "changed spells.");
 
-        StackPanel heading = Ui.Horizontal(_iconFrame, Ui.Vertical(2, _title, _subtitle));
+        _talentBadge.Click += (_, _) =>
+        {
+            if (_tabs?.Items.OfType<TabItem>().FirstOrDefault(tab => tab.Header as string == "Talents") is { } tab)
+                _tabs.SelectedItem = tab;
+        };
+        StackPanel badges = Ui.Horizontal(_subtitle, _schoolBadge, _talentBadge);
+        StackPanel heading = Ui.Horizontal(_iconFrame, Ui.Vertical(2, _title, badges));
         Button tools = new Button { Content = "Spell..." };
         tools.Flyout = new MenuFlyout
         {
@@ -306,10 +332,21 @@ public sealed class SpellEditorView : Grid
         };
         ToolTip.SetTip(tools, "Compare with the clean Spell.dbc, see what uses this spell, start from a template, " +
                               "change many spells at once, or check edited spells for mistakes");
-        StackPanel actions = Ui.Horizontal(_finder.Box, _unsaved, tools, sql, world, revert, save);
-        actions.HorizontalAlignment = HorizontalAlignment.Right;
-        actions.VerticalAlignment = VerticalAlignment.Center;
-        Grid header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(16, 12) };
+        // The heading keeps its width; the buttons take the rest and wrap onto a second line when it runs out
+        WrapPanel actions = new WrapPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 0, 0)
+        };
+        foreach (Control action in new Control[] { _finder.Box, _unsaved, tools, sql, world, revert, save })
+        {
+            action.Margin = new Thickness(8, 2, 0, 2);
+            action.VerticalAlignment = VerticalAlignment.Center;
+            actions.Children.Add(action);
+        }
+
+        Grid header = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(16, 12) };
         header.Children.Add(heading);
         Grid.SetColumn(actions, 1);
         header.Children.Add(actions);
@@ -342,7 +379,7 @@ public sealed class SpellEditorView : Grid
         int selected = _tabs?.SelectedIndex ?? 0;
         // Revert and imports rebuild the tabs: the old ones free shared controls and stop following the spell
         foreach (Control kept in new Control[] { _preview, _auraPreview, _lookIcon, _visual, _level, _levelText,
-                                                 _talentBoxes })
+                                                 _levelBox, _levelRange, _talentBoxes })
             Detach(kept);
         _fixedFields ??= _binding.Count;
         _binding.TrimTo(_fixedFields.Value);
@@ -401,7 +438,28 @@ public sealed class SpellEditorView : Grid
         TickFrequency = 1,
         Width = 260
     };
-    private readonly TextBlock _levelText = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+    // The level in a fixed-width box, so the slider doesn't move between 1 and 80
+    private readonly TextBlock _levelText = new TextBlock
+    {
+        VerticalAlignment = VerticalAlignment.Center,
+        Width = 64,
+        TextAlignment = TextAlignment.Center,
+        FontFeatures = new FontFeatureCollection { new FontFeature { Tag = "tnum" } }
+    };
+    private readonly NumericUpDown _levelBox = new NumericUpDown
+    {
+        Minimum = 1,
+        Maximum = MAX_PLAYER_LEVEL,
+        Value = MAX_PLAYER_LEVEL,
+        Increment = 1,
+        FormatString = "0",
+        Width = 120
+    };
+    private readonly TextBlock _levelRange = new TextBlock
+    {
+        Classes = { "hint" },
+        VerticalAlignment = VerticalAlignment.Center
+    };
     private readonly WrapPanel _talentBoxes = new WrapPanel();
     private readonly HashSet<uint> _knownTalents = new HashSet<uint>();
     private List<uint> _askedShown = new List<uint>();
@@ -411,22 +469,31 @@ public sealed class SpellEditorView : Grid
 
     private Control CasterPanel()
     {
-        _levelText.Text = "Level " + (int)_level.Value + " / " + MAX_PLAYER_LEVEL;
-        // The slider outlives rebuilds of the tabs, so it's hooked up once
+        _levelText.Text = (int)_level.Value + " / " + MAX_PLAYER_LEVEL;
+        // The slider and box outlive rebuilds of the tabs, so they're hooked up once, and follow each other
         if (!_levelHooked)
         {
             _levelHooked = true;
+            ToolTip.SetTip(_levelBox, "Type a level from 1 to " + MAX_PLAYER_LEVEL);
             _level.PropertyChanged += (_, change) =>
             {
                 if (change.Property != Avalonia.Controls.Primitives.RangeBase.ValueProperty)
                     return;
-                _levelText.Text = "Level " + (int)_level.Value + " / " + MAX_PLAYER_LEVEL;
+                _levelText.Text = (int)_level.Value + " / " + MAX_PLAYER_LEVEL;
+                if (_levelBox.Value != (decimal)_level.Value)
+                    _levelBox.Value = (decimal)_level.Value;
                 UpdatePreview();
+            };
+            _levelBox.ValueChanged += (_, _) =>
+            {
+                if (_levelBox.Value is { } typed && (double)typed != _level.Value)
+                    _level.Value = Math.Clamp((double)Math.Round(typed), _level.Minimum, _level.Maximum);
             };
         }
 
         _askedShown = new List<uint>();
-        return Ui.Vertical(2, Ui.Horizontal(_levelText, _level), _talentBoxes);
+        TextBlock label = new TextBlock { Text = "Level", VerticalAlignment = VerticalAlignment.Center };
+        return Ui.Vertical(2, Ui.Horizontal(label, _levelText, _level, _levelBox), _levelRange, _talentBoxes);
     }
 
     // One box per spell the text's $?s conditions ask about, kept ticked across spells
@@ -1131,8 +1198,8 @@ public sealed class SpellEditorView : Grid
         string rank = spell.Text("NameSubtext", _locale);
         _title.Text = name.Length == 0 ? "(no name)" : name;
         _subtitle.Text = "Spell " + spell.Id.ToString(CultureInfo.InvariantCulture) +
-                         (rank.Length > 0 ? "  -  " + rank : string.Empty) + "  -  " +
-                         SpellEnums.Get(SpellEnums.SCHOOL).Describe(spell.U("SchoolMask"));
+                         (rank.Length > 0 ? "  -  " + rank : string.Empty);
+        ShowBadges(spell);
         _unsaved.IsVisible = _session.ModifiedTables.Any();
         _headerIcon.Source = _images?.Get(spell.U("SpellIconID"));
         _lookIcon.Source = _headerIcon.Source;
@@ -1142,6 +1209,33 @@ public sealed class SpellEditorView : Grid
                                        ? SpellEnums.Get(SpellEnums.DISPEL).Describe(dispel) +
                                          " (border in the game's debuff colour)"
                                        : null);
+    }
+
+    private void ShowBadges(SpellRecord spell)
+    {
+        uint school = spell.U("SchoolMask");
+        string schools = SpellEnums.Get(SpellEnums.SCHOOL).Describe(school);
+        ((TextBlock)_schoolBadge.Child!).Text = schools.Length > 0 ? schools : "No school";
+        if (GameColours.School(school) is { } hex)
+        {
+            Color colour = Color.Parse(hex);
+            _schoolBadge.BorderBrush = GameBrush(hex);
+            _schoolBadge.Background = new SolidColorBrush(Color.FromArgb(BADGE_FILL_ALPHA, colour.R, colour.G,
+                                                                         colour.B));
+            ((TextBlock)_schoolBadge.Child!).Foreground = GameBrush(hex);
+        }
+        else
+        {
+            _schoolBadge.ClearValue(Border.BorderBrushProperty);
+            _schoolBadge.ClearValue(Border.BackgroundProperty);
+            ((TextBlock)_schoolBadge.Child!).ClearValue(TextBlock.ForegroundProperty);
+        }
+
+        HashSet<uint> talents = SpellReferences.TalentSpells(_session.NamingTable("Talent.dbc"));
+        int count = SpellReferences.ModifiedBy(spell.Table, spell.Row).Count(id => talents.Contains(id));
+        _talentBadge.Content = count == 1 ? "1 talent" : count + " talents";
+        _talentBadge.IsVisible = count > 0;
+        ToolTip.SetTip(_talentBadge, count + " talent ranks change this spell; open the Talents tab");
     }
 
     private void UpdatePreview()
@@ -1155,6 +1249,14 @@ public sealed class SpellEditorView : Grid
         _preview.Text = SpellText.Render(spell, description, _lookups, context);
         _auraPreview.Text = SpellText.Render(spell, aura, _lookups, context);
         ShowAskedTalents(SpellText.AskedSpells(spell, description + aura, _lookups));
+        // From the spell's own BaseLevel and MaxLevel: where points per level stop changing anything
+        int baseLevel = spell.I("BaseLevel");
+        int maxLevel = spell.I("MaxLevel");
+        _levelRange.Text = maxLevel > baseLevel
+                               ? "Points per level count from level " + Math.Max(baseLevel, spell.I("SpellLevel")) +
+                                 " up to " + maxLevel + " (BaseLevel, MaxLevel)."
+                               : string.Empty;
+        _levelRange.IsVisible = _levelRange.Text.Length > 0;
     }
 
     private void Edited()

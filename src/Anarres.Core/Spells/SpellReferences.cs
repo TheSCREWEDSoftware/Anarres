@@ -107,6 +107,40 @@ public static class SpellReferences
         return found;
     }
 
+    // How many spells change this one through family masks, without the rest of Find's work
+    public static List<uint> ModifiedBy(DbcTable spells, int row)
+    {
+        List<uint> found = new List<uint>();
+        SpellRecord spell = new SpellRecord(spells, row);
+        uint family = spell.U("SpellClassSet");
+        uint[] mask = { spell.U("SpellClassMask_1"), spell.U("SpellClassMask_2"), spell.U("SpellClassMask_3") };
+        int familyColumn = spells.Definition.IndexOf("SpellClassSet");
+        if (family == 0 || familyColumn < 0 || mask.All(part => part == 0))
+            return found;
+        int[] auras = Columns(spells, "EffectAura_");
+        int[] masksA = Columns(spells, "EffectSpellClassMaskA_");
+        int[] masksB = Columns(spells, "EffectSpellClassMaskB_");
+        int[] masksC = Columns(spells, "EffectSpellClassMaskC_");
+        for (int other = 0; other < spells.Rows.Count; ++other)
+        {
+            if (other == row || spells.GetRaw(other, familyColumn) != family)
+                continue;
+            for (int effect = 0; effect < SpellRecord.EFFECT_COUNT; ++effect)
+            {
+                if (Raw(spells, other, auras[effect]) != 0 &&
+                    ((Raw(spells, other, masksA[effect]) & mask[0]) != 0 ||
+                     (Raw(spells, other, masksB[effect]) & mask[1]) != 0 ||
+                     (Raw(spells, other, masksC[effect]) & mask[2]) != 0))
+                {
+                    found.Add(spells.Key(other));
+                    break;
+                }
+            }
+        }
+
+        return found;
+    }
+
     // Spells that are talents, from Talent.dbc's ranks
     public static HashSet<uint> TalentSpells(DbcTable? talents)
     {
