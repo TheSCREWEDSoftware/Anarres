@@ -127,4 +127,31 @@ public static class SpellTests
         Assert.Equal("Feuerball", spell.Text("Name", "deDE"), "German");
         Assert.Equal("Fireball", spell.Text("Name", "frFR"), "French falls back");
     }
+
+    // Talent conditions, chained variables, $M, signs and caster level, as the Frostbolt and Blizzard tooltips use
+    public static void RendersConditionsAndLevels()
+    {
+        SpellRecord spell = NewSpell(out SpellLookups lookups);
+        DbcTable spells = lookups.Spells!;
+        int row = spells.FindRow(100);
+        Assert.Equal("10", SpellText.Render(spell, "$?s500[${$m1*2}][$m1]", lookups), "no talent: the last branch");
+        TooltipContext talent = new TooltipContext { Known = new HashSet<uint> { 500 } };
+        Assert.Equal("20", SpellText.Render(spell, "$?s500[${$m1*2}][$m1]", lookups, talent), "with the talent");
+        Assert.Equal("c", SpellText.Render(spell, "$?s1[a]?s2[b][c]", lookups), "a chain falls through");
+        Assert.Equal("b", SpellText.Render(spell, "$?s1[a]?s500[b][c]", lookups, talent), "the chain's match");
+        Assert.Equal("20 to 30", SpellText.Render(spell, "${$m2} to ${$M2}", lookups), "$M is the largest");
+
+        spells.SetInt(row, spell.Column("EffectBasePoints_1"), -41);
+        Assert.Equal("40%", SpellText.Render(spell, "$s1%", lookups), "shown without its sign");
+
+        spells.SetInt(row, spell.Column("EffectBasePoints_1"), 9);
+        spells.SetFloat(row, spell.Column("EffectRealPointsPerLevel_1"), 0.5f);
+        spells.SetInt(row, spell.Column("BaseLevel"), 4);
+        spells.SetInt(row, spell.Column("SpellLevel"), 4);
+        spells.SetInt(row, spell.Column("MaxLevel"), 8);
+        Assert.Equal("12", SpellText.Render(spell, "$s1", lookups, new TooltipContext { Level = 80 }),
+                     "levels above the spell's, up to its maximum (8 - 4) x 0.5 = 2 more");
+        Assert.Equal("10", SpellText.Render(spell, "$s1", lookups), "the spell's own level adds nothing");
+        Assert.Equal("500", string.Join(",", SpellText.AskedSpells(spell, "$?s500[x][y]", lookups)), "asked talents");
+    }
 }

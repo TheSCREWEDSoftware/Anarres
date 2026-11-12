@@ -61,6 +61,16 @@ public sealed class SpellLookups
     }
 }
 
+// The caster the preview assumes: a level (0 for the spell's own) and the spells (ticked talents) $?s12345 asks
+public sealed class TooltipContext
+{
+    public static TooltipContext Default { get; } = new TooltipContext();
+
+    public int Level { get; init; }
+
+    public IReadOnlySet<uint> Known { get; init; } = new HashSet<uint>();
+}
+
 // Fills in the $ tokens of a spell's description as the client shows them, for a preview while editing
 public static partial class SpellText
 {
@@ -79,15 +89,16 @@ public static partial class SpellText
     [GeneratedRegex(@"\$<\w+>")]
     private static partial Regex UnknownVariableRegex();
 
-    public static string Render(SpellRecord spell, string text, SpellLookups lookups)
+    public static string Render(SpellRecord spell, string text, SpellLookups lookups, TooltipContext? context = null)
     {
+        context ??= TooltipContext.Default;
         text = ExpandVariables(text, lookups.VariablesOf(spell.U("SpellDescriptionVariableID")));
-        text = Nest(TakeElseBranches(text));
+        text = Nest(ResolveConditions(text, context.Known));
         string expanded = ExpressionRegex().Replace(text, match =>
         {
             // A variable no SpellDescriptionVariables row defines counts as 1, so the rest still adds up
             string known = UnknownVariableRegex().Replace(match.Groups["expression"].Value, "1");
-            string inner = TokenRegex().Replace(known, token => Value(spell, token, lookups, numeric: true));
+            string inner = TokenRegex().Replace(known, token => Value(spell, token, lookups, true, context));
             return Evaluate(inner) is { } value ? Number(value) : match.Value;
         });
 
@@ -107,7 +118,7 @@ public static partial class SpellText
                 continue;
             }
 
-            string value = Value(spell, match, lookups, numeric: false);
+            string value = Value(spell, match, lookups, false, context);
             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int number))
                 lastNumber = number;
             output.Append(value);
@@ -117,27 +128,82 @@ public static partial class SpellText
         return output.ToString().Replace("$$", "$");
     }
 
-    // $?s12345[with][without] depends on the caster's spells; the preview shows the caster without them
-    private static string TakeElseBranches(string text)
+    // The spells $?s12345 conditions ask about, so the preview can offer them as talents to tick
+    public static List<uint> AskedSpells(SpellRecord spell, string text, SpellLookups lookups)
     {
-        const int MAX_PASSES = 8;
+        text = ExpandVariables(text, lookups.VariablesOf(spell.U("SpellDescriptionVariableID")));
+        return ConditionRegex().Matches(text)
+                               .SelectMany(match => SpellIdRegex().Matches(match.Groups["condition"].Value))
+                               .Select(id => uint.Parse(id.Groups["id"].Value, CultureInfo.InvariantCulture))
+                               .Distinct().ToList();
+    }
+
+    [GeneratedRegex(@"\$\?(?<condition>[^\[]*)\[")]
+    private static partial Regex ConditionRegex();
+
+    [GeneratedRegex(@"[sa](?<id>\d+)")]
+    private static partial Regex SpellIdRegex();
+
+    // $?s12345[with][without], with !, | and &, and ?s678[...] chains before the last branch; a12345 likewise
+    private static string ResolveConditions(string text, IReadOnlySet<uint> known)
+    {
+        const int MAX_PASSES = 256;
         for (int pass = 0; pass < MAX_PASSES; ++pass)
         {
             int start = text.IndexOf("$?", StringComparison.Ordinal);
             if (start < 0)
                 return text;
-            int open = text.IndexOf('[', start);
-            int firstEnd = open < 0 ? -1 : Closing(text, open);
-            int secondOpen = firstEnd + 1;
-            if (firstEnd < 0 || secondOpen >= text.Length || text[secondOpen] != '[')
-                return text;
-            int secondEnd = Closing(text, secondOpen);
-            if (secondEnd < 0)
-                return text;
-            text = text[..start] + text[(secondOpen + 1)..secondEnd] + text[(secondEnd + 1)..];
+            int conditionStart = start + 2;
+            string? chosen = null;
+            int end = conditionStart;
+            while (true)
+            {
+                int open = text.IndexOf('[', end);
+                int close = open < 0 ? -1 : Closing(text, open);
+                if (close < 0)
+                    return text;
+                string condition = text[end..open];
+                string branch = text[(open + 1)..close];
+                if (chosen == null && Holds(condition, known))
+                    chosen = branch;
+                end = close + 1;
+                // ?s678[...] goes on to the next condition; [...] is the last branch, for none of them
+                if (end < text.Length && text[end] == '?')
+                {
+                    ++end;
+                    continue;
+                }
+
+                if (end < text.Length && text[end] == '[')
+                {
+                    int last = Closing(text, end);
+                    if (last < 0)
+                        return text;
+                    chosen ??= text[(end + 1)..last];
+                    end = last + 1;
+                }
+
+                break;
+            }
+
+            text = text[..start] + (chosen ?? string.Empty) + text[end..];
         }
 
         return text;
+    }
+
+    private static bool Holds(string condition, IReadOnlySet<uint> known)
+    {
+        bool any = condition.Contains('|');
+        IEnumerable<bool> parts = condition.Split('|', '&').Select(part =>
+        {
+            string trimmed = part.Trim().Trim('(', ')');
+            bool negated = trimmed.StartsWith('!');
+            Match id = SpellIdRegex().Match(trimmed);
+            bool has = id.Success && known.Contains(uint.Parse(id.Groups["id"].Value, CultureInfo.InvariantCulture));
+            return negated ? !has : has;
+        });
+        return any ? parts.Any(part => part) : parts.All(part => part);
     }
 
     private static int Closing(string text, int open)
@@ -185,7 +251,7 @@ public static partial class SpellText
     // $<name> becomes its value; inside ${...} a value's own ${...} becomes brackets so the sums nest
     private static string ExpandVariables(string text, Dictionary<string, string> variables)
     {
-        const int MAX_DEPTH = 4;
+        const int MAX_DEPTH = 24;
         if (variables.Count == 0)
             return text;
         for (int depth = 0; depth < MAX_DEPTH && text.Contains("$<", StringComparison.Ordinal); ++depth)
@@ -216,7 +282,8 @@ public static partial class SpellText
         return text;
     }
 
-    private static string Value(SpellRecord spell, Match match, SpellLookups lookups, bool numeric)
+    private static string Value(SpellRecord spell, Match match, SpellLookups lookups, bool numeric,
+                                TooltipContext context)
     {
         SpellRecord source = spell;
         if (match.Groups["spell"].Success && lookups.Spells is { } spells &&
@@ -238,8 +305,15 @@ public static partial class SpellText
             case "m":
             {
                 // Base points plus one die; with more sides the tooltip shows the whole range
-                int minimum = source.EffectBasePoints(effect) + 1;
-                int maximum = source.EffectBasePoints(effect) + source.EffectDieSides(effect);
+                int scaled = source.EffectBasePoints(effect) + LevelBonus(source, effect, context);
+                int minimum = scaled + 1;
+                int maximum = scaled + source.EffectDieSides(effect);
+                // Tooltips show amounts without their sign: a -40% slow reads "40%"
+                if (!numeric && maximum <= 0)
+                    (minimum, maximum) = (Math.Abs(maximum), Math.Abs(minimum));
+                // $m is the smallest value and $M the largest; $s shows the range when there is one
+                if (token == "M")
+                    return Number(maximum);
                 bool spread = token is "s" or "S" && maximum > minimum && !numeric;
                 return spread ? Number(minimum) + " to " + Number(maximum) : Number(minimum);
             }
@@ -248,7 +322,7 @@ public static partial class SpellText
                 int? duration = lookups.DurationMilliseconds(source.DurationIndex);
                 uint period = source.EffectAuraPeriod(effect);
                 double ticks = duration is > 0 && period > 0 ? Math.Floor((double)duration.Value / period) : 0;
-                return Number((source.EffectBasePoints(effect) + 1) * ticks);
+                return Number((source.EffectBasePoints(effect) + LevelBonus(source, effect, context) + 1) * ticks);
             }
             case "t":
                 return Number(source.EffectAuraPeriod(effect) / MILLISECONDS_PER_SECOND);
@@ -294,6 +368,21 @@ public static partial class SpellText
         if (seconds >= SECONDS_PER_MINUTE && seconds % SECONDS_PER_MINUTE == 0)
             return Number(seconds / SECONDS_PER_MINUTE) + " min";
         return Number(milliseconds / MILLISECONDS_PER_SECOND) + " sec";
+    }
+
+    // As AzerothCore's SpellEffectInfo::CalcValue: per-level points times levels above max(base, spell level)
+    private static int LevelBonus(SpellRecord spell, int effect, TooltipContext context)
+    {
+        float perLevel = spell.F(SpellRecord.EffectColumn("EffectRealPointsPerLevel", effect));
+        if (perLevel == 0 || context.Level <= 0)
+            return 0;
+        int level = context.Level;
+        int maxLevel = spell.I("MaxLevel");
+        if (maxLevel > 0 && level > maxLevel)
+            level = maxLevel;
+        else if (level < spell.I("BaseLevel"))
+            level = spell.I("BaseLevel");
+        return (int)((level - Math.Max(spell.I("BaseLevel"), spell.I("SpellLevel"))) * perLevel);
     }
 
     private static string Number(double value)

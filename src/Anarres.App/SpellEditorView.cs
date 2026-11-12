@@ -341,7 +341,8 @@ public sealed class SpellEditorView : Grid
     {
         int selected = _tabs?.SelectedIndex ?? 0;
         // Revert and imports rebuild the tabs: the old ones free shared controls and stop following the spell
-        foreach (Control kept in new Control[] { _preview, _auraPreview, _lookIcon, _visual })
+        foreach (Control kept in new Control[] { _preview, _auraPreview, _lookIcon, _visual, _level, _levelText,
+                                                 _talentBoxes })
             Detach(kept);
         _fixedFields ??= _binding.Count;
         _binding.TrimTo(_fixedFields.Value);
@@ -387,6 +388,72 @@ public sealed class SpellEditorView : Grid
                 break;
             default:
                 break;
+        }
+    }
+
+    // Like Wowhead's tooltip: a caster level and the talents the text asks about, ticked to count as learned
+    private readonly Slider _level = new Slider
+    {
+        Minimum = 1,
+        Maximum = MAX_PLAYER_LEVEL,
+        Value = MAX_PLAYER_LEVEL,
+        IsSnapToTickEnabled = true,
+        TickFrequency = 1,
+        Width = 260
+    };
+    private readonly TextBlock _levelText = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+    private readonly WrapPanel _talentBoxes = new WrapPanel();
+    private readonly HashSet<uint> _knownTalents = new HashSet<uint>();
+    private List<uint> _askedShown = new List<uint>();
+    private bool _levelHooked;
+    private const int MAX_PLAYER_LEVEL = 80;
+    private const double TALENT_BOX_WIDTH = 230;
+
+    private Control CasterPanel()
+    {
+        _levelText.Text = "Level " + (int)_level.Value + " / " + MAX_PLAYER_LEVEL;
+        // The slider outlives rebuilds of the tabs, so it's hooked up once
+        if (!_levelHooked)
+        {
+            _levelHooked = true;
+            _level.PropertyChanged += (_, change) =>
+            {
+                if (change.Property != Avalonia.Controls.Primitives.RangeBase.ValueProperty)
+                    return;
+                _levelText.Text = "Level " + (int)_level.Value + " / " + MAX_PLAYER_LEVEL;
+                UpdatePreview();
+            };
+        }
+
+        _askedShown = new List<uint>();
+        return Ui.Vertical(2, Ui.Horizontal(_levelText, _level), _talentBoxes);
+    }
+
+    // One box per spell the text's $?s conditions ask about, kept ticked across spells
+    private void ShowAskedTalents(List<uint> asked)
+    {
+        if (asked.SequenceEqual(_askedShown))
+            return;
+        _askedShown = asked;
+        _talentBoxes.Children.Clear();
+        foreach (uint id in asked)
+        {
+            CheckBox box = new CheckBox
+            {
+                Content = ChipLook(id).Name,
+                IsChecked = _knownTalents.Contains(id),
+                Width = TALENT_BOX_WIDTH
+            };
+            ToolTip.SetTip(box, "Spell " + id + ": count it as learned in the preview");
+            box.IsCheckedChanged += (_, _) =>
+            {
+                if (box.IsChecked == true)
+                    _knownTalents.Add(id);
+                else
+                    _knownTalents.Remove(id);
+                UpdatePreview();
+            };
+            _talentBoxes.Children.Add(box);
         }
     }
 
@@ -514,7 +581,7 @@ public sealed class SpellEditorView : Grid
         Grid texts = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,12,*"),
-            RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto")
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto,Auto")
         };
         Place(texts, Named(Ui.Label("Description ($s1, $d, $o1 and the rest are filled in on the right)", 500),
                            "Description_Lang_enUS"), 0, 0);
@@ -526,6 +593,7 @@ public sealed class SpellEditorView : Grid
         Place(texts, aura.Box, 3, 0);
         Place(texts, Ui.Hint("Buff preview"), 2, 2);
         Place(texts, PreviewPanel(_auraPreview), 3, 2);
+        Place(texts, CasterPanel(), 4, 2);
         _previewColumn = texts.ColumnDefinitions[2];
         _previewBox = texts;
         ShowPreviewColumn();
@@ -1081,8 +1149,12 @@ public sealed class SpellEditorView : Grid
         if (!_binding.IsBound)
             return;
         SpellRecord spell = new SpellRecord(_spells!, _binding.Row);
-        _preview.Text = SpellText.Render(spell, spell.Text("Description", _locale), _lookups);
-        _auraPreview.Text = SpellText.Render(spell, spell.Text("AuraDescription", _locale), _lookups);
+        TooltipContext context = new TooltipContext { Level = (int)_level.Value, Known = _knownTalents };
+        string description = spell.Text("Description", _locale);
+        string aura = spell.Text("AuraDescription", _locale);
+        _preview.Text = SpellText.Render(spell, description, _lookups, context);
+        _auraPreview.Text = SpellText.Render(spell, aura, _lookups, context);
+        ShowAskedTalents(SpellText.AskedSpells(spell, description + aura, _lookups));
     }
 
     private void Edited()
