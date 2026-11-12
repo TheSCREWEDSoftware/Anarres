@@ -57,9 +57,9 @@ def main():
                 columns.append({"Name": base, "Type": TYPES[kind]})
         if not columns:
             continue
-        # A generated ID is the row number, not a field in the file
+        # A generated ID is the row number, not a field in the file; it's the record's last member
         if generated:
-            columns = columns[1:]
+            columns = [column for column in columns if column["Name"] != "GeneratedID"]
         if columns and columns[0]["Name"] == "Id":
             columns[0]["Name"] = "ID"
         path = os.path.join(dbc_folder, file)
