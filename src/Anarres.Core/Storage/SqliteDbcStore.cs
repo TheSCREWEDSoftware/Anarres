@@ -27,7 +27,12 @@ public sealed class SqliteDbcStore : SqlDbcStore
         string? folder = Path.GetDirectoryName(Path.GetFullPath(path));
         if (!string.IsNullOrEmpty(folder))
             Directory.CreateDirectory(folder);
-        SqliteConnectionStringBuilder builder = new SqliteConnectionStringBuilder { DataSource = path };
+        // Without pooling, closing the project releases the file, so it can be moved, deleted or reopened at once
+        SqliteConnectionStringBuilder builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = path,
+            Pooling = false
+        };
         SqliteConnection connection = new SqliteConnection(builder.ToString());
         await connection.OpenAsync(cancellation);
         SqliteDbcStore store = new SqliteDbcStore(connection, path);
