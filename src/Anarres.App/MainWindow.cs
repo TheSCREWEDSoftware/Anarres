@@ -11,6 +11,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Shape = Avalonia.Controls.Shapes.Path;
 
 namespace Anarres.App;
 
@@ -18,8 +19,9 @@ namespace Anarres.App;
 public sealed class MainWindow : Window
 {
     private const double TITLE_BAR_HEIGHT = 40;
-    // Room on the right for Windows' minimise, maximise and close buttons
-    private const double CAPTION_BUTTONS_WIDTH = 140;
+    // The maximise button's square, and two overlapping squares once maximised
+    private const string MAXIMISE_GLYPH = "M0.5,0.5 H9.5 V9.5 H0.5 Z";
+    private const string RESTORE_GLYPH = "M2.5,0.5 H9.5 V7.5 M0.5,2.5 H7.5 V9.5 H0.5 Z";
     private const double ICON_SIZE = 20;
 
     private readonly Session _session;
@@ -75,7 +77,7 @@ public sealed class MainWindow : Window
         if (OperatingSystem.IsWindows())
         {
             ExtendClientAreaToDecorationsHint = true;
-            // Avalonia's own minimise, maximise and close buttons follow the theme; Windows' turn white on hover
+            // Windows' own buttons turn white on hover in dark themes, so Anarres draws themed ones instead
             ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
             ExtendClientAreaTitleBarHeightHint = TITLE_BAR_HEIGHT;
             // Maximised, Windows puts the window's edges off-screen; the content moves in to stay visible
@@ -199,6 +201,57 @@ public sealed class MainWindow : Window
         }
     }
 
+    // Minimise, maximise and close, themed; the maximise glyph follows the window's state
+    private Control CaptionButtons()
+    {
+        Shape maximiseGlyph = new Shape { Data = Geometry.Parse(MAXIMISE_GLYPH) };
+        Button minimise = CaptionButton(new Shape { Data = Geometry.Parse("M0,5.5 H10") }, "Minimise",
+                                        () => WindowState = WindowState.Minimized);
+        Button maximise = CaptionButton(maximiseGlyph, "Maximise", ToggleMaximised);
+        Button close = CaptionButton(new Shape { Data = Geometry.Parse("M0,0 L10,10 M10,0 L0,10") }, "Close", Close);
+        close.Classes.Add("close");
+        PropertyChanged += (_, change) =>
+        {
+            if (change.Property != WindowStateProperty)
+                return;
+            bool maximised = WindowState == WindowState.Maximized;
+            maximiseGlyph.Data = Geometry.Parse(maximised ? RESTORE_GLYPH : MAXIMISE_GLYPH);
+            ToolTip.SetTip(maximise, maximised ? "Restore" : "Maximise");
+        };
+        StackPanel buttons = Ui.Horizontal(minimise, maximise, close);
+        buttons.Spacing = 0;
+        buttons.Margin = new Thickness(8, 0, 0, 0);
+        return buttons;
+    }
+
+    private static Button CaptionButton(Shape glyph, string tip, Action onClick)
+    {
+        Button button = new Button { Content = glyph, Classes = { "caption" } };
+        ToolTip.SetTip(button, tip);
+        button.Click += (_, _) => onClick();
+        return button;
+    }
+
+    private void ToggleMaximised()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    // The empty parts of the title bar drag the window; a double-click maximises or restores it
+    private void DragsWindow(Grid bar)
+    {
+        bar.PointerPressed += (_, e) =>
+        {
+            if (e.Source != bar || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                return;
+            if (e.ClickCount == 2)
+                ToggleMaximised();
+            else
+                BeginMoveDrag(e);
+            e.Handled = true;
+        };
+    }
+
     private Control BuildTitleBar()
     {
         Image icon = new Image
@@ -278,8 +331,8 @@ public sealed class MainWindow : Window
         {
             ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,*,Auto,Auto"),
             Height = TITLE_BAR_HEIGHT,
-            Margin = OperatingSystem.IsWindows() ? new Thickness(0, 0, CAPTION_BUTTONS_WIDTH, 0)
-                                                 : new Thickness(0, 4, 8, 4)
+            Background = Brushes.Transparent,
+            Margin = OperatingSystem.IsWindows() ? default : new Thickness(0, 4, 8, 4)
         };
         bar.Children.Add(icon);
         Grid.SetColumn(menu, 1);
@@ -294,6 +347,13 @@ public sealed class MainWindow : Window
         bar.Children.Add(_windowTitle);
         Grid.SetColumn(actions, 4);
         bar.Children.Add(actions);
+        if (OperatingSystem.IsWindows())
+        {
+            Control captions = CaptionButtons();
+            Grid.SetColumn(captions, 5);
+            bar.Children.Add(captions);
+            DragsWindow(bar);
+        }
         return new Border { Margin = new Thickness(0, 0, 0, 8), Child = bar };
     }
 
