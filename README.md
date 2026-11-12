@@ -18,8 +18,11 @@ with an Avalonia interface, so it runs on Windows and Linux, and it shares its l
   - Effects, auras, targets, mechanics, powers and the rest are picked from named lists. Attribute, school,
     proc, interrupt, target-flag and shapeshift masks show the names of their set bits; `...` opens the bit list,
     with each bit's value and AzerothCore's name and notes.
-  - Every field has a readable label; its tooltip gives the `spell_dbc` column name. Misc values say what they
-    mean for the chosen effect or aura (a stat, a power, a school mask, a creature entry...).
+  - Every field has a readable label and, like Keira3, a "?" badge explaining what the column does ("the global
+    cooldown group; 133 is the normal GCD...") followed by its `spell_dbc` column name. Every Spell.dbc column is
+    described, plus SpellCastTimes, SpellDuration, SpellRadius, SpellRange, SpellIcon and SpellVisual; the DBC
+    editor shows the same notes when you hover a column header. Misc values say what they mean for the chosen
+    effect or aura (a stat, a power, a school mask, a creature entry...).
   - Cast times, durations, ranges, radii, icons and other spells are shown by what they mean, not just their index.
   - Spell icons from the client's MPQs (with the WoW Data folder set), in the header and in an icon picker.
   - A Visual tab for the spell's SpellVisual row and its kits; "own copy" gives the spell its own visual or kit so
