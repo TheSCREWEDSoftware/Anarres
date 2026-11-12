@@ -168,6 +168,26 @@ Laid out after Stoneharry's [WoW Spell Editor](https://github.com/stoneharry/WoW
 - A live tooltip preview: `$s1`, `$d`, `$o1`, `$t1`, `${...}` sums, `$<variables>`, `$?s123[a][b]`,
   `$lsingular:plural;` and references to other spells.
 - New, Copy and Delete spells; Save, Revert, Undo and Redo (Ctrl+Z, Ctrl+Y).
+- A Skill tab for the spell's SkillLineAbility rows, and the `trainer_spell` SQL that lets a trainer teach it.
+
+</details>
+
+<details>
+<summary><b>Spell tools</b></summary>
+
+All in the **Spell...** menu above the editor.
+
+- **Compare with clean**: every field that differs from the clean Spell.dbc, old and new side by side, with Revert
+  per field or for the whole spell.
+- **Used by**: spells that trigger or teach this one, talents and auras that change it through their family masks,
+  spells it triggers, and spells sharing its visual or icon.
+- **New from a template**: a working direct damage, damage over time, heal, buff, proc, summon, teleport or passive
+  spell, modelled on a real one, ready to change.
+- **Find and replace across spells**: pick spells with the search syntax, then set, add, multiply, turn bits on or
+  off, or replace text in one field. Preview first; it's one undo step.
+- **Check edited spells**: indexes into tables that don't have them, missing trigger spells, auras with no aura
+  type, periodic auras with no period, and fields set on an empty effect. Apply runs the same check and asks before
+  going on when something looks wrong.
 
 </details>
 
@@ -192,6 +212,9 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 - Every table in the project, or any `.dbc` opened straight from disk, in a grid that draws only what's on screen
   (Spell.dbc's 50,000 rows by 234 columns scroll smoothly).
 - Edit cells in place, add, copy and delete rows, undo and redo, filter by ID, text or `Column=value`.
+- Several tables open at once in tabs (`*` marks unsaved ones).
+- Shift+click, Shift+arrows and Ctrl+A select rows; Ctrl+C copies them with a header line and Ctrl+V pastes them
+  into any table with matching columns. A pasted row whose ID is taken gets the next free one.
 - Click a header to sort; right-click it to hide the column, hide every empty column, or show them all again.
 - Save to the project or back to the file, save as `.dbc` or CSV, import CSV, and write the shown rows or the rows
   changed from the clean file as SQL.
@@ -213,6 +236,12 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
   `spell_dbc` gets just the changed spells.
 - **Save as SQL...** and **Update spell_dbc...** write the shown spell, or every changed spell, as SQL or straight
   into the world database.
+- **Tools > Compare two .dbc files...** lists every added, removed and changed row between two files, and saves it
+  as a report.
+- **Tools > Write a changes report...** writes every edited table against its clean file as Markdown: what you
+  changed, field by field, for a changelog or a review.
+- **Tools > Client patches...** shows the client's archives in the order it loads them, and warns when a later
+  patch hides a file in yours.
 - `anarres-cli` does all of it from scripts and build servers.
 
 </details>
@@ -263,6 +292,7 @@ anarres-cli export --edited --server --patch
 anarres-cli sql Spell --ids 90000,90001 --out custom_spells.sql
 anarres-cli sql Spell --changed --out changed_spells.sql
 anarres-cli patch patch-A.MPQ Spell.dbc SpellIcon.dbc
+anarres-cli diff old\Spell.dbc new\Spell.dbc --out spell-changes.md
 ```
 
 `anarres-cli help` lists every command and option.

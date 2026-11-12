@@ -79,6 +79,12 @@ Import once; the project keeps the data from then on.
   Enter to edit a cell, type to replace it, Tab and Enter to move on, Ctrl+C to copy. The filter takes an ID, text
   found in any text column, `Column=value` or `Column~part`.
 
+- **Spell...** menu: **Compare with clean** shows what you changed in the spell and reverts any of it; **Used by**
+  lists what links to it; **New from a template** starts from a working spell; **Find and replace across spells**
+  changes one field in many spells at once, with a preview; **Check edited spells** looks for mistakes.
+- **DBC Editor** tabs keep several tables open. Select rows with Shift or Ctrl+A, copy them with Ctrl+C and paste
+  them into the same table, another project or a spreadsheet; pasted rows with a taken ID get the next free one.
+
 Unsaved changes are marked in the status line; Anarres asks before closing or importing over them.
 
 Shortcuts: Ctrl+S saves, Ctrl+Z and Ctrl+Y undo and redo, Ctrl+F goes to the search box or the filter, and
@@ -146,6 +152,16 @@ read again and the copy refreshed. Saving refreshes the copy too, so the next st
 The copies live in the `cache` folder beside `settings.json`. **Options > General** turns this off and clears them;
 `anarres-cli --no-cache` skips them for one run.
 
+## Seeing what changed
+
+- **Tools > Write a changes report...** compares every edited table with its clean file and opens a Markdown
+  report: each added, removed and changed row, field by field.
+- **Tools > Compare two .dbc files...** does the same for any two files, say last week's export and today's.
+- **Tools > Client patches...** lists the client's MPQs in load order. If a later patch (`patch-Z.MPQ`, say) has a
+  file your patch also has, the client reads theirs and your change won't show; the window lists those files.
+
+Before Apply writes anything it checks the edited spells; it lists what looks wrong and asks before going on.
+
 ## Automating it
 
 `anarres-cli` uses the same settings as the app (or the options you give it), so the steps can run from a script
@@ -161,6 +177,7 @@ anarres-cli apply
 anarres-cli edited
 anarres-cli export --edited --server --patch
 anarres-cli list
+anarres-cli diff old\Spell.dbc new\Spell.dbc --out spell-changes.md
 ```
 
 `anarres-cli help` lists every command and option.
