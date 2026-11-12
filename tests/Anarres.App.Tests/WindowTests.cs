@@ -67,8 +67,9 @@ public static class WindowTests
         window.Show();
         await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
         FieldFinder finder = window.SpellEditor.Finder;
-        Assert.True(finder.Find("global cooldown").Any(field => field.Words.Contains("StartRecoveryCategory")),
-                    "a field by its label");
+        List<FoundField> gcd = finder.Find("global cooldown");
+        Assert.True(gcd.Any(field => field.Words.Contains("StartRecoveryCategory")),
+                    "a field by its label: " + string.Join(" | ", gcd.Take(5).Select(field => field.Label)));
         Assert.True(finder.Find("school").Count > 0, "school");
         Assert.True(finder.Find("range").Count > 0, "range");
         FoundField passive = finder.Find("SPELL_ATTR0_PASSIVE").First();

@@ -56,7 +56,7 @@ public sealed class FieldFinder
             // Enter takes the best match when none is highlighted
             if (e.Key != Key.Enter || Box.SelectedItem != null || Box.Text is not { Length: > 0 } text)
                 return;
-            FoundField? best = (Box.ItemsSource as List<FoundField>)?.FirstOrDefault(field => Matches(text, field));
+            FoundField? best = Find(text).FirstOrDefault();
             if (best == null)
                 return;
             e.Handled = true;
@@ -74,9 +74,20 @@ public sealed class FieldFinder
         Box.ItemsSource = null;
     }
 
+    // Best first: the label itself matches, then the column or the tab, then only the notes
     public List<FoundField> Find(string text)
     {
-        return Index().Where(field => Matches(text, field)).Take(MAX_RESULTS).ToList();
+        return Index().Where(field => Matches(text, field)).OrderBy(field => Rank(text, field)).Take(MAX_RESULTS)
+                      .ToList();
+    }
+
+    private static int Rank(string text, FoundField field)
+    {
+        string[] words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.All(word => field.Label.Contains(word, StringComparison.OrdinalIgnoreCase)))
+            return 0;
+        return words.All(word => (field.Where + " " + field.Words[..Math.Min(field.Words.Length, 200)])
+                              .Contains(word, StringComparison.OrdinalIgnoreCase)) ? 1 : 2;
     }
 
     // Every word typed must appear somewhere in the field's words
