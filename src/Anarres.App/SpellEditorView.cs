@@ -487,12 +487,13 @@ public sealed class SpellEditorView : Grid
         Classes = { "hint" },
         VerticalAlignment = VerticalAlignment.Center
     };
-    private readonly WrapPanel _talentBoxes = new WrapPanel();
+    private readonly StackPanel _talentBoxes = new StackPanel { Spacing = 2 };
     private readonly HashSet<uint> _knownTalents = new HashSet<uint>();
     private List<uint> _askedShown = new List<uint>();
     private bool _levelHooked;
     private const int MAX_PLAYER_LEVEL = 80;
-    private const double TALENT_BOX_WIDTH = 230;
+    private const double TALENT_NAME_WIDTH = 150;
+    private const double TALENT_RANK_GAP = 12;
 
     private Control CasterPanel()
     {
@@ -523,32 +524,77 @@ public sealed class SpellEditorView : Grid
         return Ui.Vertical(2, Ui.Horizontal(label, _levelText, _level, _levelBox), _levelRange, _talentBoxes);
     }
 
-    // One box per spell the text's $?s conditions ask about, kept ticked across spells
+    // The spells $?s asks about: a row per talent by name, ranks side by side, one rank ticked at a time
     private void ShowAskedTalents(List<uint> asked)
     {
         if (asked.SequenceEqual(_askedShown))
             return;
         _askedShown = asked;
         _talentBoxes.Children.Clear();
-        foreach (uint id in asked)
+        IEnumerable<IGrouping<string, (uint Id, string Name, int Rank)>> talents =
+            asked.Select(id => (Id: id, Name: AskedName(id), Rank: AskedRank(id)))
+                 .GroupBy(entry => entry.Name)
+                 .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase);
+        foreach (IGrouping<string, (uint Id, string Name, int Rank)> talent in talents)
         {
-            CheckBox box = new CheckBox
+            List<(uint Id, string Name, int Rank)> ranks = talent.OrderBy(entry => entry.Rank)
+                                                                 .ThenBy(entry => entry.Id).ToList();
+            StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = TALENT_RANK_GAP };
+            row.Children.Add(new TextBlock
             {
-                Content = ChipLook(id).Name,
-                IsChecked = _knownTalents.Contains(id),
-                Width = TALENT_BOX_WIDTH
-            };
-            ToolTip.SetTip(box, "Spell " + id + ": count it as learned in the preview");
-            box.IsCheckedChanged += (_, _) =>
+                Text = talent.Key,
+                Width = TALENT_NAME_WIDTH,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            List<CheckBox> boxes = new List<CheckBox>();
+            foreach ((uint id, string _, int rank) in ranks)
             {
-                if (box.IsChecked == true)
-                    _knownTalents.Add(id);
-                else
-                    _knownTalents.Remove(id);
-                UpdatePreview();
-            };
-            _talentBoxes.Children.Add(box);
+                CheckBox box = new CheckBox
+                {
+                    Content = ranks.Count == 1 && rank == 0 ? "Learned" : rank > 0 ? "Rank " + rank : "Spell " + id,
+                    IsChecked = _knownTalents.Contains(id)
+                };
+                ToolTip.SetTip(box, ChipLook(id).Name + " (spell " + id + "): count it as learned in the preview");
+                box.IsCheckedChanged += (_, _) =>
+                {
+                    if (box.IsChecked == true)
+                    {
+                        _knownTalents.Add(id);
+                        foreach (CheckBox other in boxes.Where(other => other != box))
+                            other.IsChecked = false;
+                    }
+                    else
+                    {
+                        _knownTalents.Remove(id);
+                    }
+
+                    UpdatePreview();
+                };
+                boxes.Add(box);
+                row.Children.Add(box);
+            }
+
+            _talentBoxes.Children.Add(row);
         }
+    }
+
+    private string AskedName(uint id)
+    {
+        int row = Find(_spells, id);
+        string name = row < 0 ? string.Empty : new SpellRecord(_spells!, row).Text("Name", _locale);
+        return name.Length > 0 ? name : "Spell " + id;
+    }
+
+    // "Rank 3" gives 3; spells without a rank number give 0 and keep their ID order
+    private int AskedRank(uint id)
+    {
+        int row = Find(_spells, id);
+        if (row < 0)
+            return 0;
+        string rank = new SpellRecord(_spells!, row).Text("NameSubtext", _locale);
+        string digits = new string(rank.Where(char.IsDigit).ToArray());
+        return int.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out int number) ? number : 0;
     }
 
     // With the preview off, the text boxes take the whole width
