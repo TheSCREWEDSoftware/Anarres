@@ -66,6 +66,7 @@ public sealed class OptionsWindow : Window
 
     private readonly ComboBox _onClose = new ComboBox { ItemsSource = CloseNames, Width = 300 };
     private readonly CheckBox _confirmExit = new CheckBox { Content = "Ask before exiting" };
+    private readonly CheckBox _showSetup = new CheckBox { Content = "Show the setup questions when Anarres starts" };
     private readonly CheckBox _confirmApply = new CheckBox { Content = "Show what Apply will do and ask first" };
     private readonly ComboBox _undo = new ComboBox { Width = 120 };
     private readonly CheckBox _window = new CheckBox { Content = "Remember the window's size and position" };
@@ -123,6 +124,7 @@ public sealed class OptionsWindow : Window
         _confirmApply.IsChecked = _options.ConfirmApply;
         _onClose.SelectedIndex = (int)_options.OnClose;
         _confirmExit.IsChecked = _options.ConfirmExit;
+        _showSetup.IsChecked = _options.ShowSetup;
         _undo.ItemsSource = AppOptions.UndoSteps.Select(steps => steps.ToString("N0", CultureInfo.InvariantCulture))
                                       .ToList();
         _undo.SelectedIndex = Math.Max(0, Array.IndexOf(AppOptions.UndoSteps, _options.MaxUndoSteps));
@@ -163,6 +165,7 @@ public sealed class OptionsWindow : Window
                                _window,
                                Ui.Row("When clicking X", _onClose),
                                _confirmExit,
+                               _showSetup,
                                Ui.Title("Loading"),
                                _cache,
                                Ui.Hint("A copy of each big table is kept as a .dbc file and used while the " +
@@ -490,6 +493,7 @@ public sealed class OptionsWindow : Window
         options.ConfirmApply = _confirmApply.IsChecked == true;
         options.OnClose = (CloseAction)Math.Max(0, _onClose.SelectedIndex);
         options.ConfirmExit = _confirmExit.IsChecked == true;
+        options.ShowSetup = _showSetup.IsChecked == true;
         options.MaxUndoSteps = AppOptions.UndoSteps[Math.Max(0, _undo.SelectedIndex)];
         options.RememberWindow = _window.IsChecked == true;
         options.KeepTableCache = _cache.IsChecked == true;

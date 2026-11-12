@@ -9,7 +9,7 @@ using Avalonia.Platform;
 
 namespace Anarres.App;
 
-// First-start questions like Stoneharry's editor asks; shown at every start until "Don't show this again"
+// First-start questions like Stoneharry's editor asks; shown once, then from Tools > Setup or Options
 public sealed class SetupWindow : Window
 {
     private const double WINDOW_WIDTH = 720;
@@ -45,7 +45,10 @@ public sealed class SetupWindow : Window
     private readonly TextBox _worldPassword = new TextBox { Width = 200, PasswordChar = '*' };
     private readonly TextBox _worldDatabase = new TextBox { Width = 200 };
     private readonly CheckBox _import = new CheckBox { Content = "Import the clean files when I press Start" };
-    private readonly CheckBox _dontShow = new CheckBox { Content = "Don't show this again (Tools > Setup opens it)" };
+    private readonly CheckBox _dontShow = new CheckBox
+    {
+        Content = "Don't show this at start again (Tools > Setup and Options > General bring it back)"
+    };
     private readonly StackPanel _mysqlPanel;
     private readonly StackPanel _worldPanel;
 
@@ -76,7 +79,8 @@ public sealed class SetupWindow : Window
         _worldPassword.Text = settings.WorldPassword;
         _worldDatabase.Text = settings.WorldDatabase;
         _import.IsChecked = true;
-        _dontShow.IsChecked = !showAgain;
+        // Ticked from the start: the questions are for the first run, not every run
+        _dontShow.IsChecked = true;
 
         Image logo = new Image
         {
