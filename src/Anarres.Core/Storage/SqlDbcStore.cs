@@ -12,6 +12,7 @@ public abstract class SqlDbcStore : IDbcStore
     private const string EDITED_STAMP = "edited";
     public const string ROW_COLUMN = "_row";
     public const string ID_COLUMN = "ID";
+    private const string ROW_ID_PREFIX = "Row";
 
     public const string STAGING_SUFFIX = "_anarres_import";
 
@@ -453,10 +454,19 @@ public abstract class SqlDbcStore : IDbcStore
     {
         List<(string, DbcColumnType, int)> columns = new List<(string, DbcColumnType, int)>();
         if (definition.IndexIsRowNumber)
-            columns.Add((ID_COLUMN, DbcColumnType.UInt32, -1));
+            columns.Add((RowIdColumn(definition), DbcColumnType.UInt32, -1));
         for (int i = 0; i < definition.Columns.Count; ++i)
             columns.Add((definition.Columns[i].Name, definition.Columns[i].Type, i));
         return columns;
+    }
+
+    // The name for a row-number ID that no layout column already uses, as column names ignore case
+    private static string RowIdColumn(DbcDefinition definition)
+    {
+        string name = ID_COLUMN;
+        while (definition.Columns.Any(column => string.Equals(column.Name, name, StringComparison.OrdinalIgnoreCase)))
+            name = ROW_ID_PREFIX + name;
+        return name;
     }
 
     protected async Task<object?> ScalarAsync(string sql, CancellationToken cancellation,

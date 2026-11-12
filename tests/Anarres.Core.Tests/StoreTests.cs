@@ -74,6 +74,25 @@ public static class StoreTests
         Assert.Equal("second", loaded.GetString(1, 3), "order kept");
     }
 
+    public static async Task ImportsRowNumberTablesWithAnIdColumn()
+    {
+        using TempFolder temp = new TempFolder();
+        // Like Cfg_Configs.dbc: the row number is the key and the layout also has a column called ID
+        DbcDefinition definition = DbcTests.SampleDefinition();
+        definition.IndexIsRowNumber = true;
+        DbcTable table = new DbcTable(definition);
+        table.Load(new uint[8] { 7, 1, 0, 0, 0, 0, 0, 0 });
+        table.Load(new uint[8] { 3, 2, 0, 0, 0, 0, 0, 0 });
+        DbcDefinitions definitions = new DbcDefinitions();
+        definitions.Add(definition);
+        using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
+        await store.ImportAsync(table);
+        DbcTable loaded = await store.LoadAsync("Sample.dbc", definitions);
+        Assert.Equal(2, loaded.Rows.Count, "both rows kept");
+        Assert.Equal(3, loaded.GetInt(1, 0), "the layout's own ID column");
+        Assert.Equal(2, loaded.GetInt(1, 1), "values");
+    }
+
     public static async Task ExportsAndBuildsPatch()
     {
         using TempFolder temp = new TempFolder();
