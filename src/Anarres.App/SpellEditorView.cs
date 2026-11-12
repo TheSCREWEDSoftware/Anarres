@@ -1,6 +1,7 @@
 using System.Globalization;
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
+using Anarres.Core.Mpq;
 using Anarres.Core.Settings;
 using Anarres.Core.Spells;
 using Anarres.Core.Storage;
@@ -617,6 +618,20 @@ public sealed class SpellEditorView : Grid
     private Control LocalesTab()
     {
         StackPanel panel = new StackPanel();
+        CheckBox onlyEmpty = new CheckBox { Content = "Only fill text that's empty here", IsChecked = true };
+        Button fill = Ui.AsyncButton("Fill in every language from the client",
+                                     () => FillLanguagesAsync(onlyEmpty.IsChecked == true));
+        ToolTip.SetTip(fill, "Reads Spell.dbc from each locale folder in the WoW client's Data folder and copies its " +
+                             "language into these columns, for every spell. Save afterwards to keep it; Undo takes " +
+                             "it back.");
+        panel.Children.Add(Ui.Group("Languages",
+                                    Ui.Hint("The 3.3.5a client reads 9 of the 16 columns, one per language, in the " +
+                                            "order below. AzerothCore names the columns after a later list, so the " +
+                                            "!'s column names differ: German is Name_Lang_frFR, and the 10th " +
+                                            "column, unused, is Name_Lang_esES."),
+                                    Ui.Hint("Each locale's client only has its own language, so a project " +
+                                            "imported from one has the others empty."),
+                                    Ui.Horizontal(fill, onlyEmpty)));
         foreach (string prefix in new[] { "Name", "NameSubtext", "Description", "AuraDescription" })
         {
             StackPanel rows = new StackPanel();
@@ -935,8 +950,56 @@ public sealed class SpellEditorView : Grid
         if (path == null)
             return;
         SqlExport.Write(path, spells, rows);
+        _window.OpenWritten(path);
         _window.SetStatus("Wrote " + rows.Count + (rows.Count == 1 ? " spell" : " spells") + " to " + path +
                           ". Run it on acore_world and restart the worldserver.");
+    }
+
+    // Every locale the client has, one Spell.dbc at a time, gathered into the open spells as one undo step
+    private async Task FillLanguagesAsync(bool onlyEmpty)
+    {
+        if (_spells == null)
+            return;
+        DbcTable spells = _spells;
+        string data = _session.Settings.ClientData();
+        List<string> locales = LocaleMerge.Order(ClientArchives.FindLocales(data));
+        if (locales.Count == 0)
+        {
+            await Dialogs.MessageAsync(_window, "No locales", "No locale folders were found in the WoW client's " +
+                                                              "Data folder. Set the WoW client folder in Project " +
+                                                              "settings.");
+            return;
+        }
+
+        string patch = _session.Settings.PatchPath();
+        DbcDefinitions definitions = _session.Definitions;
+        List<string> filled = new List<string>();
+        spells.BreakUndoStep();
+        for (int i = 0; i < locales.Count; ++i)
+        {
+            string locale = locales[i];
+            _window.SetStatus("Reading " + locale + "'s Spell.dbc (" + (i + 1) + " of " + locales.Count + ")...");
+            LocaleSource? source;
+            try
+            {
+                source = await Task.Run(() => LocaleMerge.Read(data, locale, SpellRecord.FILE, patch, definitions));
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException)
+            {
+                filled.Add(locale + ": couldn't be read (" + exception.Message + ")");
+                continue;
+            }
+
+            if (source == null)
+                continue;
+            int rows = LocaleMerge.Apply(spells, source, onlyEmpty);
+            filled.Add(locale + ": " + rows.ToString("N0", CultureInfo.InvariantCulture) + " spells");
+        }
+
+        spells.BreakUndoStep();
+        _binding.Refresh();
+        UpdateHeading();
+        _window.SetStatus("Filled in " + string.Join(", ", filled) + ". Save to keep them.");
     }
 
     // Undoes or redoes the last spell change, and shows the spell it touched
