@@ -338,6 +338,77 @@ public sealed class FlagsField : IField
     }
 }
 
+// A small bit mask such as a school as a list ("4 - FIRE"); mixes show as one entry, "Choose several" opens bits
+public sealed class MaskListField : IField
+{
+    private const double COMBO_WIDTH = 300;
+    private const string SEVERAL = "Choose several...";
+
+    private readonly RecordBinding _binding;
+    private readonly string _column;
+    private readonly EnumTable _table;
+    private readonly List<uint> _values = new List<uint>();
+    private bool _refreshing;
+
+    public MaskListField(RecordBinding binding, string column, EnumTable table)
+    {
+        _binding = binding;
+        _column = column;
+        _table = table;
+        Combo = new ComboBox { Width = COMBO_WIDTH, MaxDropDownHeight = 420 };
+        Combo.SelectionChanged += async (_, _) => await ChosenAsync();
+        binding.Add(this);
+    }
+
+    public ComboBox Combo { get; }
+
+    public void Refresh()
+    {
+        _refreshing = true;
+        int column = _binding.Column(_column);
+        uint current = _binding.IsBound && column >= 0 ? _binding.Table!.GetRaw(_binding.Row, column) : 0;
+        _values.Clear();
+        List<string> items = new List<string>();
+        List<uint> singles = _table.Values.Select(value => unchecked((uint)value.Value)).Where(value => value != 0)
+                                   .Distinct().Order().ToList();
+        if (current != 0 && !singles.Contains(current))
+            Add(items, current);
+        Add(items, 0);
+        foreach (uint value in singles)
+            Add(items, value);
+        items.Add(SEVERAL);
+        Combo.ItemsSource = items;
+        Combo.SelectedIndex = _binding.IsBound ? _values.IndexOf(current) : -1;
+        Combo.IsEnabled = _binding.IsBound;
+        _refreshing = false;
+    }
+
+    private void Add(List<string> items, uint value)
+    {
+        string names = value == 0 ? "None" : _table.Names(value);
+        items.Add(value.ToString(CultureInfo.InvariantCulture) + " - " + names.ToUpperInvariant());
+        _values.Add(value);
+    }
+
+    private async Task ChosenAsync()
+    {
+        int column = _binding.Column(_column);
+        if (_refreshing || Combo.SelectedIndex < 0 || !_binding.IsBound || column < 0)
+            return;
+        uint now = _binding.Table!.GetRaw(_binding.Row, column);
+        uint? chosen = Combo.SelectedIndex < _values.Count ? _values[Combo.SelectedIndex] : null;
+        if (chosen == null && TopLevel.GetTopLevel(Combo) is Window owner)
+            chosen = await new FlagsDialog(_column, _table, now).ShowDialog<uint?>(owner);
+        if (chosen is { } value && value != now)
+        {
+            _binding.Table.SetRaw(_binding.Row, column, value);
+            _binding.ReportEdit(_column);
+        }
+
+        Refresh();
+    }
+}
+
 // An effect's misc value, labelled and explained by what the effect or its aura uses it for
 public sealed class MiscField : IField
 {
