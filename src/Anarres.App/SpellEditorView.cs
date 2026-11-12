@@ -231,7 +231,7 @@ public sealed class SpellEditorView : Grid
     {
         Button save = Ui.AsyncButton("Save", SaveAsync, accent: true);
         Button revert = Ui.AsyncButton("Revert", RevertAsync);
-        Button sql = new Button { Content = "SQL..." };
+        Button sql = new Button { Content = "Save as SQL..." };
         sql.Flyout = new MenuFlyout
         {
             Items =
@@ -240,11 +240,23 @@ public sealed class SpellEditorView : Grid
                 Item("Every spell changed from the clean Spell.dbc", () => ExportSqlAsync(changedOnly: true))
             }
         };
-        Button world = Ui.AsyncButton("Send to world DB...", SendToWorldAsync);
+        Button world = new Button { Content = "Update spell__dbc..." };
+        world.Flyout = new MenuFlyout
+        {
+            Items =
+            {
+                Item("This spell", () => SendToWorldAsync(changedOnly: false)),
+                Item("Every spell changed from the clean Spell.dbc", () => SendToWorldAsync(changedOnly: true))
+            }
+        };
         ToolTip.SetTip(save, "Save every changed spell to the project (Ctrl+S)");
         ToolTip.SetTip(revert, "Drop changes not saved yet and load the saved spells again");
-        ToolTip.SetTip(sql, "Write spells as SQL for AzerothCore's spell_dbc table");
-        ToolTip.SetTip(world, "Write this spell straight into spell_dbc in your AzerothCore world database");
+        ToolTip.SetTip(sql, "Save a .sql file of spell_dbc rows, to run on acore_world yourself or keep with your " +
+                            "server's SQL updates.\n\nspell_dbc holds server-side spells and changes to existing " +
+                            "ones; the worldserver loads it over its Spell.dbc at start-up.");
+        ToolTip.SetTip(world, "Write spells into spell_dbc in your acore_world database now, then restart the " +
+                              "worldserver.\n\nThe client still needs the patch MPQ (Apply, F6) to show new or " +
+                              "changed spells.");
 
         StackPanel heading = Ui.Horizontal(_headerIcon, Ui.Vertical(2, _title, _subtitle));
         StackPanel actions = Ui.Horizontal(_unsaved, sql, world, revert, save);
@@ -862,41 +874,37 @@ public sealed class SpellEditorView : Grid
             Select(id);
     }
 
+    // The rows to write: the shown spell, or every spell that differs from the clean Spell.dbc
+    private async Task<List<int>?> RowsToWriteAsync(DbcTable spells, bool changedOnly)
+    {
+        if (!changedOnly)
+            return _binding.IsBound ? new List<int> { _binding.Row } : null;
+        _window.SetStatus("Comparing with the clean Spell.dbc...");
+        DbcTable? clean = await Task.Run(() => DbcMerge.LoadSource(_session.Settings, SpellRecord.FILE,
+                                                                   _session.Definitions));
+        if (clean == null)
+        {
+            await Dialogs.MessageAsync(_window, "No clean Spell.dbc", "There's no clean Spell.dbc to compare with. " +
+                                                                      "Set the Clean DBC folder or the WoW client " +
+                                                                      "folder in Project settings.");
+            return null;
+        }
+
+        List<int> rows = await Task.Run(() => DbcMerge.Changed(clean, spells));
+        _window.SetStatus(rows.Count == 0 ? "No spell differs from the clean Spell.dbc." : string.Empty);
+        return rows.Count == 0 ? null : rows;
+    }
+
     private async Task ExportSqlAsync(bool changedOnly)
     {
-        if (_spells == null || (!changedOnly && !_binding.IsBound))
+        if (_spells == null)
             return;
         DbcTable spells = _spells;
-        List<int> rows;
-        string suggested;
-        if (changedOnly)
-        {
-            _window.SetStatus("Comparing with the clean Spell.dbc...");
-            DbcTable? clean = await Task.Run(() => DbcMerge.LoadSource(_session.Settings, SpellRecord.FILE,
-                                                                       _session.Definitions));
-            if (clean == null)
-            {
-                await Dialogs.MessageAsync(_window, "No clean Spell.dbc", "There's no clean Spell.dbc to compare " +
-                                                                          "with. Set the Clean DBC folder or the " +
-                                                                          "WoW Data folder in Project settings.");
-                return;
-            }
-
-            rows = await Task.Run(() => DbcMerge.Changed(clean, spells));
-            suggested = "spell_dbc_changed.sql";
-        }
-        else
-        {
-            rows = new List<int> { _binding.Row };
-            suggested = "spell_" + new SpellRecord(spells, _binding.Row).Id + ".sql";
-        }
-
-        if (rows.Count == 0)
-        {
-            _window.SetStatus("No spell differs from the clean Spell.dbc.");
+        List<int>? rows = await RowsToWriteAsync(spells, changedOnly);
+        if (rows == null)
             return;
-        }
-
+        string suggested = changedOnly ? "spell_dbc_changed.sql"
+                                       : "spell_" + new SpellRecord(spells, rows[0]).Id + ".sql";
         string? path = await Ui.SaveFileAsync(_window, "Save SQL for spell_dbc", suggested, "SQL file", "sql");
         if (path == null)
             return;
@@ -932,26 +940,40 @@ public sealed class SpellEditorView : Grid
         return item;
     }
 
-    private async Task SendToWorldAsync()
+    private async Task SendToWorldAsync(bool changedOnly)
     {
-        if (_spells == null || !_binding.IsBound)
+        if (_spells == null)
             return;
-        SpellRecord spell = new SpellRecord(_spells, _binding.Row);
-        WorldDatabaseWindow dialog = new WorldDatabaseWindow(_session.Settings, spell.Id, spell.Name);
+        DbcTable spells = _spells;
+        List<int>? rows = await RowsToWriteAsync(spells, changedOnly);
+        if (rows == null)
+            return;
+        string what = rows.Count == 1
+                          ? "Spell " + new SpellRecord(spells, rows[0]).Id + " (" +
+                            new SpellRecord(spells, rows[0]).Name + ")"
+                          : rows.Count + " spells";
+        WorldDatabaseWindow dialog = new WorldDatabaseWindow(_session.Settings, what);
         MySqlSettings? target = await dialog.ShowDialog<MySqlSettings?>(_window);
         if (target == null)
             return;
+        _session.Settings.WorldHost = target.Host;
+        _session.Settings.WorldPort = target.Port;
+        _session.Settings.WorldUser = target.User;
+        _session.Settings.WorldPassword = target.Password;
+        _session.Settings.WorldDatabase = target.Database;
+        if (!_window.IsTest)
+            _session.Settings.Save();
         try
         {
             using MySqlDbcStore world = await MySqlDbcStore.OpenAsync(target, TableNaming.AzerothCore);
-            await world.UpsertRowsAsync(_spells, new[] { _binding.Row });
-            _window.SetStatus("Spell " + spell.Id + " is in " + target.Database +
-                              ".spell_dbc. Restart the worldserver to load it.");
+            await world.UpsertRowsAsync(spells, rows);
+            _window.SetStatus(what + (rows.Count == 1 ? " is" : " are") + " in " + target.Database +
+                              ".spell_dbc. Restart the worldserver to load " + (rows.Count == 1 ? "it." : "them."));
         }
         catch (Exception exception) when (exception is InvalidOperationException or
                                               System.Data.Common.DbException)
         {
-            await Dialogs.MessageAsync(_window, "Not sent", "The spell couldn't be written: " + exception.Message);
+            await Dialogs.MessageAsync(_window, "Not written", "spell_dbc couldn't be updated: " + exception.Message);
         }
     }
 
