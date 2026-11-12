@@ -68,6 +68,54 @@ public sealed class MySqlDbcStore : SqlDbcStore
         return new MySqlDbcStore(connection, settings, naming);
     }
 
+    // The server's answer when the user may not create the database (ER_DBACCESS_DENIED_ERROR)
+    public const int ACCESS_DENIED = 1044;
+
+    public static bool IsCreateRefused(Exception exception)
+    {
+        return exception is MySqlException { Number: ACCESS_DENIED };
+    }
+
+    // As create_mysql.sql does: an admin makes the database and grants the user every right on it; returns its hosts
+    public static async Task<List<string>> CreateForUserAsync(MySqlSettings admin, string database, string user,
+                                                              CancellationToken cancellation = default)
+    {
+        string quoted = "`" + database.Replace("`", "``") + "`";
+        await using MySqlConnection server = new MySqlConnection(admin.ConnectionString(withDatabase: false));
+        await server.OpenAsync(cancellation);
+        await using (MySqlCommand create = server.CreateCommand())
+        {
+            create.CommandText = "CREATE DATABASE IF NOT EXISTS " + quoted + " CHARACTER SET utf8mb4";
+            await create.ExecuteNonQueryAsync(cancellation);
+        }
+
+        List<string> hosts = new List<string>();
+        await using (MySqlCommand find = server.CreateCommand())
+        {
+            find.CommandText = "SELECT `Host` FROM `mysql`.`user` WHERE `User` = @user";
+            find.Parameters.AddWithValue("@user", user);
+            await using MySqlDataReader reader = await find.ExecuteReaderAsync(cancellation);
+            while (await reader.ReadAsync(cancellation))
+                hosts.Add(reader.GetString(0));
+        }
+
+        foreach (string host in hosts)
+        {
+            await using MySqlCommand grant = server.CreateCommand();
+            grant.CommandText = "GRANT ALL PRIVILEGES ON " + quoted + ".* TO '" + Literal(user) + "'@'" +
+                                Literal(host) + "' WITH GRANT OPTION";
+            await grant.ExecuteNonQueryAsync(cancellation);
+        }
+
+        return hosts;
+    }
+
+    // An account name or host inside quotes; GRANT takes no placeholders for them
+    private static string Literal(string text)
+    {
+        return text.Replace("\\", "\\\\").Replace("'", "''");
+    }
+
     protected override int RowsPerInsert(int columns)
     {
         return Math.Max(1, MAX_PARAMETERS / Math.Max(1, columns));

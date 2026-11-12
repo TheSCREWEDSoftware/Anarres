@@ -270,7 +270,9 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 - **SQLite project file** (`.anarres`): one local file, nothing to run.
 - **MySQL or MariaDB**: work on a database directly, query and bulk-edit it with any SQL tool, and share it.
   - *DBC names* (`Spell`, `SpellIcon`...) for a database just for DBC data (`acore_dbc_extracted` by default),
-    like Stoneharry's editor.
+    like Stoneharry's editor. If your user (`acore`) isn't allowed to create it, Anarres asks once for an admin
+    account such as root, creates it and gives `acore` every right on it, as AzerothCore's `create_mysql.sql` does
+    for `acore_world`.
   - *AzerothCore names* (`spell_dbc`...) to work in `acore_world`'s own override tables.
 - Big tables such as Spell.dbc are kept on this PC between runs and open in about 0.2 seconds instead of 1 to 2;
   the copy is used only while the database still matches it.

@@ -186,7 +186,18 @@ public sealed class MainWindow : Window
 
         try
         {
-            await _session.StoreAsync(createDatabase: true);
+            try
+            {
+                await _session.StoreAsync(createDatabase: true);
+            }
+            catch (Exception refused) when (settings.Store == StoreKind.MySql &&
+                                            MySqlDbcStore.IsCreateRefused(refused))
+            {
+                if (!await CreateDatabaseForUserAsync())
+                    throw;
+                await _session.StoreAsync(createDatabase: true);
+            }
+
             UpdateStatus();
             return true;
         }
@@ -197,6 +208,44 @@ public sealed class MainWindow : Window
             SetStatus("The project couldn't be opened: " + exception.Message);
             await Dialogs.MessageAsync(this, "Project not opened", "The project couldn't be opened: " +
                                                                    exception.Message + "\n\nCheck Project settings.");
+            return false;
+        }
+    }
+
+    // acore may not create databases; an admin makes it and grants acore every right, as create_mysql.sql does
+    private async Task<bool> CreateDatabaseForUserAsync()
+    {
+        ProjectSettings settings = _session.Settings;
+        string? admin = await Dialogs.PromptAsync(this, "Create " + settings.MySqlDatabase,
+                                                  settings.MySqlUser + " isn't allowed to create " +
+                                                  settings.MySqlDatabase + ". An account that may (such as root) " +
+                                                  "can create it and give " + settings.MySqlUser + " every right " +
+                                                  "on it, as AzerothCore does for acore_world.\n\nAdmin account:",
+                                                  "root");
+        if (string.IsNullOrWhiteSpace(admin))
+            return false;
+        string? password = await Dialogs.PromptAsync(this, "Create " + settings.MySqlDatabase,
+                                                     "Password for " + admin.Trim() + " (used once, not saved):",
+                                                     password: true);
+        if (password == null)
+            return false;
+        try
+        {
+            List<string> hosts = await MySqlDbcStore.CreateForUserAsync(
+                new MySqlSettings(settings.MySqlHost, settings.MySqlPort, admin.Trim(), password,
+                                  settings.MySqlDatabase), settings.MySqlDatabase, settings.MySqlUser);
+            SetStatus("Created " + settings.MySqlDatabase + (hosts.Count > 0
+                                                                 ? " and gave " + settings.MySqlUser + "@" +
+                                                                   string.Join(", " + settings.MySqlUser + "@",
+                                                                               hosts) + " every right on it."
+                                                                 : "; no account called " + settings.MySqlUser +
+                                                                   " was found to give rights to."));
+            return hosts.Count > 0;
+        }
+        catch (System.Data.Common.DbException exception)
+        {
+            await Dialogs.MessageAsync(this, "Not created", settings.MySqlDatabase + " couldn't be created: " +
+                                                            exception.Message);
             return false;
         }
     }
