@@ -1,6 +1,7 @@
 using System.Globalization;
 using Anarres.Core.Dbc;
 using Anarres.Core.Spells;
+using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -240,7 +241,7 @@ public sealed class FlagsField : IField
 
     private readonly RecordBinding _binding;
     private readonly string _column;
-    private readonly EnumTable _table;
+    private readonly Func<EnumTable?> _table;
     private readonly CellField _value;
     private readonly TextBlock _summary = new TextBlock
     {
@@ -250,7 +251,12 @@ public sealed class FlagsField : IField
         HorizontalAlignment = HorizontalAlignment.Left
     };
 
-    public FlagsField(RecordBinding binding, string column, EnumTable table)
+    public FlagsField(RecordBinding binding, string column, EnumTable table) : this(binding, column, () => table)
+    {
+    }
+
+    // The list may change with the row, such as an item class's subclasses
+    public FlagsField(RecordBinding binding, string column, Func<EnumTable?> table)
     {
         _binding = binding;
         _column = column;
@@ -274,16 +280,25 @@ public sealed class FlagsField : IField
             return;
         }
 
-        string described = _table.Describe(_value.Raw());
-        _summary.Text = described;
+        EnumTable? table = _table();
+        if (table == null)
+        {
+            _summary.Text = string.Empty;
+            ToolTip.SetTip(_summary, null);
+            return;
+        }
+
+        _summary.Text = table.Describe(_value.Raw());
+        ToolTip.SetTip(_summary, table.Lines(_value.Raw()));
     }
 
     private async Task PickAsync(Control anchor)
     {
         int column = _binding.Column(_column);
-        if (!_binding.IsBound || column < 0 || TopLevel.GetTopLevel(anchor) is not Window owner)
+        if (!_binding.IsBound || column < 0 || TopLevel.GetTopLevel(anchor) is not Window owner ||
+            _table() is not { } table)
             return;
-        FlagsDialog dialog = new FlagsDialog(_column, _table, _binding.Table!.GetRaw(_binding.Row, column));
+        FlagsDialog dialog = new FlagsDialog(_column, table, _binding.Table!.GetRaw(_binding.Row, column));
         uint? chosen = await dialog.ShowDialog<uint?>(owner);
         if (chosen is not { } value || value == _binding.Table.GetRaw(_binding.Row, column))
             return;
@@ -308,11 +323,14 @@ public sealed class MiscField : IField
         MaxWidth = 420,
         TextTrimming = TextTrimming.CharacterEllipsis
     };
+    private readonly Func<string, uint, string?>? _entries;
     private MiscMeaning _current = MiscMeaning.Plain;
 
+    // entries names a creature or game object entry from the world database, when one is reachable
     public MiscField(RecordBinding binding, string column, string effectColumn, string auraColumn, bool second,
-                     string label)
+                     string label, Func<string, uint, string?>? entries = null)
     {
+        _entries = entries;
         _binding = binding;
         _effectColumn = effectColumn;
         _auraColumn = auraColumn;
@@ -356,6 +374,18 @@ public sealed class MiscField : IField
     private void Describe()
     {
         uint raw = Value.Raw();
+        string? table = _current.Label switch
+        {
+            "Creature entry" => WorldNames.CREATURES,
+            "Game object entry" => WorldNames.GAME_OBJECTS,
+            _ => null
+        };
+        if (table != null && _entries?.Invoke(table, raw) is { } name)
+        {
+            _meaning.Text = name;
+            return;
+        }
+
         _meaning.Text = _current.Values?.Describe(_current.Values.Flags ? raw : unchecked((int)raw)) ?? string.Empty;
     }
 }
@@ -390,7 +420,7 @@ public sealed class LookupField : IField
 public sealed class AllFieldsView
 {
     private readonly StackPanel _rows = new StackPanel { Spacing = 2 };
-    private readonly TextBox _filter = new TextBox { Watermark = "Filter columns", Width = 300 };
+    private readonly TextBox _filter = Ui.Clearable(new TextBox { Watermark = "Filter columns", Width = 300 });
     private readonly List<(string Name, Control Row)> _entries = new List<(string, Control)>();
 
     public AllFieldsView(RecordBinding binding, DbcDefinition definition)

@@ -16,24 +16,24 @@ public static partial class ColumnDocs
                          "spells go up to about 80864.",
                 ["Category"] = "SpellCategory.dbc ID. Spells in the same category share a cooldown: casting one " +
                                "starts CategoryRecoveryTime on all of them (potions, trinkets, shocks).",
-                ["DispelType"] = "Which dispels remove the aura: Magic, Curse, Disease, Poison and so on. None " +
-                                 "means it can't be dispelled by type.",
+                ["DispelType"] = "Which dispels remove the aura:\n• Magic, Curse, Disease, Poison and so on\n" +
+                                 "• None: it can't be dispelled by type",
                 ["Mechanic"] = "The spell's mechanic (stun, root, fear, polymorph...). Immunities, diminishing " +
                                "returns and \"break on damage\" checks use it.",
                 ["Attributes"] = "Behaviour flags. Each bit changes how the spell works; press ... to see them " +
                                  "with AzerothCore's notes.",
-                ["ShapeshiftMask"] = "Shapeshift forms the spell can be cast in; bit N is form N + 1. 0 means " +
-                                     "any form.",
+                ["ShapeshiftMask"] = "Shapeshift forms the spell can be cast in; bit N is form N + 1:\n• 0 any form",
                 ["ShapeshiftExclude"] = "Shapeshift forms the spell can't be cast in; bit N is form N + 1.",
                 ["unk_320_2"] = "Not used in 3.3.5a; leave at 0.",
                 ["unk_320_3"] = "Not used in 3.3.5a; leave at 0.",
                 ["Targets"] = "What the cast asks the player to target: a unit, an item, a ground point, a game " +
                               "object and so on. Most spells take their targets from the effects instead.",
                 ["TargetCreatureType"] = "Creature types the target must be (beast, undead, demon...); bit N is " +
-                                         "type N + 1. 0 means any type.",
+                                         "type N + 1:\n• 0 any type",
                 ["RequiresSpellFocus"] = "SpellFocusObject.dbc ID: an object that must be near the caster, " +
                                          "such as an anvil, a forge or a cooking fire.",
-                ["FacingCasterFlags"] = "1 makes the caster face the target to cast, as melee abilities need.",
+                ["FacingCasterFlags"] = "Whether the caster must face the target:\n• 0 no\n• 1 yes, as melee " +
+                                      "abilities need",
                 ["CasterAuraState"] = "An aura state the caster must have, such as \"just dodged\" for " +
                                       "Overpower or \"Health below 20%\" for Execute.",
                 ["TargetAuraState"] = "An aura state the target must have, such as \"Health below 20%\" for " +
@@ -46,8 +46,7 @@ public static partial class ColumnDocs
                                              "for Divine Shield.",
                 ["ExcludeTargetAuraSpell"] = "A spell whose aura the target must not have, such as Weakened " +
                                              "Soul for Power Word: Shield.",
-                ["CastingTimeIndex"] = "SpellCastTimes.dbc ID. 1 is instant; the value beside it is the cast " +
-                                       "time in seconds.",
+                ["CastingTimeIndex"] = "SpellCastTimes.dbc ID; the value beside it is the cast time:\n• 1 instant",
                 ["RecoveryTime"] = "The spell's own cooldown, in milliseconds.",
                 ["CategoryRecoveryTime"] = "The cooldown, in milliseconds, shared by every spell in the same " +
                                            "Category.",
@@ -59,33 +58,34 @@ public static partial class ColumnDocs
                 ["ProcTypeMask"] = "Events that can trigger the aura's proc: dealing or taking melee or spell " +
                                    "hits, crits, kills and so on. AzerothCore's spell_proc table can refine it.",
                 ["ProcChance"] = "Chance, in percent, that a matching event triggers the proc.",
-                ["ProcCharges"] = "How many procs before the aura is used up. 0 means it never runs out.",
+                ["ProcCharges"] = "How many procs before the aura is used up:\n• 0 never runs out",
                 ["MaxLevel"] = "The level where per-level growth stops (points, cost and so on).",
                 ["BaseLevel"] = "The level the spell's values are for; per-level growth counts from here.",
                 ["SpellLevel"] = "The level the spell is learned at. Also used for resists and level checks.",
-                ["DurationIndex"] = "SpellDuration.dbc ID for how long the aura or effect lasts. 0 means no " +
-                                    "duration.",
-                ["PowerType"] = "The power the spell costs: mana, rage, focus, energy, runes, runic power, or " +
-                                "health (-2).",
-                ["ManaCost"] = "The flat cost. Rage and runic power are in tenths: 100 costs 10.",
+                ["DurationIndex"] = "SpellDuration.dbc ID for how long the aura or effect lasts:\n• 0 no duration",
+                ["PowerType"] = "The power the spell costs:\n• 0 mana\n• 1 rage\n• 2 focus\n• 3 energy\n" +
+                                "• 5 runes\n• 6 runic power\n• -2 health",
+                ["ManaCost"] = "The flat cost.\n• Mana, energy, focus: as shown\n" +
+                               "• Rage and runic power: in tenths, so 100 costs 10",
                 ["ManaCostPerLevel"] = "Cost added per level above BaseLevel.",
                 ["ManaPerSecond"] = "Cost each second while channelling.",
                 ["ManaPerSecondPerLevel"] = "Per-second cost added per level.",
                 ["RangeIndex"] = "SpellRange.dbc ID: the spell's minimum and maximum range.",
                 ["Speed"] = "Missile speed in yards per second. 0 hits at once.",
                 ["ModalNextSpell"] = "The next spell of a modal chain; rarely used in 3.3.5a.",
-                ["CumulativeAura"] = "How many times the aura stacks. 0 or 1 means it doesn't stack.",
+                ["CumulativeAura"] = "How many times the aura stacks:\n• 0 or 1 doesn't stack",
                 ["Totem"] = "An item the caster must carry but doesn't use up, such as a totem or a tool.",
                 ["Reagent"] = "An item used up by the cast.",
                 ["ReagentCount"] = "How many of the reagent the cast uses up.",
-                ["EquippedItemClass"] = "Item class that must be equipped: 2 is weapons, 4 is armour. -1 means " +
-                                        "nothing needs to be equipped.",
-                ["EquippedItemSubclass"] = "Item subclasses allowed, as a mask (bit N is subclass N), such as " +
-                                           "which weapon types.",
-                ["EquippedItemInvTypes"] = "Inventory slots allowed, as a mask (bit N is inventory type N).",
+                ["EquippedItemClass"] = "Item class that must be equipped, from ItemClass.dbc:\n" +
+                                        "• -1 nothing needs to be equipped\n• 2 weapon\n• 4 armour",
+                ["EquippedItemSubclass"] = "Item subclasses allowed, as a mask: bit N is subclass N of the item " +
+                                           "class, as listed in ItemSubClass.dbc (custom ones included).",
+                ["EquippedItemInvTypes"] = "Inventory slots allowed, as a mask: bit N is inventory type N (head, " +
+                                           "neck, shoulder...).",
                 ["Effect"] = "What this effect does: damage, heal, apply an aura, summon, teleport...",
                 ["EffectDieSides"] = "Random extra value: the effect is BasePoints + 1 up to BasePoints + " +
-                                     "DieSides. 1 means no randomness.",
+                                     "DieSides.\n• 0 or 1 no randomness",
                 ["EffectRealPointsPerLevel"] = "Value added per caster level above BaseLevel, up to MaxLevel.",
                 ["EffectBasePoints"] = "The effect's value minus one: 9 with 1 die side gives 10. Tooltips show " +
                                        "it as $s1, $s2, $s3.",
@@ -129,28 +129,29 @@ public static partial class ColumnDocs
                 ["Description_Lang_Mask"] = "Which languages have a tooltip.",
                 ["AuraDescription_Lang_Mask"] = "Which languages have a buff tooltip.",
                 ["ManaCostPct"] = "Cost as a percentage of the caster's base mana (or base health).",
-                ["StartRecoveryCategory"] = "The global cooldown group. 133 is the normal global cooldown; 0 " +
-                                            "means the spell doesn't trigger or wait for one. Spells in the " +
-                                            "same group share it.",
-                ["StartRecoveryTime"] = "Length of the global cooldown it triggers, in milliseconds: usually " +
-                                        "1500, or 1000 for energy users.",
+                ["StartRecoveryCategory"] = "The global cooldown group; spells in the same group share it:\n" +
+                                            "• 133 the normal global cooldown\n" +
+                                            "• 0 doesn't trigger or wait for one",
+                ["StartRecoveryTime"] = "Length of the global cooldown it triggers, in milliseconds:\n• 1500 usually" +
+                                        "\n• 1000 for energy users",
                 ["MaxTargetLevel"] = "The highest target level the spell works on, such as for crowd control.",
                 ["SpellClassSet"] = "The spell family (Mage, Warrior, Priest...). With the family masks, it lets " +
                                     "talents and auras find this spell.",
                 ["SpellClassMask"] = "This spell's family bits. Auras whose EffectSpellClassMask matches them " +
                                      "affect this spell.",
-                ["MaxTargets"] = "The most targets an area spell hits. 0 means no limit.",
-                ["DefenseType"] = "Damage class: none, magic, melee or ranged. Decides how hit, crit and " +
-                                  "resist work.",
-                ["PreventionType"] = "What stops the cast: 1 is silence, 2 is pacify.",
+                ["MaxTargets"] = "The most targets an area spell hits:\n• 0 no limit",
+                ["DefenseType"] = "Damage class; decides how hit, crit and resist work:\n• 0 none\n• 1 magic\n" +
+                                  "• 2 melee\n• 3 ranged",
+                ["PreventionType"] = "What stops the cast:\n• 0 nothing\n• 1 silence\n• 2 pacify",
                 ["StanceBarOrder"] = "Position on the stance bar for forms and stances.",
-                ["EffectChainAmplitude"] = "Value multiplier at each chain jump: 0.5 halves it every jump.",
+                ["EffectChainAmplitude"] = "Value multiplier at each chain jump:\n• 1 the same every jump\n• 0.5 " +
+                                           "halves it every jump",
                 ["MinFactionID"] = "The faction whose reputation the caster needs.",
                 ["MinReputation"] = "The reputation rank needed with MinFactionID.",
                 ["RequiredAuraVision"] = "Aura vision needed to cast; rarely used.",
                 ["RequiredTotemCategoryID"] = "TotemCategory.dbc ID of a tool kind needed, such as any mining " +
                                               "pick or blacksmith hammer.",
-                ["RequiredAreasID"] = "AreaGroup.dbc ID of the zones the spell can be cast in. 0 means anywhere.",
+                ["RequiredAreasID"] = "AreaGroup.dbc ID of the zones the spell can be cast in:\n• 0 anywhere",
                 ["SchoolMask"] = "The spell's school: physical, holy, fire, nature, frost, shadow, arcane, or " +
                                  "several at once.",
                 ["RuneCostID"] = "SpellRuneCost.dbc ID: the blood, frost and unholy runes it costs and the " +
@@ -173,7 +174,7 @@ public static partial class ColumnDocs
             },
             ["SpellDuration.dbc"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["Duration"] = "Duration in milliseconds; -1 lasts until cancelled.",
+                ["Duration"] = "Duration in milliseconds:\n• -1 lasts until cancelled",
                 ["DurationPerLevel"] = "Milliseconds added per level.",
                 ["MaxDuration"] = "The longest it can last, in milliseconds."
             },
@@ -185,9 +186,9 @@ public static partial class ColumnDocs
             },
             ["SpellRange.dbc"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["RangeMin"] = "Minimum range in yards: 1 against enemies, 2 for friends.",
-                ["RangeMax"] = "Maximum range in yards: 1 against enemies, 2 for friends.",
-                ["Flags"] = "1 makes it a melee range; 2 a ranged-weapon range.",
+                ["RangeMin"] = "Minimum range in yards:\n• _1 against enemies\n• _2 for friends",
+                ["RangeMax"] = "Maximum range in yards:\n• _1 against enemies\n• _2 for friends",
+                ["Flags"] = "What kind of range:\n• 1 melee\n• 2 ranged weapon",
                 ["DisplayName"] = "The range's name in this language, such as \"Long Range\".",
                 ["DisplayNameShort"] = "The short name in this language."
             },

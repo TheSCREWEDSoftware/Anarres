@@ -26,7 +26,10 @@ public sealed class SpellEditorView : Grid
     private readonly Session _session;
     private readonly RecordBinding _binding = new RecordBinding();
     private readonly SpellLookups _lookups = new SpellLookups();
-    private readonly TextBox _search = new TextBox { Watermark = "Search by ID or name, or effect:6, aura:3" };
+    private readonly TextBox _search = Ui.Clearable(new TextBox
+    {
+        Watermark = "Search by ID or name, or effect:6, aura:3"
+    });
     private readonly ListBox _list = new ListBox();
     private readonly FieldFinder _finder;
     private readonly TextBlock _count = new TextBlock { Classes = { "hint" }, Margin = new Thickness(4, 4, 0, 0) };
@@ -148,8 +151,11 @@ public sealed class SpellEditorView : Grid
             }
 
             _window.SetStatus("Loading Spell.dbc...");
-            _spells = await _session.LoadAsync(SpellRecord.FILE);
-            _lookups.Spells = _spells;
+            // Spells is set only once the editor is ready, so nothing sees a half-loaded spell editor
+            DbcTable spells = await _session.LoadAsync(SpellRecord.FILE);
+            _lookups.Spells = spells;
+            await _session.LoadNamingTablesAsync();
+            _ = ShowWorldNamesAsync();
             _lookups.Durations = await _session.TryLoadAsync("SpellDuration.dbc");
             _lookups.Radii = await _session.TryLoadAsync("SpellRadius.dbc");
             _lookups.Ranges = await _session.TryLoadAsync("SpellRange.dbc");
@@ -157,7 +163,8 @@ public sealed class SpellEditorView : Grid
             CastTimes = await _session.TryLoadAsync("SpellCastTimes.dbc");
             Icons = await _session.TryLoadAsync("SpellIcon.dbc");
             _images = new IconImages(await _session.IconLibraryAsync(), Icons);
-            await _visual.LoadAsync(_spells);
+            await _visual.LoadAsync(spells);
+            _spells = spells;
             BuildEditor(_spells.Definition);
             Filter();
             if (_reopen is { } last && _spells.FindRow(last) >= 0)
@@ -349,6 +356,25 @@ public sealed class SpellEditorView : Grid
         return Named(Ui.Row(label, new EnumField(_binding, column, SpellEnums.Get(key)).View), column);
     }
 
+    // An item's name from the world database, when it's reachable
+    private string ItemName(uint id)
+    {
+        return id == 0 ? string.Empty : _session.WorldName(WorldNames.ITEMS, id) ?? string.Empty;
+    }
+
+    private string? WorldEntry(string table, uint id)
+    {
+        return id == 0 ? null : _session.WorldName(table, id);
+    }
+
+    private string ToolCategory(uint id)
+    {
+        DbcTable? table = _session.NamingTable("TotemCategory.dbc");
+        int row = id == 0 || table == null ? -1 : table.FindRow(id);
+        int name = table == null ? -1 : SpellRecord.TextColumn(table.Definition, "Name", SpellRecord.ENGLISH);
+        return row < 0 || name < 0 ? string.Empty : table!.GetString(row, name);
+    }
+
     private Control Lookup(string label, string column, Func<uint, string> describe)
     {
         return Named(Ui.Row(label, new LookupField(_binding, column, describe).View), column);
@@ -489,6 +515,11 @@ public sealed class SpellEditorView : Grid
 
     private Control Flags(string label, string column, EnumTable table)
     {
+        return Flags(label, column, () => table);
+    }
+
+    private Control Flags(string label, string column, Func<EnumTable?> table)
+    {
         StackPanel row = Ui.Row(label, new FlagsField(_binding, column, table).View);
         row.Children[0].VerticalAlignment = VerticalAlignment.Top;
         row.Children[0].Margin = new Thickness(0, 6, 0, 0);
@@ -529,11 +560,11 @@ public sealed class SpellEditorView : Grid
                      Enum("Mechanic", Column("EffectMechanic"), SpellEnums.MECHANIC),
                      Cell("Aura period (ms)", Column("EffectAuraPeriod")),
                      new MiscField(_binding, Column("EffectMiscValue"), Column("Effect"), Column("EffectAura"),
-                                   second: false, "Misc value").View,
+                                   second: false, "Misc value", WorldEntry).View,
                      new MiscField(_binding, Column("EffectMiscValueB"), Column("Effect"), Column("EffectAura"),
-                                   second: true, "Misc value B").View,
+                                   second: true, "Misc value B", WorldEntry).View,
                      Lookup("Trigger spell", Column("EffectTriggerSpell"), SpellName),
-                     Cell("Item created", Column("EffectItemType")),
+                     Lookup("Item created", Column("EffectItemType"), ItemName),
                      Named(Ui.Row("Affected family mask",
                                   new CellField(_binding, Column("EffectSpellClassMaskA"), Ui.FIELD_WIDTH).Box,
                                   new CellField(_binding, Column("EffectSpellClassMaskB"), Ui.FIELD_WIDTH).Box,
@@ -594,25 +625,35 @@ public sealed class SpellEditorView : Grid
         StackPanel reagents = new StackPanel();
         for (int reagent = 1; reagent <= SpellRecord.REAGENT_COUNT; ++reagent)
         {
-            reagents.Children.Add(Named(Ui.Row("Reagent " + reagent,
-                                               new CellField(_binding, "Reagent_" + reagent, Ui.FIELD_WIDTH).Box,
-                                               new TextBlock { Text = "x", Classes = { "label" } },
-                                               new CellField(_binding, "ReagentCount_" + reagent, Ui.FIELD_WIDTH).Box),
+            LookupField item = new LookupField(_binding, "Reagent_" + reagent, ItemName);
+            item.View.Children.Insert(1, new TextBlock { Text = "x", Classes = { "label" },
+                                                         VerticalAlignment = VerticalAlignment.Center });
+            item.View.Children.Insert(2, new CellField(_binding, "ReagentCount_" + reagent, Ui.FIELD_WIDTH).Box);
+            reagents.Children.Add(Named(Ui.Row("Reagent " + reagent, item.View),
                                         "Reagent_" + reagent, "ReagentCount_" + reagent));
         }
 
         return Ui.Vertical(0,
             Ui.Group("Reagents (item ID x count)", reagents),
             Ui.Group("Tools",
-                     Cell("Totem 1", "Totem_1"),
-                     Cell("Totem 2", "Totem_2"),
-                     Cell("Tool category 1", "RequiredTotemCategoryID_1"),
-                     Cell("Tool category 2", "RequiredTotemCategoryID_2")),
+                     Lookup("Totem 1", "Totem_1", ItemName),
+                     Lookup("Totem 2", "Totem_2", ItemName),
+                     Lookup("Tool category 1", "RequiredTotemCategoryID_1", ToolCategory),
+                     Lookup("Tool category 2", "RequiredTotemCategoryID_2", ToolCategory),
+                     Ui.Hint("Item names come from item_template in the world database (Project settings > " +
+                             "Apply), when it can be reached.")),
             Ui.Group("Equipped item",
-                     Cell("Item class", "EquippedItemClass"),
-                     Cell("Item subclass mask", "EquippedItemSubclass"),
-                     Cell("Inventory type mask", "EquippedItemInvTypes"),
-                     Ui.Hint("-1 in Item class means no item is needed.")));
+                     Lookup("Item class", "EquippedItemClass",
+                            value => ColumnValues.ItemClasses(_session.NamingTable)?.Names((int)value) ?? string.Empty),
+                     Flags("Item subclass mask", "EquippedItemSubclass",
+                           () => _binding.IsBound
+                                     ? ColumnValues.ItemSubclasses(_session.NamingTable,
+                                                                   new SpellRecord(_binding.Table!, _binding.Row)
+                                                                       .I("EquippedItemClass"))
+                                     : null),
+                     Flags("Inventory type mask", "EquippedItemInvTypes", ColumnValues.InventoryTypeMask()),
+                     Ui.Hint("-1 in Item class means no item is needed. The subclasses listed are the class's, from " +
+                             "ItemSubClass.dbc, so custom ones show too.")));
     }
 
     private Control LocalesTab()
@@ -953,6 +994,13 @@ public sealed class SpellEditorView : Grid
         _window.OpenWritten(path);
         _window.SetStatus("Wrote " + rows.Count + (rows.Count == 1 ? " spell" : " spells") + " to " + path +
                           ". Run it on acore_world and restart the worldserver.");
+    }
+
+    // Item and creature names arrive from the world database in the background, then the fields show them
+    private async Task ShowWorldNamesAsync()
+    {
+        await _session.LoadWorldNamesAsync();
+        _binding.Refresh();
     }
 
     // Every locale the client has, one Spell.dbc at a time, gathered into the open spells as one undo step

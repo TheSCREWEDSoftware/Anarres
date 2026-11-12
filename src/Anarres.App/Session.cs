@@ -1,4 +1,5 @@
 using Anarres.Core.Dbc;
+using Anarres.Core.Export;
 using Anarres.Core.Mpq;
 using Anarres.Core.Settings;
 using Anarres.Core.Storage;
@@ -65,6 +66,10 @@ public sealed class Session : IDisposable
     {
         Close();
         Settings = settings;
+        _naming.Clear();
+        _worldLoad = null;
+        lock (_world)
+            _world.Clear();
         Definitions = DbcDefinitions.Default.WithFolder(settings.DefinitionsFolder);
         Changed?.Invoke();
     }
@@ -117,6 +122,83 @@ public sealed class Session : IDisposable
         DbcTable table = await Task.Run(() => store.LoadAsync(file, Definitions, progress));
         _tables[Normalise(table.Definition.File)] = table;
         return table;
+    }
+
+    // Tables that name values (races, classes, item classes...), from the project or else the clean files
+    public static readonly string[] NamingTables =
+    {
+        "ChrRaces.dbc", "ChrClasses.dbc", "ItemClass.dbc", "ItemSubClass.dbc", "TotemCategory.dbc"
+    };
+
+    private readonly Dictionary<string, DbcTable?> _naming =
+        new Dictionary<string, DbcTable?>(StringComparer.OrdinalIgnoreCase);
+
+    // Loads the naming tables once; a missing one stays null and its values show as plain numbers
+    public async Task LoadNamingTablesAsync()
+    {
+        foreach (string file in NamingTables)
+        {
+            if (_naming.ContainsKey(file))
+                continue;
+            DbcTable? table = null;
+            try
+            {
+                table = await TryLoadAsync(file) ??
+                        await Task.Run(() => DbcMerge.LoadSource(Settings, file, Definitions));
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException or
+                                                  InvalidOperationException or System.Data.Common.DbException)
+            {
+                table = null;
+            }
+
+            _naming[file] = table;
+        }
+    }
+
+    private readonly Dictionary<string, Dictionary<uint, string>> _world =
+        new Dictionary<string, Dictionary<uint, string>>(StringComparer.Ordinal);
+    private Task? _worldLoad;
+
+    // Item, creature and game object names from the world database, tried once
+    public Task LoadWorldNamesAsync()
+    {
+        return _worldLoad ??= Task.Run(async () =>
+        {
+            MySqlSettings world = Settings.World();
+            foreach (string table in new[] { WorldNames.ITEMS, WorldNames.CREATURES, WorldNames.GAME_OBJECTS })
+            {
+                try
+                {
+                    Dictionary<uint, string> names = await WorldNames.LoadAsync(world, table);
+                    lock (_world)
+                        _world[table] = names;
+                }
+                catch (Exception exception) when (exception is System.Data.Common.DbException or
+                                                      InvalidOperationException or TimeoutException)
+                {
+                    // No world database here; IDs show without names
+                }
+            }
+        });
+    }
+
+    // The name of an entry of item_template, creature_template or gameobject_template, or null
+    public string? WorldName(string table, uint entry)
+    {
+        lock (_world)
+            return _world.TryGetValue(table, out Dictionary<uint, string>? names) &&
+                   names.TryGetValue(entry, out string? name)
+                       ? name
+                       : null;
+    }
+
+    // A naming table already loaded, or null; for the value names drawn in grids and fields
+    public DbcTable? NamingTable(string file)
+    {
+        if (Loaded(file) is { } open)
+            return open;
+        return _naming.TryGetValue(file, out DbcTable? table) ? table : null;
     }
 
     // A table if the store has it, or null; for lookups such as SpellDuration.dbc that may not be imported
