@@ -79,6 +79,14 @@ public sealed class AppOptions
 
     public bool RememberWindow { get; set; } = true;
 
+    // The program .sql and .csv files open in, and the one the project's database opens in (Tools menu)
+    public ProgramChoice TextEditor { get; set; } = new ProgramChoice { Name = ProgramChoice.SYSTEM };
+
+    public ProgramChoice SqlTool { get; set; } = new ProgramChoice { Name = ProgramChoice.NONE };
+
+    // A .sql file opens in the text editor once it's saved
+    public bool OpenSqlAfterSaving { get; set; }
+
     // The setup window opens at start until "Don't show this again" is ticked
     public bool ShowSetup { get; set; } = true;
 

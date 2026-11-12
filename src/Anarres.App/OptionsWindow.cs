@@ -5,6 +5,7 @@ using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Threading;
 
 namespace Anarres.App;
 
@@ -12,6 +13,7 @@ namespace Anarres.App;
 public sealed class OptionsWindow : Window
 {
     public const string APPEARANCE = "Appearance";
+    public const string INTEGRATIONS = "Integrations";
     public const string SPELLS = "Spell Editor";
     public const string TABLES = "DBC Editor";
     public const string GENERAL = "General";
@@ -20,7 +22,7 @@ public sealed class OptionsWindow : Window
     private const double WINDOW_HEIGHT = 640;
     private const double SIDEBAR_WIDTH = 170;
 
-    private static readonly string[] Sections = { APPEARANCE, SPELLS, TABLES, GENERAL };
+    private static readonly string[] Sections = { APPEARANCE, INTEGRATIONS, SPELLS, TABLES, GENERAL };
     private static readonly string[] LookNames = { "System", "Dark", "Light" };
     private static readonly string[] StartNames = { "The editor used last", "Spell Editor", "DBC Editor" };
 
@@ -49,6 +51,12 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _confirmApply = new CheckBox { Content = "Show what Apply will do and ask first" };
     private readonly ComboBox _undo = new ComboBox { Width = 120 };
     private readonly CheckBox _window = new CheckBox { Content = "Remember the window's size and position" };
+    private readonly ProgramPicker _editor = new ProgramPicker(ExternalTools.EditorNames);
+    private readonly ProgramPicker _sqlTool = new ProgramPicker(ExternalTools.SqlToolNames);
+    private readonly CheckBox _openSql = new CheckBox
+    {
+        Content = "Open .sql files in the text editor once they're saved"
+    };
     private readonly CheckBox _cache = new CheckBox
     {
         Content = "Keep big tables such as Spell.dbc on this PC so they open quicker"
@@ -100,6 +108,21 @@ public sealed class OptionsWindow : Window
                               Ui.Row("Grid text size", _gridFontSize),
                               _hideEmpty, _hex,
                               Ui.Hint("Hex is only how the grid shows the numbers; type them either way."));
+        _editor.Use(_options.TextEditor);
+        _sqlTool.Use(_options.SqlTool);
+        _openSql.IsChecked = _options.OpenSqlAfterSaving;
+        _pages[INTEGRATIONS] = Page(Ui.Title("Text editor"),
+                                    _editor,
+                                    _openSql,
+                                    Ui.Hint("For the .sql and .csv files Anarres writes. System default uses the " +
+                                            "program Windows or your desktop opens them with."),
+                                    Ui.Title("SQL tool"),
+                                    _sqlTool,
+                                    Ui.Hint("Tools > Open the project in the SQL tool opens the project's database, " +
+                                            "signed in where the tool allows it: HeidiSQL, DBeaver and MySQL " +
+                                            "Workbench for MySQL, DBeaver and DB Browser for SQLite for a project " +
+                                            "file. In custom arguments, %TARGET_PATH% is the project file, and " +
+                                            "%HOST%, %PORT%, %USER%, %PASSWORD% and %DATABASE% the MySQL connection."));
         _pages[GENERAL] = Page(Ui.Title("General"),
                                Ui.Row("Start in", _start),
                                _confirm,
@@ -124,6 +147,10 @@ public sealed class OptionsWindow : Window
                     HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
                 };
         };
+        // A page that fails while it's laid out or drawn says why, instead of staying blank
+        DispatcherUnhandledExceptionEventHandler failed = (_, e) => ShowFailure(e.Exception);
+        Dispatcher.UIThread.UnhandledException += failed;
+        Closed += (_, _) => Dispatcher.UIThread.UnhandledException -= failed;
         _sections.SelectedItem = Sections.Contains(section) ? section : APPEARANCE;
 
         Button save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };
@@ -289,6 +316,18 @@ public sealed class OptionsWindow : Window
             ListColours(_colours.SelectedItem as string);
     }
 
+    private void ShowFailure(Exception exception)
+    {
+        string? log = CrashLog.Write(exception, "Options page failed");
+        _page.Content = new SelectableTextBlock
+        {
+            Text = "This page couldn't be shown: " + exception.Message +
+                   (log != null ? "\n\nThe details are in " + log + "." : string.Empty),
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Margin = new Thickness(16, 0)
+        };
+    }
+
     private void ShowCacheSize()
     {
         long bytes = new DbcCache(DbcCache.DefaultFolder).SizeBytes();
@@ -314,6 +353,9 @@ public sealed class OptionsWindow : Window
     private AppOptions Build()
     {
         AppOptions options = _options.Copy();
+        options.TextEditor = _editor.Choice();
+        options.SqlTool = _sqlTool.Choice();
+        options.OpenSqlAfterSaving = _openSql.IsChecked == true;
         options.Look = (ThemeLook)Math.Max(0, _look.SelectedIndex);
         options.Colours = _colours.SelectedItem as string ?? AppOptions.BUILT_IN_COLOURS;
         options.FontSize = AppOptions.FontSizes[Math.Max(0, _fontSize.SelectedIndex)];

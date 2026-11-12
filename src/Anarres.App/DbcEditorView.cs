@@ -543,6 +543,7 @@ public sealed class DbcEditorView : Grid
         if (path == null)
             return;
         await Task.Run(() => SqlExport.Write(path, table, rows, target));
+        _window.OpenWritten(path);
         _window.SetStatus("Wrote " + rows.Count + " rows to " + path + ".");
     }
 
