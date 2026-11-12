@@ -42,8 +42,9 @@ public sealed class SpellModelsView : IField
         get => _active;
         set
         {
+            bool shown = value && !_active;
             _active = value;
-            if (value)
+            if (shown)
                 Refresh();
         }
     }

@@ -66,6 +66,7 @@ public sealed class ModelView
     private double _perfTotal;
     private Vector4 _perfParts;
     private bool _changing;
+    private ModelChoice? _loading;
     private int _loadVersion;
     private string _missing = string.Empty;
 
@@ -200,6 +201,7 @@ public sealed class ModelView
         _models.IsVisible = choices.Count > 1;
         if (choices.Count == 0)
         {
+            _loading = null;
             _instance = null;
             _image.Source = null;
             _animations.ItemsSource = null;
@@ -215,7 +217,12 @@ public sealed class ModelView
     private async Task LoadSelectedAsync()
     {
         ModelChoice? choice = Current;
+        // The same model asked for again, while it's loading or shown, is left as it is
+        if (choice != null && _loading != null && choice.Path == _loading.Path && choice.Label == _loading.Label &&
+            choice.Textures.SequenceEqual(_loading.Textures))
+            return;
         int version = ++_loadVersion;
+        _loading = choice;
         if (choice == null)
             return;
         _status.Text = "Loading " + choice.Path + "...";

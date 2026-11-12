@@ -400,19 +400,29 @@ public sealed class SpellEditorView : Grid
         _tabs.Items.Add(Tab("Procs and Interrupts", ProcsTab()));
         TabItem talentsItem = Tab("Talents", TalentsTab(out Action<bool> activateTalents));
         _tabs.Items.Add(talentsItem);
-        _tabs.SelectionChanged += (_, _) => activateTalents(_tabs.SelectedItem == talentsItem);
+        // SelectionChanged bubbles up from every list and combo box inside the tabs, so only the tabs' own count
+        TabControl tabs = _tabs;
+        tabs.SelectionChanged += (_, args) =>
+        {
+            if (args.Source == tabs)
+                activateTalents(tabs.SelectedItem == talentsItem);
+        };
         _tabs.Items.Add(Tab("Items and Reagents", ItemsTab()));
         _tabs.Items.Add(Tab("Skill", new SkillView(_binding, _session, _window).View));
         _tabs.Items.Add(Tab("Visual", _visual));
         SpellModelsView models = new SpellModelsView(_binding, _session);
         TabItem modelsTab = Tab("3D", models.View);
         _tabs.Items.Add(modelsTab);
-        _tabs.SelectionChanged += (_, _) => models.Active = _tabs.SelectedItem == modelsTab;
+        tabs.SelectionChanged += (_, args) =>
+        {
+            if (args.Source == tabs)
+                models.Active = tabs.SelectedItem == modelsTab;
+        };
         TabItem localesTab = Tab("Localisation", LocalesTab());
         _tabs.Items.Add(localesTab);
-        _tabs.SelectionChanged += (_, _) =>
+        tabs.SelectionChanged += (_, args) =>
         {
-            if (_tabs.SelectedItem == localesTab && _clientPreview.IsChecked == true)
+            if (args.Source == tabs && tabs.SelectedItem == localesTab && _clientPreview.IsChecked == true)
                 _ = LoadClientTextsAsync();
         };
         _tabs.Items.Add(new TabItem { Header = "All fields", Content = new AllFieldsView(_binding, definition).View });
