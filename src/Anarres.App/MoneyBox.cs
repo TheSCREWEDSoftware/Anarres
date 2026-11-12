@@ -11,7 +11,7 @@ public sealed class MoneyBox
     private const double TOTAL_WIDTH = 130;
     private const double PART_WIDTH = 70;
 
-    private readonly TextBox _total = new TextBox { Width = TOTAL_WIDTH, Text = "0", Watermark = "Copper" };
+    private readonly TextBox _total = new TextBox { Width = TOTAL_WIDTH, Text = "0", Watermark = "Raw value" };
     private readonly TextBox _gold = Part("Gold");
     private readonly TextBox _silver = Part("Silver");
     private readonly TextBox _copper = Part("Copper");
@@ -19,7 +19,7 @@ public sealed class MoneyBox
 
     public MoneyBox()
     {
-        ToolTip.SetTip(_total, "The whole value in copper, as the database stores it");
+        ToolTip.SetTip(_total, "The whole amount in copper, as the database stores it");
         _total.TextChanged += (_, _) =>
         {
             if (!_setting)
@@ -34,7 +34,8 @@ public sealed class MoneyBox
             };
         }
 
-        View = Ui.Horizontal(_total, Unit("copper  ="), _gold, Unit("g"), _silver, Unit("s"), _copper, Unit("c"));
+        View = Ui.Horizontal(Labelled("Raw value", _total), Labelled("Gold", _gold), Labelled("Silver", _silver),
+                             Labelled("Copper", _copper));
     }
 
     public StackPanel View { get; }
@@ -82,8 +83,13 @@ public sealed class MoneyBox
         return new TextBox { Width = PART_WIDTH, Text = "0", Watermark = name };
     }
 
-    private static TextBlock Unit(string unit)
+    // A box with its name above it
+    private static StackPanel Labelled(string name, TextBox box)
     {
-        return new TextBlock { Text = unit, VerticalAlignment = VerticalAlignment.Center, Classes = { "label" } };
+        return new StackPanel
+        {
+            Spacing = 2,
+            Children = { new TextBlock { Text = name, Classes = { "hint" } }, box }
+        };
     }
 }
