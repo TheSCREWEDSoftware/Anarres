@@ -115,13 +115,19 @@ public static class SpellEnums
             List<EnumValue> values = entry.Value.GetProperty("Values").EnumerateArray()
                                           .Select(value => new EnumValue(value.GetProperty("Value").GetInt64(),
                                                                          value.GetProperty("Name").GetString() ?? "",
-                                                                         value.GetProperty("Label").GetString() ?? "",
-                                                                         value.GetProperty("Description")
-                                                                              .GetString() ?? ""))
+                                                                         Words(value.GetProperty("Label").GetString()),
+                                                                         Words(value.GetProperty("Description")
+                                                                                    .GetString())))
                                           .ToList();
             tables[entry.Name] = new EnumTable(entry.Name, flags, values);
         }
 
         return tables;
+    }
+
+    // AzerothCore's notes say "server & client"; the interface spells it out
+    private static string Words(string? text)
+    {
+        return (text ?? string.Empty).Replace(" & ", " and ", StringComparison.Ordinal);
     }
 }
