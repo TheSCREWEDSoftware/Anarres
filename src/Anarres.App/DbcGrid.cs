@@ -215,6 +215,8 @@ public sealed class DbcGrid : Grid
                           : NUMBER_WIDTH).ToArray()
                       ?? Array.Empty<double>();
             _order = Enumerable.Range(0, _widths.Length).ToList();
+            _picked.Clear();
+            _hidden.Clear();
             _surface.FitColumnsToContents();
             _sortColumn = -1;
             _vertical.Value = 0;
@@ -222,7 +224,7 @@ public sealed class DbcGrid : Grid
             SelectedColumn = 0;
         }
 
-        _rows = Sorted(_baseRows);
+        _rows = Sorted(Unhidden(_baseRows));
         if (!sameTable && HideEmptyByDefault && table != null)
             HideEmptyColumns();
 
@@ -252,7 +254,7 @@ public sealed class DbcGrid : Grid
         int selected = SelectedRow;
         _sortColumn = column;
         _sortDescending = descending;
-        _rows = Sorted(_baseRows);
+        _rows = Sorted(Unhidden(_baseRows));
         SelectedIndex = selected >= 0 ? _rows.IndexOf(selected) : SelectedIndex;
         _surface.InvalidateVisual();
         SelectionChanged?.Invoke();
@@ -374,18 +376,79 @@ public sealed class DbcGrid : Grid
     // The other end of a Shift selection; equals SelectedIndex when one row is selected
     private int _anchor = -1;
 
-    // Rows of the table in the selected range, in the order shown
+    // Rows picked one by one with Ctrl+click, and rows hidden from the grid; held by their cells, as indexes move
+    private readonly HashSet<uint[]> _picked = new HashSet<uint[]>();
+    private readonly HashSet<uint[]> _hidden = new HashSet<uint[]>();
+
+    // Rows of the table selected: the Shift range and any Ctrl+clicked rows, in the order shown
     public List<int> SelectedRows
     {
         get
         {
-            if (SelectedIndex < 0 || _rows.Count == 0)
+            if (SelectedIndex < 0 || _rows.Count == 0 || _table == null)
                 return new List<int>();
             int from = Math.Clamp(Math.Min(_anchor < 0 ? SelectedIndex : _anchor, SelectedIndex), 0, _rows.Count - 1);
             int to = Math.Clamp(Math.Max(_anchor < 0 ? SelectedIndex : _anchor, SelectedIndex), 0, _rows.Count - 1);
-            return _rows.GetRange(from, to - from + 1);
+            if (_picked.Count == 0)
+                return _rows.GetRange(from, to - from + 1);
+            DbcTable table = _table;
+            return _rows.Where((row, index) => (index >= from && index <= to) || _picked.Contains(table.Rows[row]))
+                        .ToList();
         }
     }
+
+    public int HiddenRowCount => _hidden.Count;
+
+    private List<int> Unhidden(List<int> rows)
+    {
+        if (_hidden.Count == 0 || _table == null)
+            return rows;
+        DbcTable table = _table;
+        return rows.Where(row => row < table.Rows.Count && !_hidden.Contains(table.Rows[row])).ToList();
+    }
+
+    // Hides rows from the grid without changing the table; they come back with ShowHiddenRows
+    public void HideRows(IEnumerable<int> rows)
+    {
+        if (_table == null)
+            return;
+        foreach (int row in rows)
+            _hidden.Add(_table.Rows[row]);
+        _picked.Clear();
+        _anchor = -1;
+        Show(_table, _baseRows);
+    }
+
+    public void ShowHiddenRows()
+    {
+        _hidden.Clear();
+        if (_table != null)
+            Show(_table, _baseRows);
+    }
+
+    // Selects these rows, such as the ones just pasted, and shows the last of them
+    public void SelectRows(IReadOnlyCollection<int> rows)
+    {
+        if (_table == null || rows.Count == 0)
+            return;
+        DbcTable table = _table;
+        _picked.Clear();
+        foreach (int row in rows)
+            _picked.Add(table.Rows[row]);
+        int last = _rows.FindLastIndex(row => _picked.Contains(table.Rows[row]));
+        if (last < 0)
+            return;
+        Select(last, SelectedColumn);
+        foreach (int row in rows)
+            _picked.Add(table.Rows[row]);
+        _surface.InvalidateVisual();
+    }
+
+    // The row menu's commands that change the table; the editor carries them out
+    public event Action? AddRowRequested;
+    public event Action? CopyRowRequested;
+    public event Action? DeleteRowsRequested;
+    public event Action<string>? FilterRequested;
 
     // Ctrl+V with rows on the clipboard; the editor decides how they go in
     public event Action<string>? PasteRequested;
@@ -393,14 +456,38 @@ public sealed class DbcGrid : Grid
     private bool InRange(int index)
     {
         int anchor = _anchor < 0 ? SelectedIndex : _anchor;
-        return index >= Math.Min(anchor, SelectedIndex) && index <= Math.Max(anchor, SelectedIndex);
+        if (index >= Math.Min(anchor, SelectedIndex) && index <= Math.Max(anchor, SelectedIndex))
+            return true;
+        return _picked.Count > 0 && _table != null && index >= 0 && index < _rows.Count &&
+               _picked.Contains(_table.Rows[_rows[index]]);
     }
 
-    private void Select(int index, int column, bool extend = false)
+    // extend is Shift: from the anchor to here; toggle is Ctrl: this row in or out, keeping the rest
+    private void Select(int index, int column, bool extend = false, bool toggle = false)
     {
         if (_table == null || _rows.Count == 0)
             return;
-        SelectedIndex = Math.Clamp(index, 0, _rows.Count - 1);
+        index = Math.Clamp(index, 0, _rows.Count - 1);
+        if (toggle)
+        {
+            DbcTable table = _table;
+            foreach (int row in SelectedRows)
+                _picked.Add(table.Rows[row]);
+            uint[] cells = table.Rows[_rows[index]];
+            if (!_picked.Remove(cells))
+                _picked.Add(cells);
+            SelectedIndex = index;
+            _anchor = index;
+            // The pointed row stays the current one even when it was just taken out
+            SelectedColumn = _order.Contains(column) ? column : Step(column, 0);
+            _surface.InvalidateVisual();
+            SelectionChanged?.Invoke();
+            return;
+        }
+
+        if (!extend)
+            _picked.Clear();
+        SelectedIndex = index;
         if (!extend || _anchor < 0)
             _anchor = SelectedIndex;
         SelectedColumn = _order.Contains(column) ? column : Step(column, 0);
@@ -558,6 +645,12 @@ public sealed class DbcGrid : Grid
         }
 
         return text.ToString();
+    }
+
+    private async Task CopyTextAsync(string text)
+    {
+        if (TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard)
+            await clipboard.SetTextAsync(text);
     }
 
     private async Task PasteAsync()
@@ -840,8 +933,18 @@ public sealed class DbcGrid : Grid
 
             if (index >= _grid._rows.Count)
                 return;
-            _grid.Select(index, column, (e.KeyModifiers & KeyModifiers.Shift) != 0);
-            if (e.ClickCount == 2)
+            if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+            {
+                // A right-click on a row outside the selection selects it first, as in a file list
+                if (!_grid.InRange(index))
+                    _grid.Select(index, column);
+                RowMenu(_grid._rows[index], column).Open(this);
+                return;
+            }
+
+            _grid.Select(index, column, (e.KeyModifiers & KeyModifiers.Shift) != 0,
+                         (e.KeyModifiers & KeyModifiers.Control) != 0);
+            if (e.ClickCount == 2 && (e.KeyModifiers & KeyModifiers.Control) == 0)
                 _grid.BeginEdit();
         }
 
@@ -974,6 +1077,7 @@ public sealed class DbcGrid : Grid
                     break;
                 case Key.A when control:
                 {
+                    _grid._picked.Clear();
                     _grid._anchor = 0;
                     _grid.Select(_grid._rows.Count - 1, _grid.SelectedColumn, extend: true);
                     break;
@@ -999,10 +1103,66 @@ public sealed class DbcGrid : Grid
             return menu;
         }
 
+        // Right-click on a row: copy and paste, add, copy and delete rows, hide them, and filter by the cell
+        private ContextMenu RowMenu(int row, int column)
+        {
+            DbcTable table = _grid._table!;
+            List<int> selected = _grid.SelectedRows;
+            string rows = selected.Count == 1 ? "row" : selected.Count + " rows";
+            string name = table.Definition.Columns[column].Name;
+            string value = table.Definition.Columns[column].Type == DbcColumnType.String
+                               ? table.GetString(row, column)
+                               : _grid.Display(table, row, column);
+            ContextMenu menu = new ContextMenu();
+            menu.Items.Add(MenuItem("Copy cell (" + Shorten(value) + ")", () => _ = _grid.CopyTextAsync(value)));
+            menu.Items.Add(MenuItem("Copy " + rows + "\tCtrl+C", () => _ = _grid.CopyTextAsync(RowsText(table,
+                                                                                                    selected))));
+            menu.Items.Add(MenuItem("Copy every shown row (" + _grid._rows.Count.ToString("N0",
+                                        CultureInfo.InvariantCulture) + ")",
+                                    () => _ = _grid.CopyTextAsync(RowsText(table, _grid._rows))));
+            menu.Items.Add(MenuItem("Paste rows at the bottom\tCtrl+V", () => _ = _grid.PasteAsync()));
+            menu.Items.Add(MenuItem("Select all\tCtrl+A", () =>
+            {
+                _grid._picked.Clear();
+                _grid._anchor = 0;
+                _grid.Select(_grid._rows.Count - 1, _grid.SelectedColumn, extend: true);
+            }));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(MenuItem("Add a row", () => _grid.AddRowRequested?.Invoke()));
+            menu.Items.Add(MenuItem("Copy this row to a new one", () => _grid.CopyRowRequested?.Invoke()));
+            menu.Items.Add(MenuItem("Delete " + rows, () => _grid.DeleteRowsRequested?.Invoke()));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(MenuItem("Hide " + rows, () => _grid.HideRows(selected)));
+            if (_grid.HiddenRowCount > 0)
+                menu.Items.Add(MenuItem("Show the " + _grid.HiddenRowCount + " hidden rows", _grid.ShowHiddenRows));
+            if (table.Definition.Columns[column].Type != DbcColumnType.String ||
+                !value.Contains(' ', StringComparison.Ordinal))
+            {
+                string raw = table.Definition.Columns[column].Type == DbcColumnType.String
+                                 ? value
+                                 : table.GetText(row, column);
+                menu.Items.Add(MenuItem("Show only rows where " + name + " = " + Shorten(raw),
+                                        () => _grid.FilterRequested?.Invoke(name + "=" + raw)));
+            }
+
+            menu.Items.Add(MenuItem("Hide " + name, () => _grid.HideColumn(column)));
+            return menu;
+        }
+
+        private static string Shorten(string text)
+        {
+            return text.Length <= SHORT_TEXT ? text : text[..SHORT_TEXT] + "...";
+        }
+
+        private const int SHORT_TEXT = 30;
+
         private static MenuItem MenuItem(string header, Action action)
         {
-            // Underscores are doubled so column names aren't read as access keys
-            MenuItem item = new MenuItem { Header = header.Replace("_", "__") };
+            // Underscores are doubled so names aren't access keys; "Copy\tCtrl+C" shows the shortcut on the right
+            string[] parts = header.Split('\t');
+            MenuItem item = new MenuItem { Header = parts[0].Replace("_", "__") };
+            if (parts.Length > 1)
+                item.InputGesture = KeyGesture.Parse(parts[1]);
             item.Click += (_, _) => action();
             return item;
         }

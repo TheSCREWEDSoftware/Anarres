@@ -118,6 +118,10 @@ public sealed class DbcEditorView : Grid
         };
         _grid.EditRejected += message => _window.SetStatus(message);
         _grid.PasteRequested += Paste;
+        _grid.AddRowRequested += AddRow;
+        _grid.CopyRowRequested += CopyRow;
+        _grid.DeleteRowsRequested += () => _ = DeleteRowAsync();
+        _grid.FilterRequested += text => _filter.Text = text;
 
         Children.Add(BuildList());
         Border right = Ui.Card(BuildEditor());
@@ -288,10 +292,14 @@ public sealed class DbcEditorView : Grid
             return;
         }
 
+        _filter.Text = string.Empty;
         _grid.Show(_table);
+        // Pasted rows go at the bottom; they're selected and scrolled to
+        _grid.SelectRows(Enumerable.Range(_table.Rows.Count - result.Added, result.Added).ToList());
         _session.NotifyChanged();
         ShowInfo();
         ShowTabs();
+        RefreshMarks();
         _window.SetStatus("Pasted " + result.Added + (result.Added == 1 ? " row" : " rows") +
                           (result.Renumbered > 0 ? "; " + result.Renumbered + " got new IDs because theirs were taken"
                                                  : string.Empty) + ". Save to keep them.");
@@ -800,12 +808,17 @@ public sealed class DbcEditorView : Grid
     {
         if (_table == null || _grid.SelectedRow < 0)
             return;
-        uint key = _table.Key(_grid.SelectedRow);
+        List<int> rows = _grid.SelectedRows;
+        string what = rows.Count == 1 ? "the row with key " + _table.Key(rows[0]) : rows.Count + " rows";
         if (ConfirmDeletes &&
-            !await Dialogs.ConfirmAsync(_window, "Delete row", "Delete the row with key " + key + "? Undo brings " +
-                                                               "it back until you close the table.", "Delete"))
+            !await Dialogs.ConfirmAsync(_window, "Delete rows", "Delete " + what + "? Undo brings them back " +
+                                                                "until you close the table.", "Delete"))
             return;
-        _table.RemoveRow(_grid.SelectedRow);
+        // From the last row up, so the indexes of the rest don't move; one undo brings them all back
+        _table.BreakUndoStep();
+        foreach (int row in rows.OrderByDescending(row => row))
+            _table.RemoveRow(row);
+        _table.BreakUndoStep();
         ApplyFilter();
         _session.NotifyChanged();
         ShowInfo();
