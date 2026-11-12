@@ -17,6 +17,10 @@ public sealed class ModelRenderer
     private const int GREEN_SHIFT = 8;
     private const float CHANNEL_MAX = 255f;
     private const int QUAD_CORNERS = 4;
+    // How many times over particles may cover the picture per frame; beyond it the furthest are left out
+    private const float PARTICLE_FILL_BUDGET = 12f;
+    // A single particle bigger than this many pictures is the camera sitting inside it; it isn't drawn
+    private const float MAX_PARTICLE_FILL = 4f;
 
     private Vector3[] _colour = Array.Empty<Vector3>();
     private float[] _depth = Array.Empty<float>();
@@ -233,10 +237,32 @@ public sealed class ModelRenderer
 
         // Furthest first, so nearer smoke covers what's behind it
         all.Sort((a, b) => a.Depth.CompareTo(b.Depth));
+        float picture = (float)_width * _height;
+        float budget = picture * PARTICLE_FILL_BUDGET;
+        float filled = 0f;
+        // Nearest particles matter most, so the budget is spent from the near end
+        List<bool> draw = Enumerable.Repeat(false, all.Count).ToList();
+        Span<Vector3> probe = stackalloc Vector3[QUAD_CORNERS];
+        for (int i = all.Count - 1; i >= 0 && filled < budget; --i)
+        {
+            (float _, ParticleSystem system, Particle particle) = all[i];
+            float life = particle.Age / particle.Life;
+            Vector2 size = system.Emitter.Scale.Value(life, Vector2.One, Vector2.Lerp) * particle.Size;
+            Corners(system.Emitter, particle, size, view, probe);
+            float area = ScreenArea(probe, projection);
+            if (area > picture * MAX_PARTICLE_FILL)
+                continue;
+            filled += area;
+            draw[i] = true;
+        }
+
         Span<Vector3> quad = stackalloc Vector3[QUAD_CORNERS];
         Span<ScreenVertex> screen = stackalloc ScreenVertex[QUAD_CORNERS];
-        foreach ((float _, ParticleSystem system, Particle particle) in all)
+        for (int index = 0; index < all.Count; ++index)
         {
+            if (!draw[index])
+                continue;
+            (float _, ParticleSystem system, Particle particle) = all[index];
             M2ParticleEmitter emitter = system.Emitter;
             float life = particle.Age / particle.Life;
             Vector3 rgb = emitter.Colour.Value(life, new Vector3(CHANNEL_MAX), ModelInstance.Lerp) / CHANNEL_MAX;
@@ -252,7 +278,7 @@ public sealed class ModelRenderer
             Corners(emitter, particle, size, view, quad);
             int columns = emitter.Columns;
             int rows = emitter.Rows;
-            cell %= rows * columns;
+            cell = (int)((uint)cell % (uint)Math.Max(1L, Math.Min(int.MaxValue, (long)rows * columns)));
             float u0 = cell % columns / (float)columns;
             float v0 = cell / columns / (float)rows;
             float u1 = u0 + 1f / columns;
@@ -272,6 +298,30 @@ public sealed class ModelRenderer
             DrawTriangle(screen[0], screen[2], screen[3], texture, emitter.Blend, false, true, false);
             ++ParticlesDrawn;
         }
+    }
+
+    // About how many pixels a quad covers on screen; behind the camera counts as nothing
+    private float ScreenArea(ReadOnlySpan<Vector3> quad, Matrix4x4 projection)
+    {
+        Span<Vector2> points = stackalloc Vector2[QUAD_CORNERS];
+        for (int i = 0; i < QUAD_CORNERS; ++i)
+        {
+            Vector4 clip = Vector4.Transform(new Vector4(quad[i], 1f), projection);
+            if (clip.W < MIN_W)
+                return 0f;
+            points[i] = new Vector2(clip.X / clip.W * _width * 0.5f, clip.Y / clip.W * _height * 0.5f);
+        }
+
+        float twice = 0f;
+        for (int i = 0; i < QUAD_CORNERS; ++i)
+        {
+            Vector2 a = points[i];
+            Vector2 b = points[(i + 1) % QUAD_CORNERS];
+            twice += a.X * b.Y - b.X * a.Y;
+        }
+
+        float area = MathF.Abs(twice) * 0.5f;
+        return float.IsFinite(area) ? area : float.MaxValue;
     }
 
     // A particle's four corners in camera space: a square facing the camera, flat on the ground, or a streak

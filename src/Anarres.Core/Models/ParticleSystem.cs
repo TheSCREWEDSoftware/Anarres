@@ -115,7 +115,7 @@ public sealed class ParticleSystem
         }
 
         float scale = 1f + Between(-1f, 1f) * Emitter.ScaleVariation.X;
-        int cells = Emitter.Rows * Emitter.Columns;
+        int cells = (int)Math.Clamp((long)Emitter.Rows * Emitter.Columns, 1L, int.MaxValue);
         return new Particle
         {
             Position = Vector3.Transform(Emitter.Position + offset, bone),

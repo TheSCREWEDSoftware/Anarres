@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Anarres.Core.Models;
+using Anarres.Core.Settings;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -184,8 +185,8 @@ public sealed class ModelView
             ResetView();
             UpdateTimer();
         }
-        catch (Exception exception) when (exception is IOException or InvalidDataException or
-                                              ArgumentException or IndexOutOfRangeException)
+        // A model this reader can't make sense of says so here rather than taking the window down
+        catch (Exception exception)
         {
             if (version != _loadVersion)
                 return;
@@ -247,8 +248,26 @@ public sealed class ModelView
         Draw(seconds);
     }
 
-    // Moves the animation on and draws a frame at the view's size (capped, then stretched, on very big screens)
+    // Any frame, the first one included, goes through here
     private void Draw(float seconds)
+    {
+        try
+        {
+            DrawFrame(seconds);
+        }
+        // One bad frame stops the animation and says why, instead of failing every 33 ms
+        catch (Exception exception)
+        {
+            _timer.Stop();
+            _playing = false;
+            _play.Content = "Play";
+            _status.Text = "This model couldn't be drawn: " + exception.Message +
+                           (CrashLog.Write(exception, "Model viewer") is { } log ? " (details in " + log + ")" : "");
+        }
+    }
+
+    // Moves the animation on and draws a frame at the view's size (capped, then stretched, on very big screens)
+    private void DrawFrame(float seconds)
     {
         if (_instance == null)
             return;

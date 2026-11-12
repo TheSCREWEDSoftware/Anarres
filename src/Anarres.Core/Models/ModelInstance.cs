@@ -6,6 +6,7 @@ namespace Anarres.Core.Models;
 public sealed class ModelInstance
 {
     private const float MS_PER_SECOND = 1000f;
+    private const int BONES_PER_VERTEX = 4;
 
     private readonly ParticleSystem[] _particles;
     private double _time;
@@ -150,17 +151,22 @@ public sealed class ModelInstance
     {
         Vector3 min = new Vector3(float.MaxValue);
         Vector3 max = new Vector3(float.MinValue);
+        Span<int> bones = stackalloc int[BONES_PER_VERTEX];
+        Span<float> weights = stackalloc float[BONES_PER_VERTEX];
         foreach (int index in Skin.Indices)
         {
             M2Vertex vertex = Model.Vertices[index];
             Vector3 position = Vector3.Zero;
             float total = 0f;
-            Span<int> bones = stackalloc int[] { vertex.Bone0, vertex.Bone1, vertex.Bone2, vertex.Bone3 };
-            Span<float> weights = stackalloc float[]
-            {
-                vertex.Weights.X, vertex.Weights.Y, vertex.Weights.Z, vertex.Weights.W
-            };
-            for (int i = 0; i < bones.Length; ++i)
+            bones[0] = vertex.Bone0;
+            bones[1] = vertex.Bone1;
+            bones[2] = vertex.Bone2;
+            bones[3] = vertex.Bone3;
+            weights[0] = vertex.Weights.X;
+            weights[1] = vertex.Weights.Y;
+            weights[2] = vertex.Weights.Z;
+            weights[3] = vertex.Weights.W;
+            for (int i = 0; i < BONES_PER_VERTEX; ++i)
             {
                 if (weights[i] <= 0 || bones[i] >= BoneMatrices.Length)
                     continue;
