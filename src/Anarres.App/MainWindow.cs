@@ -451,9 +451,24 @@ public sealed class MainWindow : Window
             return;
         }
 
-        List<string> files = settings.ExportTables.Count > 0 ? settings.ExportTables
-                                                             : new List<string> { SpellRecord.FILE };
         List<string> unsaved = _session.ModifiedTables.Select(table => table.Definition.File).ToList();
+        List<string> files;
+        if (settings.ExportEditedOnly)
+        {
+            SetStatus("Finding the edited tables...");
+            IDbcStore edited = await _session.StoreAsync();
+            files = await Task.Run(() => Deployment.EditedFilesAsync(edited, settings, _session.Definitions,
+                                                                     unsaved));
+            SetStatus(string.Empty);
+            if (files.Count == 0)
+            {
+                await Dialogs.MessageAsync(this, "Apply", "No table has been edited since it was imported, so " +
+                                                          "there's nothing to apply.");
+                return;
+            }
+        }
+        else
+            files = settings.ExportTables.Count > 0 ? settings.ExportTables : new List<string> { SpellRecord.FILE };
         string message = (unsaved.Count > 0 ? "Save " + string.Join(", ", unsaved) + ", then write " : "Write ") +
                          string.Join(", ", files) + ", and " + string.Join("; ", plan) + ".";
         if (_options.ConfirmApply && !await Dialogs.ConfirmAsync(this, "Apply", message, "Apply"))
@@ -530,6 +545,7 @@ public sealed class MainWindow : Window
     private void UseOptions(AppOptions options)
     {
         _options = options;
+        _session.Cache = options.KeepTableCache ? new DbcCache(DbcCache.DefaultFolder) : null;
         App.UseOptions(options);
         _spells.UseOptions(options);
         _tables.UseOptions(options);

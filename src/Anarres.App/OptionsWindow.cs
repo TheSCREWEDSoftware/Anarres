@@ -1,6 +1,7 @@
 using System.Globalization;
 using Anarres.Core.Settings;
 using Anarres.Core.Spells;
+using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -48,6 +49,15 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _confirmApply = new CheckBox { Content = "Show what Apply will do and ask first" };
     private readonly ComboBox _undo = new ComboBox { Width = 120 };
     private readonly CheckBox _window = new CheckBox { Content = "Remember the window's size and position" };
+    private readonly CheckBox _cache = new CheckBox
+    {
+        Content = "Keep big tables such as Spell.dbc on this PC so they open quicker"
+    };
+    private readonly TextBlock _cacheSize = new TextBlock
+    {
+        Classes = { "hint" },
+        VerticalAlignment = VerticalAlignment.Center
+    };
     private Dictionary<string, Theme> _listedThemes = new Dictionary<string, Theme>(StringComparer.OrdinalIgnoreCase);
 
     public OptionsWindow(AppOptions options, string section = APPEARANCE)
@@ -77,6 +87,8 @@ public sealed class OptionsWindow : Window
                                       .ToList();
         _undo.SelectedIndex = Math.Max(0, Array.IndexOf(AppOptions.UndoSteps, _options.MaxUndoSteps));
         _window.IsChecked = _options.RememberWindow;
+        _cache.IsChecked = _options.KeepTableCache;
+        ShowCacheSize();
 
         _pages[APPEARANCE] = AppearancePage();
         _pages[SPELLS] = Page(Ui.Title("Spell Editor"),
@@ -93,7 +105,13 @@ public sealed class OptionsWindow : Window
                                _confirm,
                                _confirmApply,
                                Ui.Row("Undo steps per table", _undo),
-                               _window);
+                               _window,
+                               Ui.Title("Loading"),
+                               _cache,
+                               Ui.Hint("A copy of each big table is kept as a .dbc file and used while the " +
+                                       "project's table is unchanged; edits made anywhere, even in another " +
+                                       "database tool, make Anarres read the database again."),
+                               Ui.Horizontal(Ui.Button("Clear the copies", ClearCache), _cacheSize));
 
         _sections.ItemsSource = Sections;
         _sections.SelectionChanged += (_, _) =>
@@ -271,6 +289,28 @@ public sealed class OptionsWindow : Window
             ListColours(_colours.SelectedItem as string);
     }
 
+    private void ShowCacheSize()
+    {
+        long bytes = new DbcCache(DbcCache.DefaultFolder).SizeBytes();
+        _cacheSize.Text = (bytes / (1024.0 * 1024.0)).ToString("0.#", CultureInfo.InvariantCulture) + " MB in " +
+                          DbcCache.DefaultFolder;
+    }
+
+    private void ClearCache()
+    {
+        try
+        {
+            new DbcCache(DbcCache.DefaultFolder).Clear();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            _cacheSize.Text = "Some copies are in use and stayed: " + exception.Message;
+            return;
+        }
+
+        ShowCacheSize();
+    }
+
     private AppOptions Build()
     {
         AppOptions options = _options.Copy();
@@ -289,6 +329,7 @@ public sealed class OptionsWindow : Window
         options.ConfirmApply = _confirmApply.IsChecked == true;
         options.MaxUndoSteps = AppOptions.UndoSteps[Math.Max(0, _undo.SelectedIndex)];
         options.RememberWindow = _window.IsChecked == true;
+        options.KeepTableCache = _cache.IsChecked == true;
         return options;
     }
 }

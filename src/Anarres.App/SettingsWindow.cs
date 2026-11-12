@@ -58,6 +58,10 @@ public sealed class SettingsWindow : Window
         Content = "Keep the server's own copy of each file the first time it's replaced"
     };
     private readonly CheckBox _applyPatch = new CheckBox { Content = "Build the client patch MPQ" };
+    private readonly CheckBox _applyEdited = new CheckBox
+    {
+        Content = "Write only tables edited since import (otherwise the ones ticked in the last export)"
+    };
     private readonly CheckBox _applyWorld = new CheckBox
     {
         Content = "Put rows changed from the clean files into acore_world's _dbc tables"
@@ -97,6 +101,7 @@ public sealed class SettingsWindow : Window
         _patch.Text = settings.PatchName;
         _patchInLocale.IsChecked = settings.PatchInLocaleFolder;
         _definitions.Text = settings.DefinitionsFolder;
+        _applyEdited.IsChecked = settings.ExportEditedOnly;
         _applyServer.IsChecked = settings.ApplyToServer;
         _applyBackup.IsChecked = settings.ApplyBackupServer;
         _applyPatch.IsChecked = settings.ApplyPatch;
@@ -161,14 +166,15 @@ public sealed class SettingsWindow : Window
                                    Ui.Hint("Later letters win: patch-A.MPQ loads after patch-3.MPQ."),
                                    Ui.Row("Export folder", Ui.FolderPicker(this, _export, "Export folder"))));
         body.Children.Add(Ui.Group("Apply (one click: save, then put the changes in place)",
-                                   _applyServer, _applyBackup, _applyPatch, _applyCache, _applyWorld,
+                                   _applyEdited, _applyServer, _applyBackup, _applyPatch, _applyCache,
+                                   _applyWorld,
                                    Ui.Row("World database", _worldHost, _worldPort),
                                    Ui.Row("User", _worldUser),
                                    Ui.Row("Password", _worldPassword),
                                    Ui.Row("Database", _worldDatabase),
-                                   Ui.Hint("Apply writes the tables ticked in the last export (Spell.dbc to start " +
-                                           "with). Rows for acore_world are only those that differ from the clean " +
-                                           "files; the worldserver loads them over its .dbc files.")));
+                                   Ui.Hint("The client always needs whole .dbc files, so each edited table is " +
+                                           "written in full. Rows for acore_world are only those that differ from " +
+                                           "the clean files; the worldserver loads them over its .dbc files.")));
         ShowResolved();
         body.Children.Add(Ui.Group("Other",
                                    Ui.Row("Extra definitions", Ui.FolderPicker(this, _definitions,
@@ -227,6 +233,7 @@ public sealed class SettingsWindow : Window
             PatchInLocaleFolder = _patchInLocale.IsChecked == true,
             DefinitionsFolder = (_definitions.Text ?? string.Empty).Trim(),
             ExportTables = _original.ExportTables,
+            ExportEditedOnly = _applyEdited.IsChecked == true,
             ApplyToServer = _applyServer.IsChecked == true,
             ApplyBackupServer = _applyBackup.IsChecked == true,
             ApplyPatch = _applyPatch.IsChecked == true,

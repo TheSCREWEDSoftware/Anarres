@@ -11,6 +11,7 @@ public sealed class Session : IDisposable
     private readonly Dictionary<string, DbcTable> _tables =
         new Dictionary<string, DbcTable>(StringComparer.OrdinalIgnoreCase);
     private IDbcStore? _store;
+    private DbcCache? _cache;
     private Task<IconLibrary>? _icons;
 
     public Session(ProjectSettings settings)
@@ -28,6 +29,18 @@ public sealed class Session : IDisposable
 
     public bool IsOpen => _store != null;
 
+    // Where the store keeps big tables between runs; null reads them from the database every time
+    public DbcCache? Cache
+    {
+        get => _cache;
+        set
+        {
+            _cache = value;
+            if (_store != null)
+                _store.Cache = value;
+        }
+    }
+
     public string Description => _store?.Description ?? "No project open";
 
     public event Action? Changed;
@@ -42,6 +55,7 @@ public sealed class Session : IDisposable
             return _store;
         string? password = Settings.Store == StoreKind.MySql && !Settings.RememberMySqlPassword ? MySqlPassword : null;
         _store = await Settings.OpenStoreAsync(password, createDatabase);
+        _store.Cache = _cache;
         Changed?.Invoke();
         return _store;
     }
