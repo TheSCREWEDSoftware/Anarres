@@ -47,6 +47,11 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _gridFontSize = new ComboBox { Width = 120 };
     private readonly ComboBox _locale = new ComboBox { ItemsSource = SpellRecord.ClientLocales, Width = 120 };
     private readonly CheckBox _rank = new CheckBox { Content = "Show the rank beside each name in the spell list" };
+    private readonly ComboBox _listLayout = new ComboBox
+    {
+        ItemsSource = new[] { "Normal: icons, and a card on hover", "Compact: one line per spell" },
+        Width = 300
+    };
     private readonly CheckBox _preview2 = new CheckBox { Content = "Show the tooltip and buff preview" };
     private readonly CheckBox _reopen = new CheckBox { Content = "Open the last spell again on start" };
     private readonly CheckBox _hideEmpty = new CheckBox
@@ -115,6 +120,7 @@ public sealed class OptionsWindow : Window
         _locale.SelectedItem = SpellRecord.ClientLocales.Contains(_options.DisplayLocale) ? _options.DisplayLocale
                                                                                     : SpellRecord.ENGLISH;
         _rank.IsChecked = _options.ShowRankInList;
+        _listLayout.SelectedIndex = (int)_options.ListLayout;
         _preview2.IsChecked = _options.ShowTooltipPreview;
         _reopen.IsChecked = _options.ReopenLastSpell;
         _hideEmpty.IsChecked = _options.HideEmptyColumns;
@@ -138,7 +144,7 @@ public sealed class OptionsWindow : Window
                               Ui.Row("Language", _locale),
                               Ui.Hint("Names, ranks, the heading and the tooltip preview use this language's " +
                                       "columns. A spell without text in it falls back to enUS."),
-                              _rank, _preview2, _reopen);
+                              Ui.Row("Spell list", _listLayout), _rank, _preview2, _reopen);
         _pages[TABLES] = Page(Ui.Title("DBC Editor"),
                               Ui.Row("Grid text size", _gridFontSize),
                               _hideEmpty, _hex, _namesInCells,
@@ -492,6 +498,7 @@ public sealed class OptionsWindow : Window
         options.GridFontSize = AppOptions.GridFontSizes[Math.Max(0, _gridFontSize.SelectedIndex)];
         options.DisplayLocale = _locale.SelectedItem as string ?? SpellRecord.ENGLISH;
         options.ShowRankInList = _rank.IsChecked == true;
+        options.ListLayout = (SpellListLayout)Math.Max(0, _listLayout.SelectedIndex);
         options.ShowTooltipPreview = _preview2.IsChecked == true;
         options.ReopenLastSpell = _reopen.IsChecked == true;
         options.HideEmptyColumns = _hideEmpty.IsChecked == true;

@@ -55,9 +55,11 @@ public sealed class SpellEditorView : Grid
     private DbcTable? _spells;
     private TabControl? _tabs;
     private IconImages? _images;
-    private Border? _previewBox;
+    private Grid? _previewBox;
+    private ColumnDefinition? _previewColumn;
     private string _locale = SpellRecord.ENGLISH;
     private bool _showRank = true;
+    private SpellListLayout _layout = SpellListLayout.Normal;
     private bool _showPreview = true;
     private bool _confirmDeletes = true;
     // The spell to show when Spell.dbc first loads, from the last run
@@ -130,15 +132,21 @@ public sealed class SpellEditorView : Grid
 
     public void UseOptions(AppOptions options)
     {
-        bool listChanged = _locale != options.DisplayLocale || _showRank != options.ShowRankInList;
+        bool listChanged = _locale != options.DisplayLocale || _showRank != options.ShowRankInList ||
+                           _layout != options.ListLayout;
+        if (_layout != options.ListLayout)
+        {
+            _layout = options.ListLayout;
+            _list.ItemTemplate = ListTemplate();
+        }
+
         _locale = options.DisplayLocale;
         _showRank = options.ShowRankInList;
         _showPreview = options.ShowTooltipPreview;
         _confirmDeletes = options.ConfirmDeletes;
         if (_spells == null)
             _reopen = options.ReopenLastSpell && options.LastSpellId > 0 ? options.LastSpellId : null;
-        if (_previewBox != null)
-            _previewBox.IsVisible = _showPreview;
+        ShowPreviewColumn();
         if (listChanged && _spells != null)
             Filter();
         UpdateHeading();
@@ -239,32 +247,7 @@ public sealed class SpellEditorView : Grid
         StackPanel buttons = Ui.Horizontal(add, copy, remove);
         buttons.Margin = new Thickness(0, 8, 0, 0);
 
-        _list.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<SpellItem>((_, _) =>
-        {
-            TextBlock id = Ui.Themed(new TextBlock { Width = 58, FontSize = 12,
-                                                     VerticalAlignment = VerticalAlignment.Center },
-                                     TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT);
-            TextBlock name = new TextBlock { TextTrimming = TextTrimming.CharacterEllipsis };
-            TextBlock rank = Ui.Themed(new TextBlock { FontSize = 12, VerticalAlignment = VerticalAlignment.Center },
-                                       TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT);
-            // A strip in the school's combat text colour, as the game shows it
-            Border school = new Border
-            {
-                Width = SCHOOL_STRIP_WIDTH,
-                CornerRadius = new CornerRadius(2),
-                Margin = new Thickness(0, 3, 4, 3)
-            };
-            school.Bind(Border.BackgroundProperty, new Avalonia.Data.Binding(nameof(SpellItem.SchoolBrush)));
-            id.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Id)));
-            name.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.DisplayName)));
-            rank.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Rank)));
-            return new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 6,
-                Children = { school, id, name, rank }
-            };
-        });
+        _list.ItemTemplate = ListTemplate();
 
         DockPanel panel = new DockPanel { Margin = new Thickness(10) };
         DockPanel.SetDock(_search, Dock.Top);
@@ -368,6 +351,9 @@ public sealed class SpellEditorView : Grid
         _tabs.Items.Add(Tab("Effects", EffectsTab()));
         _tabs.Items.Add(Tab("Targets and Requirements", TargetsTab()));
         _tabs.Items.Add(Tab("Procs and Interrupts", ProcsTab()));
+        TabItem talentsItem = Tab("Talents", TalentsTab(out Action<bool> activateTalents));
+        _tabs.Items.Add(talentsItem);
+        _tabs.SelectionChanged += (_, _) => activateTalents(_tabs.SelectedItem == talentsItem);
         _tabs.Items.Add(Tab("Items and Reagents", ItemsTab()));
         _tabs.Items.Add(Tab("Skill", new SkillView(_binding, _session, _window).View));
         _tabs.Items.Add(Tab("Visual", _visual));
@@ -403,6 +389,41 @@ public sealed class SpellEditorView : Grid
                 break;
         }
     }
+
+    // With the preview off, the text boxes take the whole width
+    private void ShowPreviewColumn()
+    {
+        if (_previewBox == null || _previewColumn == null)
+            return;
+        _previewColumn.Width = _showPreview ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        foreach (Control child in _previewBox.Children)
+        {
+            if (Grid.GetColumn(child) == 2)
+                child.IsVisible = _showPreview;
+        }
+    }
+
+    private static void Place(Grid grid, Control control, int row, int column)
+    {
+        Grid.SetRow(control, row);
+        Grid.SetColumn(control, column);
+        grid.Children.Add(control);
+    }
+
+    // A preview text on the raised colour, the height of the box beside it
+    private static Border PreviewPanel(Control text)
+    {
+        return Ui.Themed(new Border
+        {
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(10),
+            MinHeight = PREVIEW_HEIGHT,
+            Margin = new Thickness(0, 0, 0, 8),
+            Child = text
+        }, Border.BackgroundProperty, ThemeColours.RAISED);
+    }
+
+    private const double PREVIEW_HEIGHT = 90;
 
     private static TabItem Tab(string header, Control content)
     {
@@ -489,24 +510,31 @@ public sealed class SpellEditorView : Grid
         aura.ValueChanged += UpdatePreview;
         _binding.Edited += _ => UpdatePreview();
 
-        Border previewBox = Ui.Themed(new Border
+        // Each text beside what the game shows for it, updated as it's typed
+        Grid texts = new Grid
         {
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(10),
-            Child = Ui.Vertical(6, Ui.Hint("Tooltip preview"), _preview, Ui.Hint("Buff preview"), _auraPreview)
-        }, Border.BackgroundProperty, ThemeColours.RAISED);
-        previewBox.IsVisible = _showPreview;
-        _previewBox = previewBox;
+            ColumnDefinitions = new ColumnDefinitions("*,12,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto")
+        };
+        Place(texts, Named(Ui.Label("Description ($s1, $d, $o1 and the rest are filled in on the right)", 500),
+                           "Description_Lang_enUS"), 0, 0);
+        Place(texts, description.Box, 1, 0);
+        Place(texts, Ui.Hint("Tooltip preview"), 0, 2);
+        Place(texts, PreviewPanel(_preview), 1, 2);
+        Place(texts, Named(Ui.Label("Aura description (shown on the buff)", 500), "AuraDescription_Lang_enUS"),
+              2, 0);
+        Place(texts, aura.Box, 3, 0);
+        Place(texts, Ui.Hint("Buff preview"), 2, 2);
+        Place(texts, PreviewPanel(_auraPreview), 3, 2);
+        _previewColumn = texts.ColumnDefinitions[2];
+        _previewBox = texts;
+        ShowPreviewColumn();
 
         return Ui.Vertical(0,
             Ui.Group("Name and text",
                      Named(Ui.Row("Name", name.Box), "Name_Lang_enUS"),
                      Named(Ui.Row("Rank", rank.Box), "NameSubtext_Lang_enUS"),
-                     Named(Ui.Label("Description ($s1, $d, $o1 and the rest are filled in below)", 500),
-                           "Description_Lang_enUS"),
-                     description.Box,
-                     Named(Ui.Label("Aura description (shown on the buff)", 500), "AuraDescription_Lang_enUS"),
-                     aura.Box, previewBox),
+                     texts),
             Ui.Group("Spell",
                      Cell("ID", "ID"),
                      Named(Ui.Row("School", new MaskListField(_binding, "SchoolMask",
@@ -565,7 +593,9 @@ public sealed class SpellEditorView : Grid
         icon.Value.ValueChanged += () => _lookIcon.Source = _images?.Get(icon.Value.Raw());
         Button pick = Ui.AsyncButton("Pick...", PickIconAsync);
         ToolTip.SetTip(pick, "Choose from every icon in SpellIcon.dbc");
-        return Named(Ui.Row("Icon", _lookIcon, icon.View, pick), "SpellIconID");
+        // The icon sits after the box, so the box lines up with the fields below it
+        icon.View.Children.Insert(1, _lookIcon);
+        return Named(Ui.Row("Icon", icon.View, pick), "SpellIconID");
     }
 
     private async Task PickIconAsync()
@@ -661,7 +691,118 @@ public sealed class SpellEditorView : Grid
                                   new CellField(_binding, Column("EffectSpellClassMaskB"), Ui.FIELD_WIDTH).Box,
                                   new CellField(_binding, Column("EffectSpellClassMaskC"), Ui.FIELD_WIDTH).Box),
                            Column("EffectSpellClassMaskA"), Column("EffectSpellClassMaskB"),
-                           Column("EffectSpellClassMaskC"))));
+                           Column("EffectSpellClassMaskC"))),
+            AffectedGroup(effect));
+    }
+
+    // Like Wowhead's "Affected spells": the spells of the same family this effect's masks pick out
+    private Control AffectedGroup(int effect)
+    {
+        SpellChips chips = new SpellChips(ChipLook, Open);
+        TextBlock title = new TextBlock { Classes = { "groupTitle" } };
+        Border group = new Border { Classes = { "group" }, Child = Ui.Vertical(0, title, chips.View) };
+        _binding.Add(new RefreshField(() =>
+        {
+            List<int> rows = _binding.IsBound ? SpellReferences.Affected(_binding.Table!, _binding.Row, effect + 1)
+                                              : new List<int>();
+            group.IsVisible = rows.Count > 0;
+            title.Text = "Affected spells (" + rows.Count + ")";
+            chips.Show(rows.Select(row => (_binding.Table!.Key(row), string.Empty)).ToList(), string.Empty);
+        }));
+        return group;
+    }
+
+    private SpellLook ChipLook(uint id)
+    {
+        int row = Find(_spells, id);
+        if (row < 0)
+            return new SpellLook("Spell " + id + " (not in Spell.dbc)", null, string.Empty);
+        SpellRecord spell = new SpellRecord(_spells!, row);
+        string name = spell.Text("Name", _locale);
+        string rank = spell.Text("NameSubtext", _locale);
+        return new SpellLook((name.Length == 0 ? "(no name)" : name) + (rank.Length > 0 ? " (" + rank + ")" : ""),
+                             ListIcon(id), SpellCard(id));
+    }
+
+    private void Open(uint id)
+    {
+        Select(id);
+    }
+
+    // Talents, then other auras, changing this spell by family mask; only worked out while the tab is shown
+    private Control TalentsTab(out Action<bool> activate)
+    {
+        SpellChips talents = new SpellChips(ChipLook, Open);
+        SpellChips others = new SpellChips(ChipLook, Open);
+        TextBlock talentTitle = new TextBlock { Classes = { "groupTitle" } };
+        TextBlock otherTitle = new TextBlock { Classes = { "groupTitle" } };
+        bool active = false;
+        void Load()
+        {
+            if (!active || !_binding.IsBound)
+                return;
+            HashSet<uint> talentSpells = SpellReferences.TalentSpells(_session.NamingTable("Talent.dbc"));
+            AuraNames auraNames = new AuraNames();
+            List<(uint Id, string Note)> modifiers = SpellReferences.Find(_binding.Table!, _binding.Row)
+                .Where(reference => reference.Group == SpellReferences.MODIFIED_BY)
+                .Select(reference => (reference.SpellId, auraNames.Describe(reference.How)))
+                .ToList();
+            List<(uint Id, string Note)> fromTalents = modifiers.Where(entry => talentSpells.Contains(entry.Id))
+                                                                .ToList();
+            List<(uint Id, string Note)> fromOthers = modifiers.Where(entry => !talentSpells.Contains(entry.Id))
+                                                               .ToList();
+            talentTitle.Text = "Talents that change this spell (" + fromTalents.Count + ")";
+            otherTitle.Text = "Other auras that change it: glyphs, set bonuses, buffs (" + fromOthers.Count + ")";
+            talents.Show(fromTalents, talentSpells.Count == 0
+                                          ? "Talent.dbc isn't in the project or the clean files, so talents can't " +
+                                            "be told apart; they're listed below."
+                                          : "No talent changes this spell.");
+            others.Show(fromOthers, "Nothing else changes this spell.");
+        }
+
+        _binding.Add(new RefreshField(Load));
+        activate = value =>
+        {
+            active = value;
+            Load();
+        };
+        return Ui.Vertical(0,
+            Ui.Hint("Spells of the same family whose effects pick this spell out with their family masks " +
+                    "(EffectSpellClassMask against this spell's SpellClassMask), as the game applies them."),
+            new Border { Classes = { "group" }, Child = Ui.Vertical(0, talentTitle, talents.View) },
+            new Border { Classes = { "group" }, Child = Ui.Vertical(0, otherTitle, others.View) });
+    }
+
+    // "effect 1, aura 108" as "effect 1: Add Pct Modifier (108)"
+    private sealed class AuraNames
+    {
+        private readonly EnumTable _auras = SpellEnums.Get(SpellEnums.AURA);
+
+        public string Describe(string how)
+        {
+            System.Text.RegularExpressions.Match match =
+                System.Text.RegularExpressions.Regex.Match(how, @"^(?<effect>effect \d+), aura (?<aura>\d+)$");
+            if (!match.Success)
+                return how;
+            long aura = long.Parse(match.Groups["aura"].Value, CultureInfo.InvariantCulture);
+            string name = _auras.Names(aura);
+            return match.Groups["effect"].Value + ": " + (name.Length > 0 ? name + " (" + aura + ")" : "aura " + aura);
+        }
+    }
+
+    private sealed class RefreshField : IField
+    {
+        private readonly Action _refresh;
+
+        public RefreshField(Action refresh)
+        {
+            _refresh = refresh;
+        }
+
+        public void Refresh()
+        {
+            _refresh();
+        }
     }
 
     private Control TargetsTab()
@@ -876,7 +1017,9 @@ public sealed class SpellEditorView : Grid
             string rank = _showRank ? Localised(table, row, rankColumn, englishRank) : string.Empty;
             items.Add(new SpellItem(table.Key(row), name, rank)
             {
-                SchoolBrush = SchoolBrush(schoolColumn >= 0 ? table.GetRaw(row, schoolColumn) : 0)
+                SchoolBrush = SchoolBrush(schoolColumn >= 0 ? table.GetRaw(row, schoolColumn) : 0),
+                IconFor = ListIcon,
+                CardFor = SpellCard
             });
         }
 
@@ -1333,6 +1476,95 @@ public sealed class SpellEditorView : Grid
     }
 
     private const double SCHOOL_STRIP_WIDTH = 4;
+    private const double LIST_ICON_SIZE = 32;
+
+    // One line per spell (compact), or its icon, name and rank on a taller row with a card on hover (normal)
+    private Avalonia.Controls.Templates.FuncDataTemplate<SpellItem> ListTemplate()
+    {
+        bool compact = _layout == SpellListLayout.Compact;
+        return new Avalonia.Controls.Templates.FuncDataTemplate<SpellItem>((_, _) =>
+        {
+            TextBlock id = Ui.Themed(new TextBlock { Width = 58, FontSize = 12,
+                                                     VerticalAlignment = VerticalAlignment.Center },
+                                     TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT);
+            TextBlock name = new TextBlock
+            {
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            TextBlock rank = Ui.Themed(new TextBlock { FontSize = 12, VerticalAlignment = VerticalAlignment.Center },
+                                       TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT);
+            // A strip in the school's combat text colour, as the game shows it
+            Border school = new Border
+            {
+                Width = SCHOOL_STRIP_WIDTH,
+                CornerRadius = new CornerRadius(2),
+                Margin = new Thickness(0, 3, 4, 3)
+            };
+            school.Bind(Border.BackgroundProperty, new Avalonia.Data.Binding(nameof(SpellItem.SchoolBrush)));
+            id.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Id)));
+            name.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.DisplayName)));
+            rank.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Rank)));
+            if (compact)
+            {
+                return new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 6,
+                    Children = { school, id, name, rank }
+                };
+            }
+
+            Image icon = new Image { Width = LIST_ICON_SIZE, Height = LIST_ICON_SIZE };
+            icon.Bind(Image.SourceProperty, new Avalonia.Data.Binding(nameof(SpellItem.Icon)));
+            Border iconFrame = new Border
+            {
+                Width = LIST_ICON_SIZE,
+                Height = LIST_ICON_SIZE,
+                CornerRadius = new CornerRadius(4),
+                ClipToBounds = true,
+                Child = icon
+            };
+            StackPanel text = new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { name, Ui.Horizontal(id, rank) }
+            };
+            StackPanel row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 8,
+                Margin = new Thickness(0, 2),
+                Children = { school, iconFrame, text }
+            };
+            row.Bind(ToolTip.TipProperty, new Avalonia.Data.Binding(nameof(SpellItem.Card)));
+            return row;
+        });
+    }
+
+    // The hover card of a spell in the list: what it is, and its tooltip as the game would show it
+    private string SpellCard(uint id)
+    {
+        int row = Find(_spells, id);
+        if (row < 0)
+            return string.Empty;
+        SpellRecord spell = new SpellRecord(_spells!, row);
+        string name = spell.Text("Name", _locale);
+        string rank = spell.Text("NameSubtext", _locale);
+        string description = SpellText.Render(spell, spell.Text("Description", _locale), _lookups);
+        string aura = SpellText.Render(spell, spell.Text("AuraDescription", _locale), _lookups);
+        return (name.Length == 0 ? "(no name)" : name) + (rank.Length > 0 ? " (" + rank + ")" : string.Empty) +
+               "\nSpell " + id + "  -  " + SpellEnums.Get(SpellEnums.SCHOOL).Describe(spell.U("SchoolMask")) +
+               "  -  " + CastTime(spell.U("CastingTimeIndex")) +
+               (description.Length > 0 ? "\n\n" + description : string.Empty) +
+               (aura.Length > 0 ? "\n\nBuff: " + aura : string.Empty);
+    }
+
+    private IImage? ListIcon(uint id)
+    {
+        int row = Find(_spells, id);
+        return row < 0 ? null : _images?.Get(new SpellRecord(_spells!, row).U("SpellIconID"));
+    }
 
     private static readonly Dictionary<string, IBrush> GameBrushes = new Dictionary<string, IBrush>();
 
@@ -1386,6 +1618,15 @@ public sealed class SpellEditorView : Grid
         public string DisplayName => _name.Length == 0 ? "(no name)" : _name;
 
         public IBrush? SchoolBrush { get; set; }
+
+        // Filled in when a row is first shown: the list only makes rows for what's on screen
+        public Func<uint, IImage?>? IconFor { get; set; }
+
+        public Func<uint, string>? CardFor { get; set; }
+
+        public IImage? Icon => IconFor?.Invoke(_id);
+
+        public string? Card => CardFor?.Invoke(_id);
 
         public string Rank
         {

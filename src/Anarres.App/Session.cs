@@ -129,7 +129,7 @@ public sealed class Session : IDisposable
     public static readonly string[] NamingTables =
     {
         "ChrRaces.dbc", "ChrClasses.dbc", "ItemClass.dbc", "ItemSubClass.dbc", "TotemCategory.dbc",
-        "SkillLine.dbc"
+        "SkillLine.dbc", "Talent.dbc"
     };
 
     private readonly Dictionary<string, DbcTable?> _naming =

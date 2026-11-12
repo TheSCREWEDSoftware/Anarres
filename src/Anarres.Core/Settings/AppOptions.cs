@@ -10,6 +10,13 @@ public enum ThemeLook
     Light
 }
 
+// How the spell list draws its rows
+public enum SpellListLayout
+{
+    Normal,
+    Compact
+}
+
 // What the window's close button does
 public enum CloseAction
 {
@@ -86,6 +93,9 @@ public sealed class AppOptions
     public string DisplayLocale { get; set; } = "enUS";
 
     public bool ShowRankInList { get; set; } = true;
+
+    // Normal rows carry the spell's icon and a hover card; compact rows are one line of text
+    public SpellListLayout ListLayout { get; set; } = SpellListLayout.Normal;
 
     public bool ShowTooltipPreview { get; set; } = true;
 

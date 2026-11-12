@@ -74,6 +74,61 @@ public static class SpellReferences
         return found;
     }
 
+    // The spells one effect changes: same family, and a SpellClassMask bit in common with the effect's masks
+    public static List<int> Affected(DbcTable spells, int row, int effect)
+    {
+        List<int> found = new List<int>();
+        SpellRecord spell = new SpellRecord(spells, row);
+        uint family = spell.U("SpellClassSet");
+        uint[] mask =
+        {
+            spell.U("EffectSpellClassMaskA_" + effect), spell.U("EffectSpellClassMaskB_" + effect),
+            spell.U("EffectSpellClassMaskC_" + effect)
+        };
+        int familyColumn = spells.Definition.IndexOf("SpellClassSet");
+        int[] classMasks = Enumerable.Range(1, mask.Length)
+                                     .Select(part => spells.Definition.IndexOf("SpellClassMask_" + part)).ToArray();
+        if (family == 0 || familyColumn < 0 || mask.All(part => part == 0) || classMasks.Any(column => column < 0))
+            return found;
+        for (int other = 0; other < spells.Rows.Count; ++other)
+        {
+            if (other == row || spells.GetRaw(other, familyColumn) != family)
+                continue;
+            for (int part = 0; part < mask.Length; ++part)
+            {
+                if ((spells.GetRaw(other, classMasks[part]) & mask[part]) != 0)
+                {
+                    found.Add(other);
+                    break;
+                }
+            }
+        }
+
+        return found;
+    }
+
+    // Spells that are talents, from Talent.dbc's ranks
+    public static HashSet<uint> TalentSpells(DbcTable? talents)
+    {
+        HashSet<uint> spells = new HashSet<uint>();
+        if (talents == null)
+            return spells;
+        int[] ranks = talents.Definition.Columns.Select((column, index) => (column, index))
+                             .Where(entry => entry.column.Name.StartsWith("SpellRank", StringComparison.Ordinal))
+                             .Select(entry => entry.index).ToArray();
+        for (int row = 0; row < talents.Rows.Count; ++row)
+        {
+            foreach (int column in ranks)
+            {
+                uint spell = talents.GetRaw(row, column);
+                if (spell != 0)
+                    spells.Add(spell);
+            }
+        }
+
+        return spells;
+    }
+
     private static SpellReference Reference(DbcTable spells, int row, string group, string how)
     {
         SpellRecord spell = new SpellRecord(spells, row);
