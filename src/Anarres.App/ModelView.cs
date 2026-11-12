@@ -44,7 +44,9 @@ public sealed class ModelView
     private readonly ModelCamera _camera = new ModelCamera();
     private List<ModelChoice> _choices = new List<ModelChoice>();
     private ModelInstance? _instance;
-    private WriteableBitmap? _bitmap;
+    // Two pictures in turn: one on screen while the next is drawn, so a frame is never shown half-written
+    private readonly WriteableBitmap?[] _bitmaps = new WriteableBitmap?[2];
+    private int _back;
     private uint[] _pixels = Array.Empty<uint>();
     private int[] _copy = Array.Empty<int>();
     private Point? _drag;
@@ -182,6 +184,7 @@ public sealed class ModelView
                                               .ToList();
             _animations.SelectedIndex = instance.Sequence;
             _missing = missing.Count > 0 ? " Not in the client: " + string.Join(", ", missing.Distinct()) + "." : "";
+            Describe();
             ResetView();
             UpdateTimer();
         }
@@ -286,25 +289,35 @@ public sealed class ModelView
         }
 
         _renderer.Render(_instance, _camera, width, height, _pixels);
-        if (_bitmap == null || _bitmap.PixelSize.Width != width || _bitmap.PixelSize.Height != height)
+        WriteableBitmap? bitmap = _bitmaps[_back];
+        if (bitmap == null || bitmap.PixelSize.Width != width || bitmap.PixelSize.Height != height)
         {
-            _bitmap = new WriteableBitmap(new PixelSize(width, height), new Avalonia.Vector(96, 96),
-                                          PixelFormat.Bgra8888, AlphaFormat.Opaque);
-            _image.Source = _bitmap;
+            bitmap = new WriteableBitmap(new PixelSize(width, height), new Avalonia.Vector(96, 96),
+                                         PixelFormat.Bgra8888, AlphaFormat.Opaque);
+            _bitmaps[_back] = bitmap;
         }
 
         Buffer.BlockCopy(_pixels, 0, _copy, 0, _pixels.Length * BYTES_PER_PIXEL);
-        using (ILockedFramebuffer frame = _bitmap.Lock())
+        using (ILockedFramebuffer frame = bitmap.Lock())
         {
             for (int y = 0; y < height; ++y)
                 Marshal.Copy(_copy, y * width, frame.Address + y * frame.RowBytes, width);
         }
 
-        _image.InvalidateVisual();
+        _image.Source = bitmap;
+        _back = 1 - _back;
+    }
+
+    // What the model holds, written once per model so the line under the picture stays still
+    private void Describe()
+    {
+        if (_instance == null)
+            return;
         M2Model model = _instance.Model;
-        _status.Text = model.Vertices.Length + " vertices, " + _renderer.TrianglesDrawn + " triangles drawn, " +
-                       model.Particles.Length + " particle emitters (" + _renderer.ParticlesDrawn + " live)" +
-                       (model.RibbonCount > 0 ? ", " + model.RibbonCount + " ribbons (not drawn)" : string.Empty) +
+        int triangles = _instance.Skin.Indices.Length / 3;
+        _status.Text = model.Vertices.Length + " vertices, " + triangles + " triangles, " + model.Particles.Length +
+                       (model.Particles.Length == 1 ? " particle emitter" : " particle emitters") +
+                       (model.RibbonCount > 0 ? ", " + model.RibbonCount + " ribbons (not drawn yet)" : string.Empty) +
                        "." + _missing + " Drag to turn, wheel to zoom, double-click to reset.";
     }
 }
