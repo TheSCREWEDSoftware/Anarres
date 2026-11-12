@@ -12,12 +12,12 @@ namespace Anarres.App;
 // Tools > Table links: a table in the middle, what points at it on the left, what it points at on the right
 public sealed class TableLinksWindow : Window
 {
-    private const double NODE_WIDTH = 200;
-    private const double NODE_HEIGHT = 30;
+    private const double NODE_WIDTH = 240;
+    private const double NODE_HEIGHT = 44;
+    private const double CENTRE_HEIGHT = 40;
     private const double ROW_GAP = 10;
     private const double COLUMN_GAP = 150;
     private const double MARGIN = 20;
-    private const double LABEL_WIDTH = 135;
     private const double ARROW_LENGTH = 9;
     private const double ARROW_HALF_WIDTH = 4;
 
@@ -110,90 +110,111 @@ public sealed class TableLinksWindow : Window
     {
         _current = file;
         SelectCurrent();
-        // Several columns between the same two tables share one line
+        // Several columns between the same two tables share one node, which names them all
         List<DbcLink> incoming = Grouped(_links.Where(link => Same(link.To, file) && !Same(link.From, file)),
                                          link => link.From);
         List<DbcLink> outgoing = Grouped(_links.Where(link => Same(link.From, file)), link => link.To);
-        _summary.Text = DbcLinks.Name(file) + ": " + Count(incoming.Count, "link") + " from other tables, and " +
-                        Count(outgoing.Count, "link") + " to other tables (or itself). Click a table to move to " +
-                        "it. Links are worked out from the column names, so a few may be missing.";
+        _summary.Text = DbcLinks.Name(file) + ": " + Count(incoming.Count, "table") + " point at it (left), and it " +
+                        "points at " + Count(outgoing.Count, "table") + " (right); each box names the columns. " +
+                        "Click a table to move to it. Links are worked out from the column names, so a few may be " +
+                        "missing.";
 
         _canvas.Children.Clear();
         double leftX = MARGIN;
         double middleX = leftX + NODE_WIDTH + COLUMN_GAP;
         double rightX = middleX + NODE_WIDTH + COLUMN_GAP;
         int rows = Math.Max(1, Math.Max(incoming.Count, outgoing.Count));
-        double height = MARGIN * 2 + rows * (NODE_HEIGHT + ROW_GAP);
-        double middleY = height / 2 - NODE_HEIGHT / 2;
+        double height = MARGIN * 2 + rows * (NODE_HEIGHT + ROW_GAP) - ROW_GAP;
+        double middleY = height / 2 - CENTRE_HEIGHT / 2;
+        double centreLine = middleY + CENTRE_HEIGHT / 2;
         _canvas.Width = rightX + NODE_WIDTH + MARGIN;
         _canvas.Height = height;
 
-        for (int i = 0; i < incoming.Count; ++i)
-        {
-            double y = MARGIN + i * (NODE_HEIGHT + ROW_GAP);
-            Line(leftX + NODE_WIDTH, y + NODE_HEIGHT / 2, middleX, middleY + NODE_HEIGHT / 2, incoming[i].Column,
-                 labelNearStart: true);
-            Node(incoming[i].From, leftX, y, false);
-        }
-
-        for (int i = 0; i < outgoing.Count; ++i)
-        {
-            double y = MARGIN + i * (NODE_HEIGHT + ROW_GAP);
-            Line(middleX + NODE_WIDTH, middleY + NODE_HEIGHT / 2, rightX, y + NODE_HEIGHT / 2, outgoing[i].Column,
-                 labelNearStart: false);
-            Node(outgoing[i].To, rightX, y, false);
-        }
-
-        Node(file, middleX, middleY, true);
+        // Each side is a column of boxes, joined by a straight bus to the table in the middle: no crossing lines
+        Side(incoming, link => link.From, leftX, height, leftX + NODE_WIDTH, middleX, centreLine, toCentre: true);
+        Side(outgoing, link => link.To, rightX, height, middleX + NODE_WIDTH, rightX, centreLine, toCentre: false);
+        Node(file, string.Empty, middleX, middleY, CENTRE_HEIGHT, true);
     }
 
-    private void Node(string file, double x, double y, bool centre)
+    private void Side(List<DbcLink> links, Func<DbcLink, string> table, double nodeX, double height, double fromX,
+                      double toX, double centreLine, bool toCentre)
     {
+        if (links.Count == 0)
+            return;
+        double top = height / 2 - (links.Count * (NODE_HEIGHT + ROW_GAP) - ROW_GAP) / 2;
+        double bus = (fromX + toX) / 2;
+        double first = top + NODE_HEIGHT / 2;
+        double last = top + (links.Count - 1) * (NODE_HEIGHT + ROW_GAP) + NODE_HEIGHT / 2;
+        Segment(bus, Math.Min(first, centreLine), bus, Math.Max(last, centreLine));
+        // The trunk between the bus and the middle table carries the arrow for the whole side
+        if (toCentre)
+            Segment(bus, centreLine, toX, centreLine, arrow: true);
+        else
+            Segment(fromX, centreLine, bus, centreLine, arrow: false);
+        for (int i = 0; i < links.Count; ++i)
+        {
+            double y = top + i * (NODE_HEIGHT + ROW_GAP);
+            double lineY = y + NODE_HEIGHT / 2;
+            if (toCentre)
+                Segment(fromX, lineY, bus, lineY, arrow: true);
+            else
+                Segment(bus, lineY, toX, lineY, arrow: true);
+            Node(table(links[i]), links[i].Column, nodeX, y, NODE_HEIGHT, false);
+        }
+    }
+
+    // A table's box: its name, and under it the columns that make the link
+    private void Node(string file, string columns, double x, double y, double height, bool centre)
+    {
+        StackPanel content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+        content.Children.Add(new TextBlock
+        {
+            Text = DbcLinks.Name(file),
+            FontWeight = FontWeight.SemiBold,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+        if (columns.Length > 0)
+        {
+            content.Children.Add(Ui.Themed(new TextBlock
+            {
+                Text = columns,
+                FontSize = 11,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                HorizontalAlignment = HorizontalAlignment.Center
+            }, TextBlock.ForegroundProperty, ThemeColours.ATTENTION));
+        }
+
         Button node = new Button
         {
-            Content = DbcLinks.Name(file),
+            Content = content,
             Width = NODE_WIDTH,
-            Height = NODE_HEIGHT,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
+            Height = height,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
             VerticalContentAlignment = VerticalAlignment.Center
         };
         if (centre)
             node.Classes.Add("accent");
-        ToolTip.SetTip(node, centre ? file : "Move to " + file);
+        ToolTip.SetTip(node, centre ? file : "Move to " + file + (columns.Length > 0 ? "\nColumns: " + columns : ""));
         node.Click += (_, _) => Show(file);
         Canvas.SetLeft(node, x);
         Canvas.SetTop(node, y);
         _canvas.Children.Add(node);
     }
 
-    // A line from one table to another, named after the column, near the table that has the column
-    private void Line(double x1, double y1, double x2, double y2, string column, bool labelNearStart)
+    // A straight piece of a link; arrow puts an arrowhead halfway along it, pointing the way it runs
+    private void Segment(double x1, double y1, double x2, double y2, bool arrow = false)
     {
         _canvas.Children.Add(Ui.Themed(new Line
         {
             StartPoint = new Point(x1, y1),
             EndPoint = new Point(x2, y2),
-            StrokeThickness = 1
+            StrokeThickness = 1.5
         }, Shape.StrokeProperty, ThemeColours.MUTED_TEXT));
-        _canvas.Children.Add(Arrow(x1, y1, x2, y2));
-        TextBlock label = new TextBlock
-        {
-            Text = column,
-            Width = LABEL_WIDTH,
-            FontSize = 11,
-            TextWrapping = TextWrapping.NoWrap,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            TextAlignment = labelNearStart ? TextAlignment.Left : TextAlignment.Right,
-            Classes = { "hint" }
-        };
-        ToolTip.SetTip(label, column);
-        double y = (labelNearStart ? y1 : y2) - NODE_HEIGHT / 2;
-        Canvas.SetLeft(label, labelNearStart ? x1 + 6 : x2 - LABEL_WIDTH - 6);
-        Canvas.SetTop(label, y);
-        _canvas.Children.Add(label);
+        if (arrow)
+            _canvas.Children.Add(Arrow(x1, y1, (x1 + x2) / 2 + ARROW_LENGTH / 2, (y1 + y2) / 2));
     }
 
-    // An arrowhead at the line's end: the table with the column points at the table it names
+    // An arrowhead ending at the given point: the table with the column points at the table it names
     private static Polygon Arrow(double x1, double y1, double x2, double y2)
     {
         double length = Math.Max(Math.Sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)), 1);
