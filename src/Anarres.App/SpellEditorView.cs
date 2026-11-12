@@ -1224,29 +1224,8 @@ public sealed class SpellEditorView : Grid
         _loadingClientTexts = true;
         try
         {
-            string patch = _session.Settings.PatchPath();
-            DbcDefinitions definitions = _session.Definitions;
             _window.SetStatus("Reading the client's text for the preview...");
-            _clientTexts = await Task.Run(() =>
-            {
-                List<LocaleTexts> found = new List<LocaleTexts>();
-                foreach (string locale in LocaleMerge.Order(ClientArchives.FindLocales(data)))
-                {
-                    try
-                    {
-                        if (LocaleMerge.Read(data, locale, SpellRecord.FILE, patch, definitions) is { } source &&
-                            found.All(texts => texts.Slot != source.Slot))
-                            found.Add(LocaleMerge.Texts(source));
-                    }
-                    catch (Exception exception) when (exception is IOException or InvalidDataException or
-                                                          UnauthorizedAccessException or NotSupportedException)
-                    {
-                        // A locale that can't be read just has no preview
-                    }
-                }
-
-                return found;
-            });
+            _clientTexts = await _session.ClientTextsAsync(SpellRecord.FILE);
             _clientTextsFolder = data;
             _window.SetStatus("The client's text is shown in red where a box is empty (" + _clientTexts.Count +
                               (_clientTexts.Count == 1 ? " locale)." : " locales)."));

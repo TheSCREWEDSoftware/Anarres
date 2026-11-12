@@ -4,6 +4,7 @@ using Anarres.Core.Dbc;
 using Anarres.Core.Export;
 using Anarres.Core.Models;
 using Anarres.Core.Settings;
+using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
@@ -122,6 +123,16 @@ public sealed class DbcEditorView : Grid
         _grid.CopyRowRequested += CopyRow;
         _grid.DeleteRowsRequested += () => _ = DeleteRowAsync();
         _grid.FilterRequested += text => _filter.Text = text;
+        ToolTip.SetTip(_clientText, "Shows in red, in empty text cells, what the client's other locale folders have " +
+                                    "there; it isn't saved. Import with All available to keep every language.");
+        _clientText.IsCheckedChanged += async (_, _) =>
+        {
+            if (_table != null && _filePath == null)
+                await ShowClientTextAsync(_table);
+            else
+                _grid.Placeholder = null;
+            _grid.Refresh();
+        };
 
         Children.Add(BuildList());
         Border right = Ui.Card(BuildEditor());
@@ -517,7 +528,8 @@ public sealed class DbcEditorView : Grid
         WrapPanel toolbar = new WrapPanel { Margin = new Thickness(12, 10, 12, 6) };
         foreach (Control control in new Control[]
                  {
-                     _spellEditor, save, add, copy, remove, _filter, export, csv, importCsv, sql, columns, _preview
+                     _spellEditor, save, add, copy, remove, _filter, export, csv, importCsv, sql, columns, _preview,
+                     _clientText
                  })
         {
             control.Margin = new Thickness(0, 0, 8, 4);
@@ -574,10 +586,12 @@ public sealed class DbcEditorView : Grid
             _filePath = null;
             _filter.Text = string.Empty;
             _grid.Clean = null;
+            _grid.Placeholder = null;
             _grid.Show(_table);
             ShowInfo();
             _window.SetStatus(string.Empty);
             await ShowCleanAsync(_table);
+            await ShowClientTextAsync(_table);
         }
         catch (Exception exception) when (exception is InvalidOperationException or IOException or
                                               System.Data.Common.DbException)
@@ -602,6 +616,7 @@ public sealed class DbcEditorView : Grid
             _tables.SelectedItem = null;
             _filter.Text = string.Empty;
             _grid.Clean = null;
+            _grid.Placeholder = null;
             _grid.Show(_table);
             ShowInfo();
         }
@@ -650,6 +665,36 @@ public sealed class DbcEditorView : Grid
     // The clean copy of a project table, read once, to mark what changed since import
     private readonly Dictionary<string, DbcTable?> _cleanTables =
         new Dictionary<string, DbcTable?>(StringComparer.OrdinalIgnoreCase);
+
+    // The client's other languages in red in a table's empty text cells, read once per table and session
+    private readonly CheckBox _clientText = new CheckBox { Content = "Client text", IsChecked = true };
+
+    private async Task ShowClientTextAsync(DbcTable table)
+    {
+        _grid.Placeholder = null;
+        if (_clientText.IsChecked != true || !LocaleMerge.HasText(table.Definition))
+            return;
+        // Name_Lang_deDE is the Name field's 4th language: its base name and the language's place
+        Dictionary<int, (string Field, int Slot)> languages = new Dictionary<int, (string, int)>();
+        for (int column = 0; column < table.Definition.Columns.Count; ++column)
+        {
+            string name = table.Definition.Columns[column].Name;
+            int at = name.LastIndexOf("_Lang_", StringComparison.OrdinalIgnoreCase);
+            int slot = at < 0 ? -1 : Array.IndexOf(SpellRecord.Locales, name[(at + "_Lang_".Length)..]);
+            if (slot >= 0 && table.Definition.Columns[column].Type == DbcColumnType.String)
+                languages[column] = (name[..at], slot);
+        }
+
+        List<LocaleTexts> texts = await _session.ClientTextsAsync(table.Definition.File);
+        if (!ReferenceEquals(_table, table) || texts.Count == 0)
+            return;
+        _grid.Placeholder = (row, column) =>
+            languages.TryGetValue(column, out (string Field, int Slot) language) &&
+            texts.FirstOrDefault(locale => locale.Slot == language.Slot) is { } found
+                ? found.Get(table.Key(row), language.Field)
+                : null;
+        _grid.Refresh();
+    }
 
     private async Task ShowCleanAsync(DbcTable table)
     {

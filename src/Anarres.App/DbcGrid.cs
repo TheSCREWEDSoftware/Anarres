@@ -79,6 +79,9 @@ public sealed class DbcGrid : Grid
     // The clean copy of the table, to mark rows added or changed since import; null marks only unsaved edits
     public DbcTable? Clean { get; set; }
 
+    // Text drawn in red in an empty cell, such as the client's own text for that language; it isn't the cell's value
+    public Func<int, int, string?>? Placeholder { get; set; }
+
     // How a row differs: unsaved edits first, then what the saved project has that the clean file doesn't
     internal RowMark Mark(DbcTable table, int row)
     {
@@ -734,6 +737,7 @@ public sealed class DbcGrid : Grid
             IBrush header = ThemeBrushes.Get(ThemeColours.GRID_HEADER);
             IBrush alternate = ThemeBrushes.Get(ThemeColours.GRID_ALTERNATE);
             RowLook look = new RowLook();
+            IBrush placeholder = ThemeBrushes.Get(ThemeColours.ERROR);
             Color accent = ThemeBrushes.ColourOf(ThemeColours.ACCENT);
             IBrush selectedRow = new SolidColorBrush(Color.FromArgb(0x30, accent.R, accent.G, accent.B));
             IBrush selectedCell = new SolidColorBrush(Color.FromArgb(0x70, accent.R, accent.G, accent.B));
@@ -773,8 +777,12 @@ public sealed class DbcGrid : Grid
                             context.FillRectangle(selectedCell, cell);
                         else if (mark != RowMark.None && _grid.IsCellMarked(table, row, column, mark))
                             context.FillRectangle(look.Cell(mark), cell);
-                        DrawText(context, _grid.Display(table, row, column), cell, text, _typeface,
-                                 table.Definition.Columns[column].Type != DbcColumnType.String);
+                        string shown = _grid.Display(table, row, column);
+                        if (shown.Length == 0 && _grid.Placeholder?.Invoke(row, column) is { Length: > 0 } preview)
+                            DrawText(context, preview, cell, placeholder, _typeface, false);
+                        else
+                            DrawText(context, shown, cell, text, _typeface,
+                                     table.Definition.Columns[column].Type != DbcColumnType.String);
                         context.DrawLine(line, new Point(left + width - 0.5, top), new Point(left + width - 0.5,
                                                                                              top + _grid.RowHeight));
                         left += width;

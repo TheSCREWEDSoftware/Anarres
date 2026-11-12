@@ -3,6 +3,7 @@ using Anarres.Core.Export;
 using Anarres.Core.Models;
 using Anarres.Core.Mpq;
 using Anarres.Core.Settings;
+using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 
 namespace Anarres.App;
@@ -284,6 +285,54 @@ public sealed class Session : IDisposable
             return loaded;
         IDbcStore store = await StoreAsync();
         return await store.ContainsAsync(file) ? await LoadAsync(file) : null;
+    }
+
+    // Each locale folder's text for a table, read from the client once per session and kept as text only
+    private readonly Dictionary<string, Task<List<LocaleTexts>>> _clientTexts =
+        new Dictionary<string, Task<List<LocaleTexts>>>(StringComparer.OrdinalIgnoreCase);
+    private string _clientTextsFolder = string.Empty;
+
+    public Task<List<LocaleTexts>> ClientTextsAsync(string file)
+    {
+        string data = Settings.ClientData();
+        if (data != _clientTextsFolder)
+        {
+            _clientTexts.Clear();
+            _clientTextsFolder = data;
+        }
+
+        if (!_clientTexts.TryGetValue(file, out Task<List<LocaleTexts>>? texts))
+        {
+            string patch = Settings.PatchPath();
+            DbcDefinitions definitions = Definitions;
+            texts = data.Length == 0 ? Task.FromResult(new List<LocaleTexts>())
+                                     : Task.Run(() => ReadClientTexts(data, file, patch, definitions));
+            _clientTexts[file] = texts;
+        }
+
+        return texts;
+    }
+
+    private static List<LocaleTexts> ReadClientTexts(string data, string file, string patch,
+                                                     DbcDefinitions definitions)
+    {
+        List<LocaleTexts> found = new List<LocaleTexts>();
+        foreach (string locale in LocaleMerge.Order(ClientArchives.FindLocales(data)))
+        {
+            try
+            {
+                if (LocaleMerge.Read(data, locale, file, patch, definitions) is { } source &&
+                    found.All(texts => texts.Slot != source.Slot))
+                    found.Add(LocaleMerge.Texts(source));
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException or
+                                                  UnauthorizedAccessException or NotSupportedException)
+            {
+                // A locale that can't be read just has no preview
+            }
+        }
+
+        return found;
     }
 
     public async Task SaveAsync(DbcTable table)
