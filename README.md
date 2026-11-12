@@ -173,6 +173,24 @@ Laid out after Stoneharry's [WoW Spell Editor](https://github.com/stoneharry/WoW
 </details>
 
 <details>
+<summary><b>3D models and effects</b></summary>
+
+Drawn from your client's own files (its patches and custom models included); nothing comes from the internet.
+
+- The spell editor's **3D** tab plays the spell's missile and the effects of its visual kits (precast, cast,
+  channel, impact...), and shows what it summons, turns into, shapeshifts into, rides, places or makes. Creatures,
+  game objects and items are looked up in the world database.
+- **Tools > Model viewer...** browses every model in the client, or opens one by creature display, spell visual,
+  item display or game object display ID.
+- Display tables in the DBC editor (CreatureDisplayInfo, CreatureModelData, SpellVisual, SpellVisualEffectName,
+  ItemDisplayInfo, GameObjectDisplayInfo, SpellShapeshiftForm) get a **3D preview** of the selected row.
+- Animations from the model (and its `.anim` files), animated textures and colours, and particle emitters: the
+  sparks, smoke and glows that make up most spell effects. Drag to turn, use the wheel to zoom, double-click to reset.
+- Not drawn yet: ribbons (trails), buildings (WMO) and dressed character models.
+
+</details>
+
+<details>
 <summary><b>Spell tools</b></summary>
 
 All in the **Spell...** menu above the editor.
@@ -386,7 +404,9 @@ messages and tests.
 - Stoneharry's [WoW Spell Editor](https://github.com/stoneharry/WoW-Spell-Editor) and
   [DBC Editing Workflow](https://github.com/stoneharry/DBC-Editing-Workflow), and
   [WDBX Editor](https://github.com/WowDevTools/WDBXEditor), whose layout and workflow Anarres follows;
-  [Keira3](https://github.com/azerothcore/Keira3) for the idea of notes on every field. No code was taken from them.
+  [Keira3](https://github.com/azerothcore/Keira3) for the idea of notes on every field and for its local model
+  viewer, whose approach (models from the client's own files instead of an online viewer) the 3D view follows.
+  No code was taken from them.
 - [Urras](https://github.com/TheSCREWEDSoftware/Urras) for the look, the themes and the theme editor.
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia) (MIT),
   [MySqlConnector](https://github.com/mysql-net/MySqlConnector) (MIT) and

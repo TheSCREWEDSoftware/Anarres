@@ -152,6 +152,14 @@ read again and the copy refreshed. Saving refreshes the copy too, so the next st
 The copies live in the `cache` folder beside `settings.json`. **Options > General** turns this off and clears them;
 `anarres-cli --no-cache` skips them for one run.
 
+## Seeing it in 3D
+
+The spell editor's **3D** tab draws the spell's missile and kit effects, with their particles, from the client
+set in the project settings, so a changed `SpellVisual`, `SpellVisualKit` or `SpellVisualEffectName` row shows
+straight away, before any export. Summons, transforms, mounts, objects and created items are looked up in
+`acore_world` (`creature_template_model`, `gameobject_template`, `item_template`). **Tools > Model viewer...**
+opens any model in the client, and display tables in the DBC editor have a **3D preview** button.
+
 ## Seeing what changed
 
 - **Tools > Write a changes report...** compares every edited table with its clean file and opens a Markdown
