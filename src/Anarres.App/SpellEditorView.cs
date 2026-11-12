@@ -116,6 +116,9 @@ public sealed class SpellEditorView : Grid
 
     internal FieldFinder Finder => _finder;
 
+    // False when loading failed and the editor shows the error instead of the tabs
+    internal bool ShowsTabs => _editor.Content is TabControl;
+
     public void UseOptions(AppOptions options)
     {
         bool listChanged = _locale != options.DisplayLocale || _showRank != options.ShowRankInList;
@@ -332,6 +335,11 @@ public sealed class SpellEditorView : Grid
     private void BuildEditor(DbcDefinition definition)
     {
         int selected = _tabs?.SelectedIndex ?? 0;
+        // Revert and imports rebuild the tabs: the old ones free shared controls and stop following the spell
+        foreach (Control kept in new Control[] { _preview, _auraPreview, _lookIcon, _visual })
+            Detach(kept);
+        _fixedFields ??= _binding.Count;
+        _binding.TrimTo(_fixedFields.Value);
         _tabs = new TabControl { Margin = new Thickness(12, 0, 12, 12) };
         _tabs.Items.Add(Tab("Base", BaseTab()));
         _tabs.Items.Add(Tab("Attributes", AttributesTab()));
@@ -351,6 +359,27 @@ public sealed class SpellEditorView : Grid
         models.Active = _tabs.SelectedItem == modelsTab;
         _editor.Content = _tabs;
         _finder.Forget();
+    }
+
+    private int? _fixedFields;
+
+    // Takes a control out of the old tabs, so a rebuild can put it into the new ones
+    private static void Detach(Control control)
+    {
+        switch (control.Parent)
+        {
+            case Panel panel:
+                panel.Children.Remove(control);
+                break;
+            case ContentControl content:
+                content.Content = null;
+                break;
+            case Decorator decorator:
+                decorator.Child = null;
+                break;
+            default:
+                break;
+        }
     }
 
     private static TabItem Tab(string header, Control content)

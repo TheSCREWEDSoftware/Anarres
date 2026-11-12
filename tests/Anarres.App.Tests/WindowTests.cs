@@ -42,6 +42,24 @@ public static class WindowTests
         window.Close();
     }
 
+    // Revert and imports load the spells again; the rebuilt tabs reuse the previews without an error
+    public static async Task SpellEditorReloads()
+    {
+        using TestProject project = await TestProject.CreateAsync();
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
+        window.Show();
+        await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
+        for (int reload = 0; reload < 2; ++reload)
+        {
+            window.Session.Forget(SpellRecord.FILE);
+            await window.SpellEditor.LoadAsync();
+            Assert.True(window.SpellEditor.ShowsTabs, "the editor came back after reload " + (reload + 1));
+        }
+
+        window.Session.Close();
+        window.Close();
+    }
+
     // Fields carry a "?" badge explaining the column, as Keira3 does
     public static async Task FieldsExplainColumns()
     {

@@ -24,9 +24,18 @@ public sealed class RecordBinding
     // A field was edited by the user
     public event Action<string>? Edited;
 
+    public int Count => _fields.Count;
+
     public void Add(IField field)
     {
         _fields.Add(field);
+    }
+
+    // Drops the fields added after the first count, when the editor that held them is rebuilt
+    public void TrimTo(int count)
+    {
+        if (count < _fields.Count)
+            _fields.RemoveRange(count, _fields.Count - count);
     }
 
     public void Bind(DbcTable? table, int row)
