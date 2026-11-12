@@ -341,9 +341,14 @@ public sealed class SpellEditorView : Grid
         _tabs.Items.Add(Tab("Items and Reagents", ItemsTab()));
         _tabs.Items.Add(Tab("Skill", new SkillView(_binding, _session, _window).View));
         _tabs.Items.Add(Tab("Visual", _visual));
+        SpellModelsView models = new SpellModelsView(_binding, _session);
+        TabItem modelsTab = Tab("3D", models.View);
+        _tabs.Items.Add(modelsTab);
+        _tabs.SelectionChanged += (_, _) => models.Active = _tabs.SelectedItem == modelsTab;
         _tabs.Items.Add(Tab("Localisation", LocalesTab()));
         _tabs.Items.Add(new TabItem { Header = "All fields", Content = new AllFieldsView(_binding, definition).View });
         _tabs.SelectedIndex = Math.Clamp(selected, 0, _tabs.ItemCount - 1);
+        models.Active = _tabs.SelectedItem == modelsTab;
         _editor.Content = _tabs;
         _finder.Forget();
     }

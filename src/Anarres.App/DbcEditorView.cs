@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
+using Anarres.Core.Models;
 using Anarres.Core.Settings;
 using Anarres.Core.Storage;
 using Avalonia;
@@ -39,6 +40,7 @@ public sealed class DbcEditorView : Grid
     private readonly TextBlock _cell = new TextBlock { Classes = { "hint" }, Margin = new Thickness(12, 0, 12, 8) };
     private readonly DispatcherTimer _filterTimer;
     private DbcTable? _table;
+    private readonly Button _preview;
     // Set when the table came from a file on disk instead of the project
     private string? _filePath;
     private bool _refreshing;
@@ -47,6 +49,8 @@ public sealed class DbcEditorView : Grid
     {
         _window = window;
         _session = session;
+        _preview = Ui.AsyncButton("3D preview", PreviewAsync);
+        _preview.IsVisible = false;
         _names = new ValueNames(session);
         _grid.Names = _names.For;
         ColumnDefinitions = new ColumnDefinitions("Auto,8,*");
@@ -101,9 +105,63 @@ public sealed class DbcEditorView : Grid
 
     public DbcTable? Current => _table;
 
+    // Tables whose rows lead to a model get a 3D preview
+    private static readonly string[] PreviewTables =
+    {
+        ModelSources.CREATURE_DISPLAY, ModelSources.CREATURE_MODEL, ModelSources.SPELL_VISUAL,
+        ModelSources.EFFECT_NAME, ModelSources.ITEM_DISPLAY, ModelSources.OBJECT_DISPLAY, ModelSources.SHAPESHIFT
+    };
+
+    private async Task PreviewAsync()
+    {
+        if (_table == null || _grid.SelectedRow < 0)
+        {
+            _window.SetStatus("Select a row to preview its model.");
+            return;
+        }
+
+        uint key = _table.Key(_grid.SelectedRow);
+        ModelSources sources = await _session.ModelSourcesAsync();
+        string file = _table.Definition.File;
+        List<ModelChoice> found = new List<ModelChoice>();
+        if (file.Equals(ModelSources.CREATURE_DISPLAY, StringComparison.OrdinalIgnoreCase) &&
+            sources.ForCreatureDisplay(key) is { } creature)
+            found.Add(creature);
+        else if (file.Equals(ModelSources.CREATURE_MODEL, StringComparison.OrdinalIgnoreCase))
+        {
+            int column = _table.Definition.IndexOf("ModelName");
+            string path = column >= 0 ? M2Model.ModelFile(_table.GetString(_grid.SelectedRow, column)) : "";
+            if (path.Length > 0)
+                found.Add(new ModelChoice("Creature model " + key, path, ModelChoice.NoTextures));
+        }
+        else if (file.Equals(ModelSources.SPELL_VISUAL, StringComparison.OrdinalIgnoreCase))
+            found.AddRange(sources.ForSpellVisual(key));
+        else if (file.Equals(ModelSources.EFFECT_NAME, StringComparison.OrdinalIgnoreCase) &&
+                 sources.EffectFile(key) is { } effect)
+            found.Add(new ModelChoice("Effect " + key, effect, ModelChoice.NoTextures));
+        else if (file.Equals(ModelSources.ITEM_DISPLAY, StringComparison.OrdinalIgnoreCase) &&
+                 sources.ForItemDisplay(key) is { } item)
+            found.Add(item);
+        else if (file.Equals(ModelSources.OBJECT_DISPLAY, StringComparison.OrdinalIgnoreCase) &&
+                 sources.ForGameObjectDisplay(key) is { } gameObject)
+            found.Add(gameObject);
+        else if (file.Equals(ModelSources.SHAPESHIFT, StringComparison.OrdinalIgnoreCase))
+            found.AddRange(sources.ForShapeshift(key));
+
+        if (found.Count == 0)
+        {
+            _window.SetStatus("Row " + key + " has no model Anarres can show.");
+            return;
+        }
+
+        await new ModelWindow(_session, found, file + " " + key).ShowDialog(_window);
+    }
+
     // A tab per table opened this session; the shown one is marked, and each closes with its x
     private void ShowTabs()
     {
+        _preview.IsVisible = _table != null &&
+                             PreviewTables.Contains(_table.Definition.File, StringComparer.OrdinalIgnoreCase);
         _tabStrip.Children.Clear();
         foreach (string file in _open)
         {
@@ -303,6 +361,7 @@ public sealed class DbcEditorView : Grid
         };
         ToolTip.SetTip(importCsv, "Replace the table's rows with a CSV file's; columns are matched by name");
         Button columns = Ui.AsyncButton("Columns...", ShowColumnsAsync);
+        ToolTip.SetTip(_preview, "The selected row's model in 3D, from the client's files");
         ToolTip.SetTip(save, "Save changes to the project, or to the file when one was opened from disk (Ctrl+S)");
         ToolTip.SetTip(sql, "SQL for AzerothCore's matching _dbc table");
         ToolTip.SetTip(columns, "The column layout, and renaming the columns of a guessed layout");
@@ -310,7 +369,7 @@ public sealed class DbcEditorView : Grid
         WrapPanel toolbar = new WrapPanel { Margin = new Thickness(12, 10, 12, 6) };
         foreach (Control control in new Control[]
                  {
-                     save, add, copy, remove, _filter, export, csv, importCsv, sql, columns
+                     save, add, copy, remove, _filter, export, csv, importCsv, sql, columns, _preview
                  })
         {
             control.Margin = new Thickness(0, 0, 8, 4);

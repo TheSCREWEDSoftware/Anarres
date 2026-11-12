@@ -137,7 +137,8 @@ public static class WindowTests
             new FindReplaceWindow(spells, "school:fire"),
             new UsedByWindow(133, "Fireball", SpellReferences.Find(spells, row)),
             new DiffWindow("old.dbc", spells, "new.dbc", spells),
-            new PatchesWindow(project.Settings)
+            new PatchesWindow(project.Settings),
+            new ModelWindow(window.Session)
         };
         foreach (Window dialog in dialogs)
         {

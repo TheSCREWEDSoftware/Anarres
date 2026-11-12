@@ -234,6 +234,7 @@ public sealed class MainWindow : Window
         tools.Items.Add(new Separator());
         tools.Items.Add(Item("Open the project in the _SQL tool", OpenInSqlToolAsync));
         tools.Items.Add(Item("Build _patch MPQ from .dbc files...", BuildPatchFromFilesAsync));
+        tools.Items.Add(Item("_Model viewer...", () => new ModelWindow(_session).ShowDialog(this)));
         tools.Items.Add(Item("_Compare two .dbc files...", CompareFilesAsync));
         tools.Items.Add(Item("Write a changes _report...", ChangesReportAsync));
         tools.Items.Add(Item("Client _patches...", ShowPatchesAsync));

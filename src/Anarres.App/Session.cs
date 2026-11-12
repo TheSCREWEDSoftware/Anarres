@@ -1,5 +1,6 @@
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
+using Anarres.Core.Models;
 using Anarres.Core.Mpq;
 using Anarres.Core.Settings;
 using Anarres.Core.Storage;
@@ -192,6 +193,58 @@ public sealed class Session : IDisposable
                    names.TryGetValue(entry, out string? name)
                        ? name
                        : null;
+    }
+
+    // The tables that lead from spells, creatures, objects and items to their models
+    public static readonly string[] ModelTables =
+    {
+        ModelSources.SPELL_VISUAL, ModelSources.VISUAL_KIT, ModelSources.EFFECT_NAME, ModelSources.CREATURE_DISPLAY,
+        ModelSources.CREATURE_MODEL, ModelSources.OBJECT_DISPLAY, ModelSources.ITEM_DISPLAY, ModelSources.SHAPESHIFT,
+        AnimationNames.FILE
+    };
+
+    private readonly Dictionary<string, DbcTable?> _modelTables =
+        new Dictionary<string, DbcTable?>(StringComparer.OrdinalIgnoreCase);
+
+    // Finds models from the project's tables (with unsaved edits) or else the clean files and the client
+    public async Task<ModelSources> ModelSourcesAsync()
+    {
+        IconLibrary client = await IconLibraryAsync();
+        foreach (string file in ModelTables)
+        {
+            if (_modelTables.ContainsKey(file) || Loaded(file) != null)
+                continue;
+            DbcTable? table;
+            try
+            {
+                table = await TryLoadAsync(file) ??
+                        await Task.Run(() => DbcMerge.LoadSource(Settings, file, Definitions));
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException or
+                                                  InvalidOperationException or System.Data.Common.DbException)
+            {
+                table = null;
+            }
+
+            _modelTables[file] = table;
+        }
+
+        AnimationNames.Use(Loaded(AnimationNames.FILE) ?? _modelTables.GetValueOrDefault(AnimationNames.FILE));
+        return new ModelSources(file => Loaded(file) ?? _modelTables.GetValueOrDefault(file), client.Contains);
+    }
+
+    // The display a creature, game object or item entry uses in the world database, or null without one
+    public async Task<(uint Display, uint Slot)?> WorldDisplayAsync(string table, uint entry)
+    {
+        try
+        {
+            return await WorldNames.DisplayAsync(Settings.World(), table, entry);
+        }
+        catch (Exception exception) when (exception is System.Data.Common.DbException or
+                                              InvalidOperationException or TimeoutException)
+        {
+            return null;
+        }
     }
 
     // A naming table already loaded, or null; for the value names drawn in grids and fields
