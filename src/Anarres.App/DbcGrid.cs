@@ -50,6 +50,7 @@ public sealed class DbcGrid : Grid
         ColumnDefinitions = new ColumnDefinitions("*,Auto");
         _surface = new Surface(this) { Focusable = true, ClipToBounds = true };
         Children.Add(_surface);
+        Children.Add(_surface.Hover);
         Children.Add(_overlay);
         SetColumn(_vertical, 1);
         Children.Add(_vertical);
@@ -541,11 +542,53 @@ public sealed class DbcGrid : Grid
         private double _resizeWidth;
         private int _tipColumn = -1;
         private (int Row, int Column) _tipCell = (-1, -1);
+        // Its own hover box: a tooltip reopened as the pointer moved between cells didn't always show
+        private readonly Popup _hover = new Popup
+        {
+            Placement = PlacementMode.Pointer,
+            IsLightDismissEnabled = false,
+            IsHitTestVisible = false
+        };
+        private readonly TextBlock _hoverText = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 460 };
+        private readonly Avalonia.Threading.DispatcherTimer _hoverDelay = new Avalonia.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(HOVER_DELAY_MS)
+        };
+        private const int HOVER_DELAY_MS = 350;
 
         public Surface(DbcGrid grid)
         {
             _grid = grid;
             Cursor = Cursor.Default;
+            Border box = new Border
+            {
+                Child = _hoverText,
+                Padding = new Thickness(10, 6),
+                CornerRadius = new CornerRadius(4),
+                BorderThickness = new Thickness(1)
+            };
+            Ui.Themed(box, Border.BackgroundProperty, ThemeColours.RAISED);
+            Ui.Themed(box, Border.BorderBrushProperty, ThemeColours.BORDER);
+            Ui.Themed(_hoverText, TextBlock.ForegroundProperty, ThemeColours.TEXT);
+            _hover.Child = box;
+            _hover.PlacementTarget = this;
+            _hoverDelay.Tick += (_, _) =>
+            {
+                _hoverDelay.Stop();
+                _hover.IsOpen = _hoverText.Text is { Length: > 0 };
+            };
+        }
+
+        // Grid adds the hover box to the tree beside the surface, so it can open
+        public Popup Hover => _hover;
+
+        private void ShowHover(string? text)
+        {
+            _hover.IsOpen = false;
+            _hoverDelay.Stop();
+            _hoverText.Text = text;
+            if (!string.IsNullOrEmpty(text))
+                _hoverDelay.Start();
         }
 
         public override void Render(DrawingContext context)
@@ -711,6 +754,7 @@ public sealed class DbcGrid : Grid
         {
             base.OnPointerPressed(e);
             Focus();
+            ShowHover(null);
             Point point = e.GetPosition(this);
             int resize = _grid.ResizeColumn(point);
             // Double-clicking a column's edge fits it to its widest value, as Excel does
@@ -793,11 +837,7 @@ public sealed class DbcGrid : Grid
                 return;
             _tipCell = cell;
             _tipColumn = -1;
-            ToolTip.SetIsOpen(this, false);
-            string? tip = _grid.CellTip(row, column);
-            ToolTip.SetTip(this, tip);
-            if (tip != null)
-                ToolTip.SetIsOpen(this, true);
+            ShowHover(_grid.CellTip(row, column));
         }
 
         // Hovering a header explains the column: what it's for, its type and its name in the file
@@ -807,10 +847,9 @@ public sealed class DbcGrid : Grid
                 return;
             _tipColumn = column;
             _tipCell = (-1, -1);
-            ToolTip.SetIsOpen(this, false);
             if (column < 0 || _grid._table == null)
             {
-                ToolTip.SetTip(this, null);
+                ShowHover(null);
                 return;
             }
 
@@ -818,8 +857,7 @@ public sealed class DbcGrid : Grid
             DbcColumn info = definition.Columns[column];
             string tip = info.Name + " (" + info.Type + ")";
             string? note = ColumnDocs.Describe(definition.File, info.Name);
-            ToolTip.SetTip(this, note == null ? tip : tip + "\n\n" + note);
-            ToolTip.SetIsOpen(this, true);
+            ShowHover(note == null ? tip : tip + "\n\n" + note);
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
