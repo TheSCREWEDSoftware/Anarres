@@ -58,6 +58,10 @@ public sealed class OptionsWindow : Window
     {
         Content = "Open tables as preview tabs: the next table replaces it until it's edited or double-clicked"
     };
+    private readonly CheckBox _linkedOnly = new CheckBox
+    {
+        Content = "Only show tables with links in Table links"
+    };
     private readonly CheckBox _hideEmpty = new CheckBox
     {
         Content = "Hide columns that are zero or empty in every row"
@@ -129,6 +133,7 @@ public sealed class OptionsWindow : Window
         _reopen.IsChecked = _options.ReopenLastSpell;
         _hideEmpty.IsChecked = _options.HideEmptyColumns;
         _previewTabs.IsChecked = _options.PreviewTabs;
+        _linkedOnly.IsChecked = _options.LinkedTablesOnly;
         _hex.IsChecked = _options.FlagsInHex;
         _namesInCells.IsChecked = _options.NamesInCells;
         _start.SelectedIndex = (int)_options.StartIn;
@@ -152,7 +157,7 @@ public sealed class OptionsWindow : Window
                               Ui.Row("Spell list", _listLayout), _rank, _preview2, _reopen);
         _pages[TABLES] = Page(Ui.Title("DBC Editor"),
                               Ui.Row("Grid text size", _gridFontSize),
-                              _previewTabs, _hideEmpty, _hex, _namesInCells,
+                              _previewTabs, _linkedOnly, _hideEmpty, _hex, _namesInCells,
                               Ui.Hint("Hex is only how the grid shows the numbers; type them either way."));
         _editor.Use(_options.TextEditor);
         _sqlTool.Use(_options.SqlTool);
@@ -508,6 +513,7 @@ public sealed class OptionsWindow : Window
         options.ReopenLastSpell = _reopen.IsChecked == true;
         options.HideEmptyColumns = _hideEmpty.IsChecked == true;
         options.PreviewTabs = _previewTabs.IsChecked == true;
+        options.LinkedTablesOnly = _linkedOnly.IsChecked == true;
         options.FlagsInHex = _hex.IsChecked == true;
         options.NamesInCells = _namesInCells.IsChecked == true;
         options.StartIn = (StartEditor)Math.Max(0, _start.SelectedIndex);

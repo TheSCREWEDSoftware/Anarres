@@ -372,7 +372,7 @@ public sealed class MainWindow : Window
         tools.Items.Add(Item("Build _patch MPQ from .dbc files...", BuildPatchFromFilesAsync));
         tools.Items.Add(Item("_Model viewer...", () => new ModelWindow(_session).ShowDialog(this)));
         tools.Items.Add(Item("_Table links...",
-                             () => new TableLinksWindow(this, _session.Definitions).ShowDialog(this)));
+                             () => new TableLinksWindow(this, _session.Definitions, _options).ShowDialog(this)));
         tools.Items.Add(Item("_Compare two .dbc files...", CompareFilesAsync));
         tools.Items.Add(Item("Write a changes _report...", ChangesReportAsync));
         tools.Items.Add(Item("Client _patches...", ShowPatchesAsync));

@@ -109,6 +109,9 @@ public sealed class AppOptions
     // A table opened from the list replaces the last one's tab until it's edited or kept, like a file preview
     public bool PreviewTabs { get; set; } = true;
 
+    // Table links lists only the tables that point at another table or are pointed at
+    public bool LinkedTablesOnly { get; set; } = true;
+
     // Columns named Flags, Mask or Attributes show as 0x... in the grid
     public bool FlagsInHex { get; set; } = true;
 
