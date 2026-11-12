@@ -79,6 +79,9 @@ public sealed class AppOptions
 
     public bool RememberWindow { get; set; } = true;
 
+    // The setup window opens at start until "Don't show this again" is ticked
+    public bool ShowSetup { get; set; } = true;
+
     // Big tables such as Spell.dbc are kept on this PC between runs, so they open in a fraction of the time
     public bool KeepTableCache { get; set; } = true;
 

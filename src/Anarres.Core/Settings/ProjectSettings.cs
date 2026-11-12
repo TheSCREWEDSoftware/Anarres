@@ -98,8 +98,8 @@ public sealed class ProjectSettings
     // The server's own copy of each file is kept once, the first time Apply replaces it
     public bool ApplyBackupServer { get; set; } = true;
 
-    // Rows changed from the clean files also go into acore_world's _dbc tables
-    public bool ApplyWorldDatabase { get; set; }
+    // Rows changed from the clean files also go into acore_world's _dbc tables, as most servers need
+    public bool ApplyWorldDatabase { get; set; } = true;
 
     // The client's Cache folder is emptied, so it doesn't show old spell text
     public bool ApplyClearClientCache { get; set; }
@@ -193,6 +193,12 @@ public sealed class ProjectSettings
         }
 
         return new ProjectSettings();
+    }
+
+    // A separate copy, for windows that edit the settings and may be cancelled
+    public ProjectSettings Clone()
+    {
+        return JsonSerializer.Deserialize<ProjectSettings>(JsonSerializer.Serialize(this, JsonOptions), JsonOptions)!;
     }
 
     public void Save(string? path = null)

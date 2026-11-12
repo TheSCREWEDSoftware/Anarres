@@ -189,7 +189,9 @@ public static class StoreTests
             ExportFolder = temp.File("Export"),
             ServerDbcFolder = temp.File("server"),
             ClientDataFolder = wow,
-            ApplyClearClientCache = true
+            ApplyClearClientCache = true,
+            // No world database in this test; the MySQL path is covered by CacheTests when a server is there
+            ApplyWorldDatabase = false
         };
 
         ApplyResult result = await Deployment.ApplyAsync(store, settings, new[] { "Sample.dbc" }, Definitions());
