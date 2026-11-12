@@ -233,8 +233,9 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 <details>
 <summary><b>Look and options</b></summary>
 
-- System, Dark or Light, with built-in colours, ready-made themes (Urras, Frost, Fel, Horde, Alliance, Parchment)
-  or your own, made in the theme editor and kept as files in Urras's format ([docs/themes.md](docs/themes.md)).
+- System, Dark or Light, with built-in colours, ready-made themes (Urras's GitHub, GitLab, SourceGit and Fork
+  themes, and Urras, Frost, Fel, Horde, Alliance and Parchment) or your own, made in the theme editor and kept as
+  files in Urras's format ([docs/themes.md](docs/themes.md)).
 - Text sizes, the language spell names are shown in, which editor opens first, confirmations, undo depth and more,
   in **View > Options**.
 - Unexpected errors go to `crash.log` instead of closing Anarres.

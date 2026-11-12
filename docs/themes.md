@@ -17,8 +17,9 @@ Options are saved as `options.json` beside `settings.json` (`%APPDATA%\Anarres` 
 
 ## Colours
 
-Colours offers the built-in colours of the look, the ready-made themes (Urras, Frost, Fel, Horde, Alliance and
-Parchment), and your own.
+Colours offers the built-in colours of the look, the ready-made themes, and your own. The ready-made ones are the
+same as [Urras](https://github.com/TheSCREWEDSoftware/Urras)'s (GitHub Dark, GitHub Dark Dimmed, GitHub Light, GitLab
+Dark, SourceGit Dark and Fork Dark), plus Urras, Frost, Fel, Horde, Alliance and Parchment.
 
 1. Choose **New theme...** and give it a name. It starts as a copy of the colours chosen above.
 2. Change the colours in the editor that opens. Each row shows a swatch, what the colour is used for, and its
