@@ -114,6 +114,46 @@ public static class Deployment
         return new ExportResult(written, server, patchPath);
     }
 
+    // Tables edited since import plus unsaved ones; untracked older imports are compared with clean files once
+    public static async Task<List<string>> EditedFilesAsync(IDbcStore store, ProjectSettings settings,
+                                                            DbcDefinitions definitions,
+                                                            IEnumerable<string>? unsaved = null,
+                                                            IProgress<(string File, double Done)>? progress = null,
+                                                            CancellationToken cancellation = default)
+    {
+        List<EditedTable> edited = await store.EditedTablesAsync(cancellation);
+        List<string> unknown = edited.Where(table => !table.Known).Select(table => table.File).ToList();
+        List<string> files = edited.Where(table => table.Known).Select(table => table.File).ToList();
+        if (unknown.Count > 0)
+            files.AddRange(await CheckEditedAsync(store, settings, unknown, definitions, progress, cancellation));
+        files.AddRange(unsaved ?? Enumerable.Empty<string>());
+        return files.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    // Compares tables with their clean files and records which differ; returns those that do
+    public static async Task<List<string>> CheckEditedAsync(IDbcStore store, ProjectSettings settings,
+                                                            IReadOnlyCollection<string> files,
+                                                            DbcDefinitions definitions,
+                                                            IProgress<(string File, double Done)>? progress = null,
+                                                            CancellationToken cancellation = default)
+    {
+        List<string> edited = new List<string>();
+        int index = 0;
+        foreach (string file in files)
+        {
+            progress?.Report((file, (double)index++ / files.Count));
+            DbcTable table = await store.LoadAsync(file, definitions, null, cancellation);
+            DbcTable? clean = DbcMerge.LoadSource(settings, file, definitions);
+            bool differs = clean == null || !DbcMerge.Same(clean, table);
+            await store.MarkEditedAsync(file, differs, cancellation);
+            if (differs)
+                edited.Add(file);
+        }
+
+        progress?.Report((string.Empty, 1));
+        return edited;
+    }
+
     private static DbcTable LoadSourceOrFail(ProjectSettings settings, string file, DbcDefinitions definitions)
     {
         string table = definitions.Find(file)?.Table ?? file;

@@ -86,6 +86,27 @@ public static class DbcMerge
         return changed;
     }
 
+    // The same rows in the same order, with the same values; what decides whether a file needs writing
+    public static bool Same(DbcTable clean, DbcTable edited)
+    {
+        if (clean.Rows.Count != edited.Rows.Count || clean.ColumnCount != edited.ColumnCount)
+            return false;
+        List<DbcColumn> columns = edited.Definition.Columns;
+        for (int row = 0; row < edited.Rows.Count; ++row)
+        {
+            for (int column = 0; column < columns.Count; ++column)
+            {
+                bool same = columns[column].Type == DbcColumnType.String
+                                ? clean.GetString(row, column) == edited.GetString(row, column)
+                                : clean.GetRaw(row, column) == edited.GetRaw(row, column);
+                if (!same)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
     // A row's cells for another table: strings are moved into that table's pool
     private static uint[] Copy(DbcTable from, int row, DbcTable to)
     {

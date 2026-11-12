@@ -13,7 +13,8 @@ Commands:
   list                         Tables in the store and their row counts
   import <folder>              Import every .dbc in a folder (or --only some)
   import-client <Data folder>  Import DBFilesClient files from the client's MPQs (--locale enUS)
-  export                       Write .dbc files to the export folder (--only some, or every table)
+  edited                       Tables edited since import (--check compares every one with its clean file again)
+  export                       Write .dbc files to the export folder (--only some, --edited, or every table)
                                --server copies them to the server's dbc folder, --patch builds the client MPQ
   apply                        Save nothing, but do what the app's Apply does with the settings: write the tables,
                                copy them to the server, build the patch, and the other steps chosen (--only some)
@@ -27,13 +28,14 @@ Store options (otherwise the app's settings are used):
   --settings <settings.json>
   --sqlite <project.anarres>
   --mysql <host[:port]/database> --user <name> --password <password> [--naming dbc|ac]
+  --no-cache                   Read big tables from the database instead of the copies kept on this PC
 """;
 
 Dictionary<string, string> options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 List<string> positional = new List<string>();
 HashSet<string> switches = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 {
-    "--server", "--patch", "--changed"
+    "--server", "--patch", "--changed", "--edited", "--check", "--no-cache"
 };
 for (int i = 0; i < args.Length; ++i)
 {
@@ -79,7 +81,7 @@ try
         }
         case "list":
         {
-            using IDbcStore store = await settings.OpenStoreAsync();
+            using IDbcStore store = await OpenAsync();
             Console.WriteLine(store.Description);
             foreach (StoredTable table in await store.ListTablesAsync())
                 Console.WriteLine("  " + table.File.PadRight(40) + table.Rows.ToString(CultureInfo.InvariantCulture)
@@ -91,7 +93,7 @@ try
         {
             if (positional.Count < 2)
                 return Fail("Give the folder to import from.");
-            using IDbcStore store = await settings.OpenStoreAsync(createDatabase: true);
+            using IDbcStore store = await OpenAsync(createDatabase: true);
             List<ImportResult> results = positional[0] == "import"
                                              ? await Deployment.ImportFolderAsync(store, positional[1], definitions,
                                                                                   only, progress)
@@ -112,10 +114,27 @@ try
                               store.Description + ".");
             return 0;
         }
+        case "edited":
+        {
+            using IDbcStore store = await OpenAsync();
+            List<string> files = options.ContainsKey("--check")
+                                     ? await Deployment.CheckEditedAsync(store, settings,
+                                                                         (await store.ListTablesAsync())
+                                                                         .Select(table => table.File).ToList(),
+                                                                         definitions, progress)
+                                     : await Deployment.EditedFilesAsync(store, settings, definitions, null, progress);
+            Console.WriteLine();
+            foreach (string file in files)
+                Console.WriteLine("  " + file);
+            Console.WriteLine(files.Count + (files.Count == 1 ? " table" : " tables") + " edited since import.");
+            return 0;
+        }
         case "export":
         {
-            using IDbcStore store = await settings.OpenStoreAsync();
-            List<string> files = only ?? (await store.ListTablesAsync()).Select(table => table.File).ToList();
+            using IDbcStore store = await OpenAsync();
+            List<string> files = only ?? (options.ContainsKey("--edited")
+                                              ? await Deployment.EditedFilesAsync(store, settings, definitions)
+                                              : (await store.ListTablesAsync()).Select(table => table.File).ToList());
             ExportResult result = await Deployment.ExportAsync(store, settings, files, definitions,
                                                                options.ContainsKey("--server"),
                                                                options.ContainsKey("--patch"), progress);
@@ -130,10 +149,19 @@ try
         }
         case "apply":
         {
-            using IDbcStore store = await settings.OpenStoreAsync();
-            List<string> files = only ?? (settings.ExportTables.Count > 0
-                                              ? settings.ExportTables
-                                              : (await store.ListTablesAsync()).Select(table => table.File).ToList());
+            using IDbcStore store = await OpenAsync();
+            List<string> files = only ?? (settings.ExportEditedOnly || options.ContainsKey("--edited")
+                                              ? await Deployment.EditedFilesAsync(store, settings, definitions)
+                                              : settings.ExportTables.Count > 0
+                                                  ? settings.ExportTables
+                                                  : (await store.ListTablesAsync()).Select(table => table.File)
+                                                                                    .ToList());
+            if (files.Count == 0)
+            {
+                Console.WriteLine("No table has been edited since import, so there's nothing to apply.");
+                return 0;
+            }
+
             ApplyResult result = await Deployment.ApplyAsync(store, settings, files, definitions, progress);
             Console.WriteLine();
             foreach (string line in result.Done)
@@ -147,7 +175,7 @@ try
             bool changed = options.ContainsKey("--changed");
             if (positional.Count < 2 || (!options.TryGetValue("--ids", out string? ids) && !changed))
                 return Fail("Give the table and --ids or --changed.");
-            using IDbcStore store = await settings.OpenStoreAsync();
+            using IDbcStore store = await OpenAsync();
             DbcTable table = await store.LoadAsync(positional[1], definitions);
             List<int> rows = new List<int>();
             if (changed)
@@ -188,6 +216,15 @@ catch (Exception exception) when (exception is IOException or InvalidDataExcepti
 {
     Console.WriteLine();
     return Fail(exception.Message);
+}
+
+// The store, keeping big tables on this PC as the app does unless --no-cache says otherwise
+async Task<IDbcStore> OpenAsync(bool createDatabase = false)
+{
+    IDbcStore store = await settings.OpenStoreAsync(createDatabase: createDatabase);
+    if (!options.ContainsKey("--no-cache") && AppOptions.Load(AppOptions.DefaultPath).KeepTableCache)
+        store.Cache = new DbcCache(DbcCache.DefaultFolder);
+    return store;
 }
 
 static int Fail(string message)
