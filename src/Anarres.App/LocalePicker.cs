@@ -40,7 +40,7 @@ public sealed class LocalePicker : StackPanel
     private void Fill(List<string> found, string locale)
     {
         // Without a client to look at, every 3.3.5a locale is offered
-        List<string> items = found.Count > 0 ? found : SpellRecord.Locales.Where(name => name != "Unk").ToList();
+        List<string> items = found.Count > 0 ? found : SpellRecord.AllClientLocales.ToList();
         if (!items.Contains(locale) && locale.Length > 0)
             items.Add(locale);
         _box.SelectionChanged -= OnChanged;

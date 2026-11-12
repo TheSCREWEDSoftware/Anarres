@@ -52,6 +52,28 @@ public static class Ui
         return row;
     }
 
+    // Progress that reads "Importing Spell.dbc (12 of 246, 5%)..." as each file comes up
+    public static Progress<(string File, double Done)> Steps(string verb, int total, TextBlock status, ProgressBar bar)
+    {
+        int index = 0;
+        string last = string.Empty;
+        return new Progress<(string File, double Done)>(update =>
+        {
+            bar.Value = update.Done;
+            if (update.File.Length == 0)
+                return;
+            if (update.File != last)
+            {
+                last = update.File;
+                ++index;
+            }
+
+            string percent = (update.Done * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+            status.Text = verb + " " + update.File + " (" + Math.Min(index, Math.Max(total, 1)) + " of " + total +
+                          ", " + percent + "%)...";
+        });
+    }
+
     public const double BADGE_SIZE = 16;
 
     // A small round "?" that explains a field when hovered, like Keira3's column notes

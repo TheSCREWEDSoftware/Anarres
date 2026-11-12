@@ -1,7 +1,9 @@
 using Anarres.Core;
+using Anarres.Core.Dbc;
 using Anarres.Core.Export;
 using Anarres.Core.Mpq;
 using Anarres.Core.Settings;
+using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
@@ -40,6 +42,13 @@ public sealed class ImportWindow : Window
     private readonly TextBlock _status = new TextBlock { Classes = { "hint" } };
     private readonly Button _import;
     private List<CheckBox> _boxes = new List<CheckBox>();
+    private readonly CheckBox _skipImported = new CheckBox
+    {
+        Content = "Skip tables already in the project (to carry on after an import that stopped)",
+        IsChecked = true
+    };
+    private readonly TextBlock _language = new TextBlock { Classes = { "hint" } };
+    private HashSet<string> _inProject = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public ImportWindow(Session session)
     {
@@ -79,9 +88,11 @@ public sealed class ImportWindow : Window
         top.Children.Add(_fromClient);
         top.Children.Add(Ui.Row("WoW client folder", Ui.FolderPicker(this, _client, "WoW client folder")));
         top.Children.Add(Ui.Row("Locale", _locale));
-        top.Children.Add(Ui.Hint("Importing replaces the project's copy of each ticked table. Files without a " +
-                                 "known layout get one guessed from their data; rename its columns later in the " +
-                                 "DBC editor."));
+        top.Children.Add(_language);
+        top.Children.Add(_skipImported);
+        top.Children.Add(Ui.Hint("Each table is saved as soon as it's imported, replacing the project's copy. Files " +
+                                 "without a known layout get one guessed from their data; rename its columns later " +
+                                 "in the DBC editor."));
         top.Children.Add(Ui.Horizontal(list, spellSet, all, none, _filter));
 
         StackPanel bottom = new StackPanel { Margin = new Thickness(20, 8, 20, 16), Spacing = 8 };
@@ -161,15 +172,79 @@ public sealed class ImportWindow : Window
             _files.Children.Add(box);
         if (_status.Text is null or "" || names.Count > 0)
             _status.Text = names.Count == 0 ? "No .dbc files found there." : names.Count + " files found.";
+        await MarkImportedAsync();
+        if (names.Count > 0)
+            await DetectLanguageAsync();
+    }
+
+    // Files already in the project are marked, so a stopped import can carry on with the rest
+    private async Task MarkImportedAsync()
+    {
+        try
+        {
+            IDbcStore store = await _session.StoreAsync(createDatabase: true);
+            _inProject = new HashSet<string>((await store.ListTablesAsync()).Select(table => table.File),
+                                             StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or IOException or
+                                              System.Data.Common.DbException)
+        {
+            _inProject.Clear();
+        }
+
+        foreach (CheckBox box in _boxes)
+        {
+            string name = box.Tag as string ?? string.Empty;
+            if (_inProject.Contains(name))
+                box.Content = name.Replace("_", "__") + "   (in the project)";
+        }
+    }
+
+    // Which of the 16 text columns is filled tells the files' language
+    private async Task DetectLanguageAsync()
+    {
+        _language.Text = "Finding the files' language...";
+        bool fromFolder = _fromFolder.IsChecked == true;
+        string folder = (_folder.Text ?? string.Empty).Trim();
+        string data = ProjectSettings.ResolveClientData(_client.Text ?? string.Empty);
+        string locale = _locale.Locale;
+        string patch = _session.Settings.PatchPath();
+        DbcDefinitions definitions = _session.Definitions;
+        DetectedLocale? found = null;
+        try
+        {
+            found = await Task.Run(() => fromFolder ? LocaleDetector.DetectFolder(folder, definitions)
+                                                    : LocaleDetector.DetectClient(data, locale, patch, definitions));
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or
+                                              UnauthorizedAccessException)
+        {
+            _language.Text = string.Empty;
+            return;
+        }
+
+        _language.Text = found == null
+                             ? "The files' language couldn't be told (no ChrRaces, ChrClasses or Spell .dbc)."
+                             : "Text in these files is " + found.Locale + " (" + found.Rows + " of " + found.Total +
+                               " rows of " + found.File + " have it).";
     }
 
     private async Task ImportAsync()
     {
         List<string> chosen = _boxes.Where(box => box.IsChecked == true && box.IsEnabled)
                                     .Select(box => box.Tag as string ?? string.Empty).ToList();
+        int already = 0;
+        if (_skipImported.IsChecked == true)
+        {
+            already = chosen.Count(name => _inProject.Contains(name));
+            chosen = chosen.Where(name => !_inProject.Contains(name)).ToList();
+        }
+
         if (chosen.Count == 0)
         {
-            _status.Text = "Tick the files to import first.";
+            _status.Text = already > 0 ? "Every ticked table is already in the project; untick \"Skip tables " +
+                                         "already in the project\" to import them again."
+                                       : "Tick the files to import first.";
             return;
         }
 
@@ -186,12 +261,7 @@ public sealed class ImportWindow : Window
             return;
 
         IDbcStore store = await _session.StoreAsync(createDatabase: true);
-        Progress<(string File, double Done)> progress = new Progress<(string File, double Done)>(update =>
-        {
-            _progress.Value = update.Done;
-            if (update.File.Length > 0)
-                _status.Text = "Importing " + update.File + "...";
-        });
+        Progress<(string File, double Done)> progress = Ui.Steps("Importing", chosen.Count, _status, _progress);
 
         try
         {
@@ -214,19 +284,29 @@ public sealed class ImportWindow : Window
             }
 
             Imported = true;
+            List<string> unreadable = results.Where(result => result.Problem != null)
+                                             .Select(result => result.File).ToList();
             results = results.Where(result => !result.Skipped).ToList();
             int guessed = results.Count(result => result.Inferred);
             _progress.Value = 1;
             _status.Text = "Imported " + results.Count + (results.Count == 1 ? " table" : " tables") + " (" +
                            results.Sum(result => result.Rows).ToString("N0") + " rows)" +
-                           (guessed > 0 ? "; " + guessed + " with a guessed layout." : ".");
+                           (guessed > 0 ? "; " + guessed + " with a guessed layout" : string.Empty) +
+                           (unreadable.Count > 0
+                                ? ". Skipped " + string.Join(", ", unreadable) + ": empty or unreadable, as a few " +
+                                  "of the client's own files are."
+                                : ".") +
+                           (already > 0 ? " " + already + " already in the project were left as they were." : "");
+            await MarkImportedAsync();
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or
                                               InvalidOperationException or NotSupportedException or
                                               System.Data.Common.DbException)
         {
             Imported = true;
-            _status.Text = "The import stopped: " + exception.Message;
+            _status.Text = "The import stopped: " + exception.Message + " The tables before it are saved; Import " +
+                           "again carries on with the rest.";
+            await MarkImportedAsync();
         }
     }
 }

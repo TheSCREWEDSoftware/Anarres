@@ -35,7 +35,7 @@ public sealed class OptionsWindow : Window
     private readonly ThemePreview _preview = new ThemePreview { Margin = new Thickness(0, 8, 0, 0) };
     private readonly ComboBox _fontSize = new ComboBox { Width = 120 };
     private readonly ComboBox _gridFontSize = new ComboBox { Width = 120 };
-    private readonly ComboBox _locale = new ComboBox { ItemsSource = SpellRecord.Locales, Width = 120 };
+    private readonly ComboBox _locale = new ComboBox { ItemsSource = SpellRecord.ClientLocales, Width = 120 };
     private readonly CheckBox _rank = new CheckBox { Content = "Show the rank beside each name in the spell list" };
     private readonly CheckBox _preview2 = new CheckBox { Content = "Show the tooltip and buff preview" };
     private readonly CheckBox _reopen = new CheckBox { Content = "Open the last spell again on start" };
@@ -73,7 +73,7 @@ public sealed class OptionsWindow : Window
         _fontSize.SelectedIndex = Math.Max(0, Array.IndexOf(AppOptions.FontSizes, _options.FontSize));
         _gridFontSize.ItemsSource = AppOptions.GridFontSizes.Select(Size).ToList();
         _gridFontSize.SelectedIndex = Math.Max(0, Array.IndexOf(AppOptions.GridFontSizes, _options.GridFontSize));
-        _locale.SelectedItem = SpellRecord.Locales.Contains(_options.DisplayLocale) ? _options.DisplayLocale
+        _locale.SelectedItem = SpellRecord.ClientLocales.Contains(_options.DisplayLocale) ? _options.DisplayLocale
                                                                                     : SpellRecord.ENGLISH;
         _rank.IsChecked = _options.ShowRankInList;
         _preview2.IsChecked = _options.ShowTooltipPreview;

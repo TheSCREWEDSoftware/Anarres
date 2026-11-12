@@ -118,7 +118,7 @@ public sealed class ExportWindow : Window
     private async Task FindEditedAsync(bool check)
     {
         IDbcStore store = await _session.StoreAsync();
-        Progress<(string File, double Done)> progress = Progress("Comparing");
+        Progress<(string File, double Done)> progress = Progress("Comparing", _boxes.Count);
         try
         {
             List<string> unsaved = _session.ModifiedTables.Select(table => table.Definition.File).ToList();
@@ -162,14 +162,9 @@ public sealed class ExportWindow : Window
         }
     }
 
-    private Progress<(string File, double Done)> Progress(string verb)
+    private Progress<(string File, double Done)> Progress(string verb, int total)
     {
-        return new Progress<(string File, double Done)>(update =>
-        {
-            _progress.Value = update.Done;
-            if (update.File.Length > 0)
-                _status.Text = verb + " " + update.File + "...";
-        });
+        return Ui.Steps(verb, total, _status, _progress);
     }
 
     private async Task ExportAsync()
@@ -187,7 +182,7 @@ public sealed class ExportWindow : Window
         if (!_session.Settings.ExportEditedOnly)
             _session.Settings.ExportTables = files;
         IDbcStore store = await _session.StoreAsync();
-        Progress<(string File, double Done)> progress = Progress("Writing");
+        Progress<(string File, double Done)> progress = Progress("Writing", files.Count);
         bool server = _server.IsChecked == true;
         bool patch = _patch.IsChecked == true;
         try

@@ -597,12 +597,15 @@ public sealed class SpellEditorView : Grid
         foreach (string prefix in new[] { "Name", "NameSubtext", "Description", "AuraDescription" })
         {
             StackPanel rows = new StackPanel();
-            foreach (string locale in SpellRecord.Locales)
+            // Labelled by what the client keeps in each column; AzerothCore's column names differ
+            for (int slot = 0; slot < SpellRecord.TEXT_COLUMNS; ++slot)
             {
                 bool longText = prefix is "Description" or "AuraDescription";
-                rows.Children.Add(Named(Ui.Row(locale, new CellField(_binding, prefix + "_Lang_" + locale,
-                                                                     longText ? 640 : 360).Box),
-                                        prefix + "_Lang_" + locale));
+                string column = prefix + "_Lang_" + SpellRecord.Locales[slot];
+                string label = slot < SpellRecord.ClientLocales.Length ? SpellRecord.ClientLocales[slot]
+                                                                         : "Unused " + (slot + 1);
+                rows.Children.Add(Named(Ui.Row(label, new CellField(_binding, column, longText ? 640 : 360).Box),
+                                        column));
             }
 
             rows.Children.Add(Named(Ui.Row("Mask", new CellField(_binding, prefix + "_Lang_Mask", 160).Box),
@@ -693,8 +696,8 @@ public sealed class SpellEditorView : Grid
         if (_spells == null)
             return;
         DbcTable table = _spells;
-        int nameColumn = table.Definition.IndexOf("Name_Lang_" + _locale);
-        int rankColumn = table.Definition.IndexOf("NameSubtext_Lang_" + _locale);
+        int nameColumn = SpellRecord.TextColumn(table.Definition, "Name", _locale);
+        int rankColumn = SpellRecord.TextColumn(table.Definition, "NameSubtext", _locale);
         int englishName = table.Definition.IndexOf("Name_Lang_" + SpellRecord.ENGLISH);
         int englishRank = table.Definition.IndexOf("NameSubtext_Lang_" + SpellRecord.ENGLISH);
         string query = (_search.Text ?? string.Empty).Trim();
