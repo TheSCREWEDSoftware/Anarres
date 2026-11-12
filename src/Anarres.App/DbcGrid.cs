@@ -177,7 +177,7 @@ public sealed class DbcGrid : Grid
                           : NUMBER_WIDTH).ToArray()
                       ?? Array.Empty<double>();
             _order = Enumerable.Range(0, _widths.Length).ToList();
-            _surface.WidenTextColumns();
+            _surface.FitColumnsToContents();
             _sortColumn = -1;
             _vertical.Value = 0;
             _horizontal.Value = 0;
@@ -643,26 +643,30 @@ public sealed class DbcGrid : Grid
 
         private const int MOST_ROWS_MEASURED = 20000;
         private const int ROWS_MEASURED_ON_OPEN = 200;
+        private const int FEWEST_ROWS_MEASURED = 20;
+        private const int CELLS_MEASURED_ON_OPEN = 12000;
         private const double MAX_OPENING_WIDTH = 360;
+        private const double MAX_FITTED_WIDTH = 640;
 
-        // Text columns start as wide as their first rows need, up to a limit, so paths and names can be read
-        public void WidenTextColumns()
+        // Every column starts as wide as its name and its first rows need, up to a limit
+        public void FitColumnsToContents()
         {
             DbcTable? table = _grid._table;
             if (table == null)
                 return;
+            // Wide tables such as Spell.dbc measure fewer rows, so they still open quickly
+            int perColumn = Math.Clamp(CELLS_MEASURED_ON_OPEN / Math.Max(1, table.Definition.Columns.Count),
+                                       FEWEST_ROWS_MEASURED, ROWS_MEASURED_ON_OPEN);
+            int rows = Math.Min(_grid._baseRows.Count, perColumn);
             for (int column = 0; column < table.Definition.Columns.Count; ++column)
             {
-                if (table.Definition.Columns[column].Type != DbcColumnType.String)
-                    continue;
                 double widest = Measure(table.Definition.Columns[column].Name, _bold);
-                for (int row = 0; row < Math.Min(table.Rows.Count, ROWS_MEASURED_ON_OPEN); ++row)
-                    widest = Math.Max(widest, Measure(table.GetString(row, column), _typeface));
-                _grid._widths[column] = Math.Clamp(widest + CELL_PADDING * 2 + 2, _grid._widths[column],
+                for (int i = 0; i < rows; ++i)
+                    widest = Math.Max(widest, Measure(_grid.Display(table, _grid._baseRows[i], column), _typeface));
+                _grid._widths[column] = Math.Clamp(widest + CELL_PADDING * 2 + 2, MIN_COLUMN_WIDTH,
                                                    MAX_OPENING_WIDTH);
             }
         }
-        private const double MAX_FITTED_WIDTH = 640;
 
         private void FitColumn(int column)
         {
