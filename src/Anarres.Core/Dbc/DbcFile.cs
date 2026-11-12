@@ -21,7 +21,7 @@ public static class DbcFile
     // The definition is found by file name; when none fits the file's layout, one is worked out from the data
     public static DbcTable Read(byte[] data, string fileName, DbcDefinitions? definitions = null)
     {
-        Header header = ReadHeader(data);
+        Header header = ReadHeader(data, fileName);
         int recordsStart = HEADER_SIZE;
         int stringsStart = recordsStart + header.RecordCount * header.RecordSize;
         if (stringsStart + header.StringBlockSize > data.Length)
@@ -39,7 +39,7 @@ public static class DbcFile
     // Reads with exactly this layout, as the table cache does; a file that doesn't fit it is refused
     public static DbcTable Read(byte[] data, DbcDefinition definition)
     {
-        Header header = ReadHeader(data);
+        Header header = ReadHeader(data, definition.File);
         int stringsStart = HEADER_SIZE + header.RecordCount * header.RecordSize;
         if (stringsStart + header.StringBlockSize > data.Length || !Fits(definition, header))
             throw new InvalidDataException(definition.File + " doesn't match its layout.");
@@ -73,17 +73,24 @@ public static class DbcFile
         return table;
     }
 
-    public static Header ReadHeader(ReadOnlySpan<byte> data)
+    // name, when given, goes in the messages so the user knows which file is broken
+    public static Header ReadHeader(ReadOnlySpan<byte> data, string? name = null)
     {
         if (data.Length == 0)
             throw new InvalidDataException("The file is empty; the client ships a few .dbc files like that.");
         if (data.Length < HEADER_SIZE || BinaryPrimitives.ReadUInt32LittleEndian(data) != SIGNATURE)
             throw new InvalidDataException("This is not a WDBC file (WoW 3.3.5a .dbc).");
 
-        return new Header(BinaryPrimitives.ReadInt32LittleEndian(data[4..]),
-                          BinaryPrimitives.ReadInt32LittleEndian(data[8..]),
-                          BinaryPrimitives.ReadInt32LittleEndian(data[12..]),
-                          BinaryPrimitives.ReadInt32LittleEndian(data[16..]));
+        Header header = new Header(BinaryPrimitives.ReadInt32LittleEndian(data[4..]),
+                                   BinaryPrimitives.ReadInt32LittleEndian(data[8..]),
+                                   BinaryPrimitives.ReadInt32LittleEndian(data[12..]),
+                                   BinaryPrimitives.ReadInt32LittleEndian(data[16..]));
+        // Summed in 64 bits, so a damaged header's negative or huge counts are refused instead of overflowing
+        if (header.RecordCount < 0 || header.FieldCount < 0 || header.RecordSize < 0 || header.StringBlockSize < 0 ||
+            HEADER_SIZE + (long)header.RecordCount * header.RecordSize + header.StringBlockSize > data.Length)
+            throw new InvalidDataException((name ?? "The file") + " is shorter than its header says; it may be cut " +
+                                           "off or damaged.");
+        return header;
     }
 
     public static void Write(DbcTable table, string path)

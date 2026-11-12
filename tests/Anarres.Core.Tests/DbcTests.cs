@@ -62,6 +62,26 @@ public static class DbcTests
         Assert.True(!read.IsModified, "a table just read has no changes");
     }
 
+    // Counts that overflow an int or are negative are refused with a clear message, not a crash
+    public static void RefusesDamagedHeaders()
+    {
+        byte[] data = DbcFile.Write(SampleTable());
+        foreach (int count in new[] { int.MaxValue, -1 })
+        {
+            byte[] damaged = (byte[])data.Clone();
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(damaged.AsSpan(4), count);
+            try
+            {
+                DbcFile.Read(damaged, "Sample.dbc");
+                Assert.True(false, "a record count of " + count + " is refused");
+            }
+            catch (InvalidDataException exception)
+            {
+                Assert.True(exception.Message.StartsWith("Sample.dbc", StringComparison.Ordinal), "names the file");
+            }
+        }
+    }
+
     public static void TracksChangesByKey()
     {
         DbcTable table = SampleTable();
