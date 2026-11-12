@@ -156,6 +156,8 @@ also in **File > Project settings**.
 
 Laid out after Stoneharry's [WoW Spell Editor](https://github.com/stoneharry/WoW-Spell-Editor).
 
+- Sort the spell list by ID, by name (A to Z or Z to A) or recently changed first, and show just the changed
+  spells, the talents, or one class's, race's or profession's spells.
 - A searchable spell list: by ID, name, or `effect:6`, `aura:3`, `family:3`, `trigger:`, `icon:`... Normal rows
   show each spell's icon, ID and rank with a strip in its school's colour, and hovering one shows its tooltip;
   Compact rows fit more on screen (**View > Options > Spell Editor**).
@@ -241,6 +243,16 @@ Laid out after Stoneharry's [WoW Spell Editor](https://github.com/stoneharry/WoW
 
 Items show in their quality's colour with their icon when the world database can be reached; these screenshots
 were taken without one.
+
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/list-filter.png" alt="Screenshot: sorting and filtering the spell list"><br>
+      The Mage's spells, A to Z; Show also has talents, every race and every profession
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -346,19 +358,29 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 - The **Spell Editor | DBC Editor** switch in the title bar moves between them; Spell.dbc has an **Open in Spell
   Editor** button.
 - Edit cells in place, add, copy and delete rows, undo and redo, filter by ID, text or `Column=value`.
+- The editor switch in the title bar is a light switch: Spell Editor on one side, DBC Editor on the other.
 - Several tables open at once in tabs (`*` marks unsaved ones) and **Close all**. A single click opens a preview
   tab (in italics) that the next table replaces, as in VS Code; double-click or edit to keep it. Preview tabs can be
   turned off in Options.
 - Shift+click, Shift+arrows and Ctrl+A select rows; Ctrl+C copies them with a header line and Ctrl+V pastes them
   into any table with matching columns. A pasted row whose ID is taken gets the next free one.
 - Click a header to sort; right-click it to hide the column, hide every empty column, or show them all again.
-  Double-click a column's edge to fit it to its contents; text columns start wide enough to read.
+  Columns open sized to their contents; double-click a column's edge to fit it again.
+- Rows show what changed: **New** (blue) and **Changed** (orange) aren't saved yet, **Added** (green) and
+  **Edited** (pink) are saved and differ from the clean file. Changed cells are brighter, a legend explains the
+  colours, and the table list marks tables with unsaved changes (orange) or edited since import (pink).
+- Right-click a row to copy the cell, the selected rows or every shown row, paste rows at the bottom, add, copy or
+  delete rows, hide rows, or show only rows with that cell's value. Ctrl+click picks single rows.
+- Hover a column header for what it does, or a named cell for what its value means.
+- Empty language cells show, in red, the text the client's other locale folders have there.
 - Save to the project or back to the file, save as `.dbc` or CSV, import CSV, and write the shown rows or the rows
   changed from the clean file as SQL.
 - See and rename a layout's columns, saved as a definition file that replaces the built-in one.
 - 240 file layouts built in; anything else gets one guessed from its data.
-- **Tools > Table links...** maps which tables point at which: pick a table to see the tables and columns that
-  point at it and the ones it points at, open any of them, or save every link as a Mermaid diagram.
+- **Tools > Table links...** maps which tables point at which: the tables pointing at the chosen one on the left,
+  the ones it points at on the right, each box naming the columns, with arrows along the links. The list shows each
+  table's ins and outs, and only tables with links unless you untick it. Open any table, or save every link as a
+  Mermaid diagram.
 
 
 <table>
@@ -380,6 +402,26 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
     <td>
       <img src="docs/screenshots/columns.png" alt="Screenshot: renaming columns"><br>
       Renaming a layout's columns
+    </td>
+  </tr>
+</table>
+
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/row-marks.png" alt="Screenshot: row colours"><br>
+      Rows coloured by what changed: a saved edit (pink) and an unsaved one (orange)
+    </td>
+    <td>
+      <img src="docs/screenshots/row-menu.png" alt="Screenshot: the row menu"><br>
+      Right-click with three rows picked by Ctrl+click
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/dbc-client-text.png" alt="Screenshot: client text in the DBC editor"><br>
+      The client's German names in red in their empty column (AzerothCore calls it frFR)
     </td>
   </tr>
 </table>
