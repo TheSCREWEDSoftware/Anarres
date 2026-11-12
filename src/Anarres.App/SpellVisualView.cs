@@ -89,7 +89,7 @@ public sealed class SpellVisualView : StackPanel
         StackPanel kits = new StackPanel { Spacing = 6 };
         foreach (DbcColumn column in _visuals.Definition.Columns)
         {
-            CellField field = new CellField(visual, column.Name, 120);
+            CellField field = new CellField(visual, column.Name, Ui.FIELD_WIDTH);
             if (!column.Name.EndsWith(KIT_SUFFIX, StringComparison.Ordinal))
             {
                 fields.Children.Add(Ui.Documented(Ui.Row(column.Name, field.Box), _visuals.Definition.File,
@@ -125,7 +125,7 @@ public sealed class SpellVisualView : StackPanel
         {
             Control editor = kitColumn.Name.Contains(EFFECT_SUFFIX, StringComparison.Ordinal) && _effects != null
                                  ? new LookupField(kit, kitColumn.Name, EffectName).View
-                                 : new CellField(kit, kitColumn.Name, 120).Box;
+                                 : new CellField(kit, kitColumn.Name, Ui.FIELD_WIDTH).Box;
             kitFields.Children.Add(Ui.Row(kitColumn.Name, editor));
         }
 

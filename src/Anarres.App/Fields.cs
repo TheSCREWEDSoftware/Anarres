@@ -180,7 +180,7 @@ public sealed class EnumField : IField
             ItemsSource = _items.Select(Text).ToList(),
             MaxDropDownHeight = 420
         };
-        Value = new CellField(binding, column, 80);
+        Value = new CellField(binding, column, Ui.FIELD_WIDTH);
         _binding.Add(this);
         Combo.SelectionChanged += (_, _) =>
         {
@@ -255,7 +255,7 @@ public sealed class FlagsField : IField
         _binding = binding;
         _column = column;
         _table = table;
-        _value = new CellField(binding, column, 120);
+        _value = new CellField(binding, column, Ui.FIELD_WIDTH);
         _value.ValueChanged += Refresh;
         Button pick = new Button { Content = "...", Padding = new Thickness(10, 2) };
         ToolTip.SetTip(pick, "Choose the bits of " + column);
@@ -319,7 +319,7 @@ public sealed class MiscField : IField
         _second = second;
         _defaultLabel = label;
         _label = Ui.Label(label);
-        Value = new CellField(binding, column, 110);
+        Value = new CellField(binding, column, Ui.FIELD_WIDTH);
         Value.ValueChanged += Describe;
         binding.Add(this);
         binding.Edited += edited =>
@@ -370,7 +370,7 @@ public sealed class LookupField : IField
     public LookupField(RecordBinding binding, string column, Func<uint, string> describe)
     {
         _describe = describe;
-        Value = new CellField(binding, column, 90);
+        Value = new CellField(binding, column, Ui.FIELD_WIDTH);
         Value.ValueChanged += Refresh;
         binding.Add(this);
         View = Ui.Horizontal(Value.Box, _meaning);
@@ -397,7 +397,8 @@ public sealed class AllFieldsView
     {
         foreach (DbcColumn column in definition.Columns)
         {
-            CellField field = new CellField(binding, column.Name, column.Type == DbcColumnType.String ? 520 : 160);
+            CellField field = new CellField(binding, column.Name,
+                                            column.Type == DbcColumnType.String ? 520 : Ui.FIELD_WIDTH);
             TextBlock type = new TextBlock { Text = column.Type.ToString(), Width = 60, Classes = { "label" },
                                              FontSize = 11 };
             StackPanel row = Ui.Horizontal(Ui.Label(column.Name, 240), type, field.Box);
@@ -421,4 +422,112 @@ public sealed class AllFieldsView
     }
 
     public DockPanel View { get; }
+}
+
+// Every bit of a flags column as a toggle on the page, like Stoneharry's attribute checkboxes
+public sealed class FlagToggles : IField
+{
+    public const string BIT_CLASS = "flag-bit";
+    private const double ITEM_WIDTH = 330;
+    private const int BITS = 32;
+
+    private readonly RecordBinding _binding;
+    private readonly string _column;
+    private readonly ToggleSwitch[] _switches = new ToggleSwitch[BITS];
+    private readonly TextBlock _hex = new TextBlock
+    {
+        Classes = { "hint" },
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    private bool _updating;
+
+    public FlagToggles(RecordBinding binding, string column, EnumTable table)
+    {
+        _binding = binding;
+        _column = column;
+        Value = new CellField(binding, column);
+        Value.ValueChanged += Refresh;
+        WrapPanel bits = new WrapPanel();
+        for (int bit = 0; bit < BITS; ++bit)
+        {
+            uint mask = 1u << bit;
+            EnumValue? entry = table.Values.FirstOrDefault(value => value.Value == mask);
+            ToggleSwitch toggle = new ToggleSwitch { OnContent = null, OffContent = null, MinWidth = 0 };
+            int index = bit;
+            toggle.IsCheckedChanged += (_, _) => Toggle(index, toggle.IsChecked == true);
+            _switches[bit] = toggle;
+            string label = entry?.Label ?? "Unknown bit " + bit;
+            TextBlock text = new TextBlock
+            {
+                Text = label,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Width = ITEM_WIDTH - 64
+            };
+            StackPanel item = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Width = ITEM_WIDTH,
+                Classes = { BIT_CLASS },
+                Children = { toggle, text }
+            };
+            string details = entry == null ? string.Empty
+                             : "\n\n" + entry.Name + (entry.Description.Length > 0 ? ": " + entry.Description : "");
+            ToolTip.SetTip(item, label + details + "\n\nBit " + bit + " (" +
+                                 mask.ToString(CultureInfo.InvariantCulture) + ", 0x" +
+                                 mask.ToString("X", CultureInfo.InvariantCulture) + ") of " + column);
+            bits.Children.Add(item);
+        }
+
+        Bits = bits;
+        binding.Add(this);
+    }
+
+    public CellField Value { get; }
+
+    // The value as hex, shown beside the value box
+    public TextBlock Hex => _hex;
+
+    public Control Bits { get; }
+
+    public void Refresh()
+    {
+        _updating = true;
+        uint raw = _binding.IsBound ? Value.Raw() : 0;
+        for (int bit = 0; bit < BITS; ++bit)
+        {
+            _switches[bit].IsChecked = (raw & (1u << bit)) != 0;
+            _switches[bit].IsEnabled = _binding.IsBound;
+        }
+
+        _hex.Text = _binding.IsBound ? "0x" + raw.ToString("X8", CultureInfo.InvariantCulture) : string.Empty;
+        _updating = false;
+    }
+
+    public void Clear()
+    {
+        int column = _binding.Column(_column);
+        if (!_binding.IsBound || column < 0 || _binding.Table!.GetRaw(_binding.Row, column) == 0)
+            return;
+        _binding.Table.SetRaw(_binding.Row, column, 0);
+        _binding.ReportEdit(_column);
+        Value.Refresh();
+        Refresh();
+    }
+
+    private void Toggle(int bit, bool on)
+    {
+        int column = _binding.Column(_column);
+        if (_updating || !_binding.IsBound || column < 0)
+            return;
+        uint raw = _binding.Table!.GetRaw(_binding.Row, column);
+        uint changed = on ? raw | (1u << bit) : raw & ~(1u << bit);
+        if (changed == raw)
+            return;
+        _binding.Table.SetRaw(_binding.Row, column, changed);
+        _binding.ReportEdit(_column);
+        Value.Refresh();
+        Refresh();
+    }
 }
