@@ -158,6 +158,9 @@ public sealed class MpqArchive : IDisposable
         if (encrypted)
             MpqCrypto.Decrypt(offsets, key - 1);
 
+        if (block.FileSize > int.MaxValue)
+            throw new InvalidDataException(name + " says it's bigger than an archive can hold; the archive is " +
+                                           "damaged.");
         byte[] output = new byte[block.FileSize];
         for (int sector = 0; sector < sectors; ++sector)
         {
@@ -288,10 +291,13 @@ public sealed class MpqArchive : IDisposable
         return words;
     }
 
+    // Every read comes through here, so a damaged table's impossible sizes are refused as bad data in one place
     private byte[] ReadAt(long position, int count, bool allowShort = false)
     {
         if (allowShort)
             count = (int)Math.Min(count, _stream.Length - position);
+        if (count < 0 || position < 0 || position + count > _stream.Length)
+            throw new InvalidDataException(System.IO.Path.GetFileName(Path) + " is damaged: it points past its end.");
         byte[] buffer = new byte[count];
         _stream.Position = position;
         _stream.ReadExactly(buffer);
