@@ -267,6 +267,12 @@ public sealed class FlagsField : IField
         ToolTip.SetTip(pick, "Choose the bits of " + column);
         pick.Click += async (_, _) => await PickAsync(pick);
         binding.Add(this);
+        // A list that depends on another column, such as an item class's subclasses, follows its edits
+        binding.Edited += edited =>
+        {
+            if (edited != _column)
+                Refresh();
+        };
         View = Ui.Vertical(4, Ui.Horizontal(_value.Box, pick), _summary);
     }
 

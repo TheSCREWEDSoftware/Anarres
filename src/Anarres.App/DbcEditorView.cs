@@ -393,6 +393,8 @@ public sealed class DbcEditorView : Grid
             else
             {
                 await _session.SaveAsync(_table);
+                // Saved races, classes or item classes rename the values shown for them
+                _names.Forget();
                 _window.SetStatus("Saved " + _table.Definition.File + " to the project.");
                 await RefreshCountsAsync();
             }
