@@ -73,6 +73,8 @@ public static class ColumnValues
             return classColumn < 0 || row < 0 ? null : ItemSubclasses(tables, table.GetInt(row, classColumn));
         }
 
+        if (name is "SkillLine" or "ReqSkillLine" or "SkillID")
+            return Names(tables("SkillLine.dbc"), "DisplayName", "SkillLines");
         if (name.Contains("RaceMask", StringComparison.OrdinalIgnoreCase) ||
             name.Equals("AllowableRace", StringComparison.OrdinalIgnoreCase))
             return MaskFrom(tables("ChrRaces.dbc"), "Races");
@@ -98,7 +100,20 @@ public static class ColumnValues
                (name.Contains("ClassMask", StringComparison.OrdinalIgnoreCase) &&
                 !name.Contains("Spell", StringComparison.OrdinalIgnoreCase)) ||
                name.Equals("AllowableClass", StringComparison.OrdinalIgnoreCase) ||
-               name.EndsWith("SchoolMask", StringComparison.OrdinalIgnoreCase);
+               name.EndsWith("SchoolMask", StringComparison.OrdinalIgnoreCase) ||
+               name is "SkillLine" or "ReqSkillLine" or "SkillID";
+    }
+
+    // Values that are row IDs of a table with names, such as skill lines
+    private static EnumTable? Names(DbcTable? table, string field, string key)
+    {
+        int name = table == null ? -1 : SpellRecord.TextColumn(table.Definition, field, SpellRecord.ENGLISH);
+        if (table == null || name < 0)
+            return null;
+        List<EnumValue> values = Enumerable.Range(0, table.Rows.Count)
+                                           .Select(row => new EnumValue(table.Key(row), key, table.GetString(row, name),
+                                                                        string.Empty)).ToList();
+        return new EnumTable(key, false, values);
     }
 
     // Item classes by ID from ItemClass.dbc
