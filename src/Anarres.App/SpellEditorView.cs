@@ -27,6 +27,7 @@ public sealed class SpellEditorView : Grid
     private readonly SpellLookups _lookups = new SpellLookups();
     private readonly TextBox _search = new TextBox { Watermark = "Search by ID or name, or effect:6, aura:3" };
     private readonly ListBox _list = new ListBox();
+    private readonly FieldFinder _finder;
     private readonly TextBlock _count = new TextBlock { Classes = { "hint" }, Margin = new Thickness(4, 4, 0, 0) };
     private readonly TextBlock _title = new TextBlock { FontSize = 20, FontWeight = FontWeight.SemiBold };
     private readonly TextBlock _subtitle = new TextBlock { Classes = { "label" } };
@@ -54,6 +55,7 @@ public sealed class SpellEditorView : Grid
     {
         _window = window;
         _session = session;
+        _finder = new FieldFinder(() => _tabs);
         ColumnDefinitions = new ColumnDefinitions("Auto,8,*");
         _searchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(SEARCH_DELAY_MS) };
         _searchTimer.Tick += (_, _) =>
@@ -94,6 +96,21 @@ public sealed class SpellEditorView : Grid
         _search.Focus();
         _search.SelectAll();
     }
+
+    // Ctrl+F: the field finder while a spell is open and the list isn't in use; pressed again, the spell search
+    public void FocusFind()
+    {
+        bool inList = _search.IsKeyboardFocusWithin || _list.IsKeyboardFocusWithin;
+        if (!_binding.IsBound || inList || _finder.Box.IsKeyboardFocusWithin)
+        {
+            FocusSearch();
+            return;
+        }
+
+        _finder.Box.Focus();
+    }
+
+    internal FieldFinder Finder => _finder;
 
     public void UseOptions(AppOptions options)
     {
@@ -259,7 +276,7 @@ public sealed class SpellEditorView : Grid
                               "changed spells.");
 
         StackPanel heading = Ui.Horizontal(_headerIcon, Ui.Vertical(2, _title, _subtitle));
-        StackPanel actions = Ui.Horizontal(_unsaved, sql, world, revert, save);
+        StackPanel actions = Ui.Horizontal(_finder.Box, _unsaved, sql, world, revert, save);
         actions.HorizontalAlignment = HorizontalAlignment.Right;
         actions.VerticalAlignment = VerticalAlignment.Center;
         Grid header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(16, 12) };
@@ -297,14 +314,15 @@ public sealed class SpellEditorView : Grid
         _tabs.Items.Add(Tab("Base", BaseTab()));
         _tabs.Items.Add(Tab("Attributes", AttributesTab()));
         _tabs.Items.Add(Tab("Effects", EffectsTab()));
-        _tabs.Items.Add(Tab("Targets & Requirements", TargetsTab()));
-        _tabs.Items.Add(Tab("Procs & Interrupts", ProcsTab()));
-        _tabs.Items.Add(Tab("Items & Reagents", ItemsTab()));
+        _tabs.Items.Add(Tab("Targets and Requirements", TargetsTab()));
+        _tabs.Items.Add(Tab("Procs and Interrupts", ProcsTab()));
+        _tabs.Items.Add(Tab("Items and Reagents", ItemsTab()));
         _tabs.Items.Add(Tab("Visual", _visual));
         _tabs.Items.Add(Tab("Localisation", LocalesTab()));
         _tabs.Items.Add(new TabItem { Header = "All fields", Content = new AllFieldsView(_binding, definition).View });
         _tabs.SelectedIndex = Math.Clamp(selected, 0, _tabs.ItemCount - 1);
         _editor.Content = _tabs;
+        _finder.Forget();
     }
 
     private static TabItem Tab(string header, Control content)
@@ -383,9 +401,9 @@ public sealed class SpellEditorView : Grid
                      Enum("Prevention type", "PreventionType", SpellEnums.PREVENTION_TYPE),
                      Cell("Category", "Category"),
                      Enum("Spell family", "SpellClassSet", SpellEnums.SPELL_FAMILY),
-                     Named(Ui.Row("Family mask", new CellField(_binding, "SpellClassMask_1", 110).Box,
-                                  new CellField(_binding, "SpellClassMask_2", 110).Box,
-                                  new CellField(_binding, "SpellClassMask_3", 110).Box),
+                     Named(Ui.Row("Family mask", new CellField(_binding, "SpellClassMask_1", Ui.FIELD_WIDTH).Box,
+                                  new CellField(_binding, "SpellClassMask_2", Ui.FIELD_WIDTH).Box,
+                                  new CellField(_binding, "SpellClassMask_3", Ui.FIELD_WIDTH).Box),
                            "SpellClassMask_1", "SpellClassMask_2", "SpellClassMask_3"),
                      Cell("Priority", "SpellPriority"),
                      Cell("Description variables", "SpellDescriptionVariableID"),
@@ -453,14 +471,19 @@ public sealed class SpellEditorView : Grid
 
     private Control AttributesTab()
     {
-        StackPanel rows = new StackPanel { Spacing = 6 };
+        StackPanel groups = new StackPanel { Spacing = 8 };
         for (int index = 0; index < SpellEnums.AttributeColumns.Length; ++index)
         {
             string column = SpellEnums.AttributeColumns[index];
-            rows.Children.Add(Flags("Attributes " + index, column, SpellEnums.Get(column)));
+            FlagToggles toggles = new FlagToggles(_binding, column, SpellEnums.Get(column));
+            Button clear = Ui.Button("Clear", toggles.Clear);
+            ToolTip.SetTip(clear, "Turn every bit of " + column + " off");
+            groups.Children.Add(Ui.Group("Attributes " + index,
+                                         Named(Ui.Row("Value", toggles.Value.Box, toggles.Hex, clear), column),
+                                         toggles.Bits));
         }
 
-        return Ui.Group("Attributes (press ... to pick the bits)", rows);
+        return groups;
     }
 
     private Control Flags(string label, string column, EnumTable table)
@@ -511,9 +534,9 @@ public sealed class SpellEditorView : Grid
                      Lookup("Trigger spell", Column("EffectTriggerSpell"), SpellName),
                      Cell("Item created", Column("EffectItemType")),
                      Named(Ui.Row("Affected family mask",
-                                  new CellField(_binding, Column("EffectSpellClassMaskA"), 110).Box,
-                                  new CellField(_binding, Column("EffectSpellClassMaskB"), 110).Box,
-                                  new CellField(_binding, Column("EffectSpellClassMaskC"), 110).Box),
+                                  new CellField(_binding, Column("EffectSpellClassMaskA"), Ui.FIELD_WIDTH).Box,
+                                  new CellField(_binding, Column("EffectSpellClassMaskB"), Ui.FIELD_WIDTH).Box,
+                                  new CellField(_binding, Column("EffectSpellClassMaskC"), Ui.FIELD_WIDTH).Box),
                            Column("EffectSpellClassMaskA"), Column("EffectSpellClassMaskB"),
                            Column("EffectSpellClassMaskC"))));
     }
@@ -571,9 +594,9 @@ public sealed class SpellEditorView : Grid
         for (int reagent = 1; reagent <= SpellRecord.REAGENT_COUNT; ++reagent)
         {
             reagents.Children.Add(Named(Ui.Row("Reagent " + reagent,
-                                               new CellField(_binding, "Reagent_" + reagent, 110).Box,
+                                               new CellField(_binding, "Reagent_" + reagent, Ui.FIELD_WIDTH).Box,
                                                new TextBlock { Text = "x", Classes = { "label" } },
-                                               new CellField(_binding, "ReagentCount_" + reagent, 60).Box),
+                                               new CellField(_binding, "ReagentCount_" + reagent, Ui.FIELD_WIDTH).Box),
                                         "Reagent_" + reagent, "ReagentCount_" + reagent));
         }
 
@@ -608,7 +631,7 @@ public sealed class SpellEditorView : Grid
                                         column));
             }
 
-            rows.Children.Add(Named(Ui.Row("Mask", new CellField(_binding, prefix + "_Lang_Mask", 160).Box),
+            rows.Children.Add(Named(Ui.Row("Mask", new CellField(_binding, prefix + "_Lang_Mask").Box),
                                     prefix + "_Lang_Mask"));
             panel.Children.Add(Ui.Group(prefix, rows));
         }

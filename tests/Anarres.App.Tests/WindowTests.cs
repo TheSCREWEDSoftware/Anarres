@@ -59,6 +59,33 @@ public static class WindowTests
         window.Close();
     }
 
+    // Ctrl+F finds fields and flag bits by label, column, notes or AzerothCore name; toggles change the bits
+    public static async Task FindsFieldsAndTogglesFlags()
+    {
+        using TestProject project = await TestProject.CreateAsync();
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
+        window.Show();
+        await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
+        FieldFinder finder = window.SpellEditor.Finder;
+        Assert.True(finder.Find("global cooldown").Any(field => field.Words.Contains("StartRecoveryCategory")),
+                    "a field by its label");
+        Assert.True(finder.Find("school").Count > 0, "school");
+        Assert.True(finder.Find("range").Count > 0, "range");
+        FoundField passive = finder.Find("SPELL_ATTR0_PASSIVE").First();
+        Assert.Equal("Passive spell", passive.Label, "a flag by its AzerothCore name");
+        Assert.True(passive.Where.StartsWith("Attributes"), "found on the Attributes tab: " + passive.Where);
+
+        DbcTable spells = window.SpellEditor.Spells!;
+        int column = spells.Definition.IndexOf("Attributes");
+        int row = spells.FindRow(window.SpellEditor.CurrentSpellId!.Value);
+        uint before = spells.GetRaw(row, column);
+        ToggleSwitch toggle = passive.Target.GetLogicalDescendants().OfType<ToggleSwitch>().First();
+        toggle.IsChecked = toggle.IsChecked != true;
+        Assert.Equal(before ^ 0x40u, spells.GetRaw(row, column), "bit 6 flipped");
+        window.Session.Close();
+        window.Close();
+    }
+
     public static async Task GridSortsAndHides()
     {
         using TestProject project = await TestProject.CreateAsync();

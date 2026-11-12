@@ -98,7 +98,7 @@ public sealed class MainWindow : Window
             {
                 e.Handled = true;
                 if (_content.Content == _spells)
-                    _spells.FocusSearch();
+                    _spells.FocusFind();
                 else
                     _tables.FocusFilter();
             }
