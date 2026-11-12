@@ -5,8 +5,8 @@ namespace Anarres.Core.Models;
 // Draws a posed model and its particles into BGRA pixels in software: the same on every system and in tests
 public sealed class ModelRenderer
 {
-    private const float AMBIENT = 0.55f;
-    private const float DIFFUSE = 0.6f;
+    private const float AMBIENT = 0.45f;
+    private const float DIFFUSE = 0.55f;
     private const float ALPHA_KEY = 0.5f;
     private const float MIN_W = 0.0001f;
     private const float INVISIBLE = 0.004f;
@@ -166,6 +166,8 @@ public sealed class ModelRenderer
                           material.Blend is M2Blend.Opaque or M2Blend.AlphaKey;
 
         M2Submesh submesh = skin.Submeshes[batch.Submesh];
+        if (!instance.ShowsGeoset(submesh.Id))
+            return;
         int end = Math.Min(skin.Indices.Length, submesh.IndexStart + submesh.IndexCount);
         Span<ScreenVertex> corners = stackalloc ScreenVertex[3];
         for (int i = submesh.IndexStart; i + 2 < end; i += 3)

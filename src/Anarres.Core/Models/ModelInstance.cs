@@ -41,6 +41,16 @@ public sealed class ModelInstance
 
     public bool ShowParticles { get; set; } = true;
 
+    // Character models hold every hair style and outfit piece at once; only the defaults are drawn
+    public bool DefaultGeosetsOnly { get; set; }
+
+    private const int GEOSET_GROUP = 100;
+
+    public bool ShowsGeoset(int id)
+    {
+        return !DefaultGeosetsOnly || id == 0 || id % GEOSET_GROUP == 1;
+    }
+
     public void SetSequence(int sequence)
     {
         Sequence = sequence >= 0 && sequence < Model.Sequences.Length ? sequence : Model.DefaultSequence();
@@ -133,6 +143,37 @@ public sealed class ModelInstance
         return Matrix3x2.CreateTranslation(-centre) * Matrix3x2.CreateScale(scale.X, scale.Y) *
                Matrix3x2.CreateRotation(angle) * Matrix3x2.CreateTranslation(centre) *
                Matrix3x2.CreateTranslation(translation.X, translation.Y);
+    }
+
+    // The box around the drawn mesh in its current pose; the header's box also covers every animation's reach
+    public (Vector3 Min, Vector3 Max) PosedBounds()
+    {
+        Vector3 min = new Vector3(float.MaxValue);
+        Vector3 max = new Vector3(float.MinValue);
+        foreach (int index in Skin.Indices)
+        {
+            M2Vertex vertex = Model.Vertices[index];
+            Vector3 position = Vector3.Zero;
+            float total = 0f;
+            Span<int> bones = stackalloc int[] { vertex.Bone0, vertex.Bone1, vertex.Bone2, vertex.Bone3 };
+            Span<float> weights = stackalloc float[]
+            {
+                vertex.Weights.X, vertex.Weights.Y, vertex.Weights.Z, vertex.Weights.W
+            };
+            for (int i = 0; i < bones.Length; ++i)
+            {
+                if (weights[i] <= 0 || bones[i] >= BoneMatrices.Length)
+                    continue;
+                position += Vector3.Transform(vertex.Position, BoneMatrices[bones[i]]) * weights[i];
+                total += weights[i];
+            }
+
+            position = total > 0 ? position / total : vertex.Position;
+            min = Vector3.Min(min, position);
+            max = Vector3.Max(max, position);
+        }
+
+        return min.X <= max.X ? (min, max) : (Model.BoundsMin, Model.BoundsMax);
     }
 
     private void Pose(Vector3 cameraPosition, Vector3 cameraUp)

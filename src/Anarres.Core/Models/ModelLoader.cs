@@ -3,6 +3,8 @@ namespace Anarres.Core.Models;
 // Loads a model, its skin, animations and textures from the client (its patches and custom files included)
 public static class ModelLoader
 {
+    private const string CHARACTER_FOLDER = "Character\\";
+
     // read gives a file from the client by its path, or null when no archive has it
     public static ModelInstance Load(Func<string, byte[]?> read, ModelChoice choice, List<string>? missing = null)
     {
@@ -47,6 +49,9 @@ public static class ModelLoader
             }
         }
 
-        return new ModelInstance(model, skin, textures);
+        return new ModelInstance(model, skin, textures)
+        {
+            DefaultGeosetsOnly = choice.Path.StartsWith(CHARACTER_FOLDER, StringComparison.OrdinalIgnoreCase)
+        };
     }
 }

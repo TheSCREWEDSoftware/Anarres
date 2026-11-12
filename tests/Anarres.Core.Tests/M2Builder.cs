@@ -201,7 +201,9 @@ public sealed class M2Builder
             EmptyTrack(writer); // horizontal range
             EmptyTrack(writer); // gravity
             Track(writer, timeList, lifeList); // lifespan
+            writer.Write(0f); // lifespan variation
             Track(writer, timeList, rateList); // emission rate
+            writer.Write(0f); // rate variation
             for (int i = 0; i < 3; ++i)
                 EmptyTrack(writer); // area length and width, z source
             for (int i = 0; i < 3; ++i)

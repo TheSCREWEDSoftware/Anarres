@@ -20,7 +20,7 @@ public sealed class ModelView
     private const int FRAME_MS = 33;
     private const double TURN_PER_PIXEL = 0.01;
     private const double ZOOM_STEP = 0.9;
-    private const int MAX_PIXELS = 900 * 700;
+    private const int MAX_PIXELS = 640 * 480;
     private const int MIN_SIDE = 16;
     private const int BYTES_PER_PIXEL = 4;
     private const double DEFAULT_HEIGHT = 360;
@@ -204,17 +204,9 @@ public sealed class ModelView
         M2Model model = _instance.Model;
         Vector3 min = model.BoundsMin;
         Vector3 max = model.BoundsMax;
-        // Spell effects often have no bounds; frame what the vertices cover, or a yard around the middle
-        if ((max - min).LengthSquared() < 0.0001f && model.Vertices.Length > 0)
-        {
-            min = new Vector3(float.MaxValue);
-            max = new Vector3(float.MinValue);
-            foreach (M2Vertex vertex in model.Vertices)
-            {
-                min = Vector3.Min(min, vertex.Position);
-                max = Vector3.Max(max, vertex.Position);
-            }
-        }
+        // Particles fly beyond the mesh, so effects keep the header's box; other models frame their posed mesh
+        if (model.Particles.Length == 0 || (max - min).LengthSquared() < 0.0001f)
+            (min, max) = _instance.PosedBounds();
 
         if ((max - min).LengthSquared() < 0.0001f)
         {

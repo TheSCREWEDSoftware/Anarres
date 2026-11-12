@@ -53,7 +53,9 @@ public sealed class M2ParticleEmitter
     public required M2Track<float> HorizontalRange { get; init; }
     public required M2Track<float> Gravity { get; init; }
     public required M2Track<float> Lifespan { get; init; }
+    public float LifespanVariation { get; private init; }
     public required M2Track<float> Rate { get; init; }
+    public float RateVariation { get; private init; }
     public required M2Track<float> AreaLength { get; init; }
     public required M2Track<float> AreaWidth { get; init; }
     public required M2Track<float> ZSource { get; init; }
@@ -94,7 +96,9 @@ public sealed class M2ParticleEmitter
         M2Track<float> horizontal = M2Model.FloatTrack(cursor, source);
         M2Track<float> gravity = M2Model.FloatTrack(cursor, source);
         M2Track<float> lifespan = M2Model.FloatTrack(cursor, source);
+        float lifespanVariation = cursor.F32();
         M2Track<float> rate = M2Model.FloatTrack(cursor, source);
+        float rateVariation = cursor.F32();
         M2Track<float> length = M2Model.FloatTrack(cursor, source);
         M2Track<float> width = M2Model.FloatTrack(cursor, source);
         M2Track<float> zSource = M2Model.FloatTrack(cursor, source);
@@ -138,7 +142,9 @@ public sealed class M2ParticleEmitter
             HorizontalRange = horizontal,
             Gravity = gravity,
             Lifespan = lifespan,
+            LifespanVariation = lifespanVariation,
             Rate = rate,
+            RateVariation = rateVariation,
             AreaLength = length,
             AreaWidth = width,
             ZSource = zSource,

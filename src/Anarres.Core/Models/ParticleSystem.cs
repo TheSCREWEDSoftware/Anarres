@@ -68,7 +68,8 @@ public sealed class ParticleSystem
         bool enabled = instance.Value(Emitter.Enabled, (byte)1, (a, _, _) => a) != 0;
         if (!enabled)
             return;
-        _owed += MathF.Max(0f, instance.Value(Emitter.Rate, 0f)) * seconds;
+        float rate = instance.Value(Emitter.Rate, 0f) * (1f + Between(-1f, 1f) * Emitter.RateVariation);
+        _owed += MathF.Max(0f, rate) * seconds;
         Matrix4x4 bone = Emitter.Bone < instance.BoneMatrices.Length ? instance.BoneMatrices[Emitter.Bone]
                                                                      : Matrix4x4.Identity;
         while (_owed >= 1f)
@@ -119,7 +120,8 @@ public sealed class ParticleSystem
         {
             Position = Vector3.Transform(Emitter.Position + offset, bone),
             Velocity = Vector3.TransformNormal(direction, bone) * speed,
-            Life = MathF.Max(MIN_LIFE, instance.Value(Emitter.Lifespan, 1f)),
+            Life = MathF.Max(MIN_LIFE, instance.Value(Emitter.Lifespan, 1f) *
+                                       (1f + Between(-1f, 1f) * Emitter.LifespanVariation)),
             Spin = Emitter.BaseSpin + Between(-1f, 1f) * Emitter.BaseSpinVariation * FULL_CIRCLE,
             SpinRate = Emitter.Spin + Between(-1f, 1f) * Emitter.SpinVariation,
             Size = MathF.Max(0f, scale),
