@@ -51,6 +51,7 @@ public sealed class ModelView
     private int[] _copy = Array.Empty<int>();
     private Point? _drag;
     private bool _playing = true;
+    private bool _changing;
     private int _loadVersion;
     private string _missing = string.Empty;
 
@@ -103,7 +104,11 @@ public sealed class ModelView
                 UpdateTimer();
         };
 
-        _models.SelectionChanged += async (_, _) => await LoadSelectedAsync();
+        _models.SelectionChanged += (_, _) =>
+        {
+            if (!_changing)
+                _ = LoadSelectedAsync();
+        };
         _animations.SelectionChanged += (_, _) =>
         {
             if (_instance != null && _animations.SelectedIndex >= 0)
@@ -142,6 +147,26 @@ public sealed class ModelView
     // Shows these models, the first one loaded; empty shows the message instead
     public void Show(List<ModelChoice> choices, string emptyMessage)
     {
+        // The list can't be swapped while it's in the middle of changing its selection; do it right after
+        if (_changing)
+        {
+            Dispatcher.UIThread.Post(() => Show(choices, emptyMessage));
+            return;
+        }
+
+        _changing = true;
+        try
+        {
+            ShowChoices(choices, emptyMessage);
+        }
+        finally
+        {
+            _changing = false;
+        }
+    }
+
+    private void ShowChoices(List<ModelChoice> choices, string emptyMessage)
+    {
         _choices = choices;
         _models.ItemsSource = choices.Select(choice => choice.Label + "  (" + choice.Path + ")").ToList();
         _models.IsVisible = choices.Count > 1;
@@ -155,10 +180,8 @@ public sealed class ModelView
             return;
         }
 
-        if (_models.SelectedIndex == 0)
-            _ = LoadSelectedAsync();
-        else
-            _models.SelectedIndex = 0;
+        _models.SelectedIndex = 0;
+        _ = LoadSelectedAsync();
     }
 
     private async Task LoadSelectedAsync()

@@ -60,6 +60,33 @@ public static class WindowTests
         window.Close();
     }
 
+    // Moving quickly through spells with the 3D tab open loads its list once, without errors
+    public static async Task ModelTabFollowsQuickChanges()
+    {
+        using TestProject project = await TestProject.CreateAsync();
+        MainWindow window = new MainWindow(project.Settings) { IsTest = true };
+        window.Show();
+        await Pump.WaitForAsync(() => window.SpellEditor.Spells != null, "the spells to load");
+        TabControl tabs = window.GetLogicalDescendants().OfType<TabControl>().First(tab => tab.ItemCount > 5);
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(tab => tab.Header as string == "3D");
+        List<Exception> errors = new List<Exception>();
+        Avalonia.Threading.DispatcherUnhandledExceptionEventHandler catcher = (_, e) =>
+        {
+            errors.Add(e.Exception);
+            e.Handled = true;
+        };
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += catcher;
+        DbcTable spells = window.SpellEditor.Spells!;
+        for (int i = 0; i < Math.Min(20, spells.Rows.Count); ++i)
+            window.SpellEditor.Select(spells.Key(i));
+        await Task.Delay(300);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException -= catcher;
+        Assert.Equal(string.Empty, string.Join(" | ", errors.Select(error => error.Message)), "no errors");
+        window.Session.Close();
+        window.Close();
+    }
+
     // Fields carry a "?" badge explaining the column, as Keira3 does
     public static async Task FieldsExplainColumns()
     {

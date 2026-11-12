@@ -43,6 +43,7 @@ public sealed class OptionsWindow : Window
     private Dictionary<string, ThemeText> _themeText = new Dictionary<string, ThemeText>();
     private List<string> _fonts = new List<string>();
     private string? _textTheme;
+    private readonly Dictionary<string, ScrollViewer> _scrollers = new Dictionary<string, ScrollViewer>();
     private readonly ComboBox _gridFontSize = new ComboBox { Width = 120 };
     private readonly ComboBox _locale = new ComboBox { ItemsSource = SpellRecord.ClientLocales, Width = 120 };
     private readonly CheckBox _rank = new CheckBox { Content = "Show the rank beside each name in the spell list" };
@@ -176,13 +177,21 @@ public sealed class OptionsWindow : Window
         _sections.ItemsSource = Sections;
         _sections.SelectionChanged += (_, _) =>
         {
-            if (_sections.SelectedItem is string name)
-                _page.Content = new ScrollViewer
+            if (_sections.SelectedItem is not string name)
+                return;
+            // One scroll area per page, made once; a new one each time found the page still in the old one (blank)
+            if (!_scrollers.TryGetValue(name, out ScrollViewer? scroller))
+            {
+                scroller = new ScrollViewer
                 {
                     Content = _pages[name],
                     Padding = new Thickness(16, 0, 16, 0),
                     HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
                 };
+                _scrollers[name] = scroller;
+            }
+
+            _page.Content = scroller;
         };
         // A page that fails while it's laid out or drawn says why, instead of staying blank
         DispatcherUnhandledExceptionEventHandler failed = (_, e) => ShowFailure(e.Exception);

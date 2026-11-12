@@ -1,8 +1,10 @@
 using Anarres.Core.Models;
 using Anarres.Core.Mpq;
+using Anarres.Core.Settings;
 using Anarres.Core.Storage;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Threading;
 
 namespace Anarres.App;
 
@@ -15,6 +17,7 @@ public sealed class SpellModelsView : IField
     private readonly TextBlock _notes = new TextBlock { Classes = { "hint" }, TextWrapping = TextWrapping.Wrap };
     private IconLibrary? _client;
     private bool _active;
+    private bool _queued;
     private int _version;
 
     public SpellModelsView(RecordBinding binding, Session session)
@@ -45,10 +48,25 @@ public sealed class SpellModelsView : IField
         }
     }
 
+    // Many refreshes come at once (every field of a spell); they're gathered into one load after them
     public void Refresh()
     {
-        if (_active)
-            _ = LoadAsync();
+        if (!_active || _queued)
+            return;
+        _queued = true;
+        Dispatcher.UIThread.Post(async () =>
+        {
+            _queued = false;
+            try
+            {
+                await LoadAsync();
+            }
+            catch (Exception exception)
+            {
+                _notes.Text = "The models couldn't be listed: " + exception.Message;
+                CrashLog.Write(exception, "3D tab");
+            }
+        }, DispatcherPriority.Background);
     }
 
     private byte[]? ReadClientFile(string name)
