@@ -39,4 +39,35 @@ public static class SettingsTests
         Assert.True(File.ReadAllText(temp.File("old.json")).Contains(ThemeColours.TEXT), "written back");
         Assert.True(!ThemeColours.IsColour("#12"), "not a colour");
     }
+
+    public static void ThemesHaveTheirOwnText()
+    {
+        AppOptions options = new AppOptions { FontSize = 14, FontFamily = "Inter" };
+        options.ThemeText["Fel"] = new ThemeText { FontSize = 16 };
+        Assert.Equal(16.0, options.FontSizeFor("fel"), "Fel's own size, any case");
+        Assert.Equal("Inter", options.FontFamilyFor("Fel"), "Fel follows the font for every theme");
+        Assert.Equal(14.0, options.FontSizeFor("Frost"), "other themes follow the size for every theme");
+        AppOptions copy = options.Copy();
+        Assert.Equal(16.0, copy.FontSizeFor("Fel"), "kept when saved and read back");
+    }
+
+    public static void EditsReadyMadeThemesAndRestoresThem()
+    {
+        using TempFolder temp = new TempFolder();
+        ThemeStore store = new ThemeStore(temp.File("themes"));
+        string preset = ThemePresets.Names[0];
+        Theme edited = ThemePresets.Find(preset)!.Copy(preset);
+        edited.Colours[ThemeColours.ACCENT] = "#123456";
+        store.Save(edited);
+        Assert.Equal("#123456", store.Resolve(preset, ThemeBase.Dark).Colour(ThemeColours.ACCENT), "your version");
+        store.RemoveEdits(preset);
+        Assert.Equal(ThemePresets.Find(preset)!.Colour(ThemeColours.ACCENT),
+                     store.Resolve(preset, ThemeBase.Dark).Colour(ThemeColours.ACCENT), "the original again");
+
+        Theme dark = Theme.BuiltIn(ThemeBase.Dark);
+        dark.Colours[ThemeColours.TEXT] = "#ABCDEF";
+        store.Save(dark);
+        Assert.Equal("#ABCDEF", store.BuiltIn(ThemeBase.Dark).Colour(ThemeColours.TEXT), "edited built-in colours");
+        Assert.True(ThemeStore.Original("Dark") != null && ThemeStore.Original("Mine") == null, "what has defaults");
+    }
 }

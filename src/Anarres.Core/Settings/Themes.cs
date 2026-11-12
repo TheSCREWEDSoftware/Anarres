@@ -231,13 +231,40 @@ public sealed class ThemeStore
         File.WriteAllText(FileFor(theme.Name), theme.ToJson());
     }
 
-    // The theme to use for a name: a preset, a file, or the built-in colours of the base
+    // The theme for a name: a preset or the built-in colours (your edited version if any), or a theme file
     public Theme Resolve(string? name, ThemeBase fallback)
     {
         if (ThemePresets.Find(name) is { } preset)
-            return preset;
+            return Find(preset.Name) ?? preset;
         if (!string.IsNullOrEmpty(name) && name is not (Theme.DARK or Theme.LIGHT) && Find(name) is { } custom)
             return custom;
-        return Theme.BuiltIn(fallback);
+        return BuiltIn(fallback);
+    }
+
+    // The built-in Dark or Light colours, or your edited version of them
+    public Theme BuiltIn(ThemeBase themeBase)
+    {
+        Theme original = Theme.BuiltIn(themeBase);
+        return Find(original.Name) ?? original;
+    }
+
+    // What a theme looks like as shipped: a preset or the built-in colours; null for your own themes
+    public static Theme? Original(string name)
+    {
+        if (ThemePresets.Find(name) is { } preset)
+            return preset;
+        return name switch
+        {
+            Theme.DARK => Theme.BuiltIn(ThemeBase.Dark),
+            Theme.LIGHT => Theme.BuiltIn(ThemeBase.Light),
+            _ => null
+        };
+    }
+
+    // Deletes your version of a preset or the built-in colours, so the shipped one is used again
+    public void RemoveEdits(string name)
+    {
+        if (Original(name) != null && File.Exists(FileFor(name)))
+            File.Delete(FileFor(name));
     }
 }

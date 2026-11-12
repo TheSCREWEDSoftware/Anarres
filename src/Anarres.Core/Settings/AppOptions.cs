@@ -24,6 +24,14 @@ public enum StartEditor
     Tables
 }
 
+// A theme's own text size and font; null means the one set for every theme
+public sealed class ThemeText
+{
+    public double? FontSize { get; set; }
+
+    public string? FontFamily { get; set; }
+}
+
 // How Anarres looks and behaves, apart from any project; saved as options.json beside settings.json
 public sealed class AppOptions
 {
@@ -51,7 +59,26 @@ public sealed class AppOptions
     // A preset or a theme file's name; the built-in colours of the look otherwise
     public string Colours { get; set; } = BUILT_IN_COLOURS;
 
+    // Text size and font for every theme; empty font means the system's own interface font
     public double FontSize { get; set; } = DEFAULT_FONT_SIZE;
+
+    public string FontFamily { get; set; } = string.Empty;
+
+    // Per theme (by the name under Colours), a text size or font that replaces the ones above
+    public Dictionary<string, ThemeText> ThemeText { get; set; } =
+        new Dictionary<string, ThemeText>(StringComparer.OrdinalIgnoreCase);
+
+    public double FontSizeFor(string theme)
+    {
+        return ThemeText.TryGetValue(theme, out ThemeText? text) && text.FontSize is { } size ? size : FontSize;
+    }
+
+    public string FontFamilyFor(string theme)
+    {
+        return ThemeText.TryGetValue(theme, out ThemeText? text) && !string.IsNullOrEmpty(text.FontFamily)
+                   ? text.FontFamily
+                   : FontFamily;
+    }
 
     public double GridFontSize { get; set; } = DEFAULT_GRID_FONT_SIZE;
 
@@ -160,6 +187,15 @@ public sealed class AppOptions
     private AppOptions Checked()
     {
         FontSize = Math.Clamp(FontSize, FontSizes[0], FontSizes[^1]);
+        ThemeText = new Dictionary<string, ThemeText>(ThemeText ?? new Dictionary<string, ThemeText>(),
+                                                      StringComparer.OrdinalIgnoreCase);
+        foreach (ThemeText text in ThemeText.Values)
+        {
+            if (text.FontSize is { } size)
+                text.FontSize = Math.Clamp(size, FontSizes[0], FontSizes[^1]);
+        }
+
+        FontFamily ??= string.Empty;
         GridFontSize = Math.Clamp(GridFontSize, GridFontSizes[0], GridFontSizes[^1]);
         MaxUndoSteps = Math.Clamp(MaxUndoSteps, UndoSteps[0], UndoSteps[^1]);
         if (string.IsNullOrWhiteSpace(Colours))
