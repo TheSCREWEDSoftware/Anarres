@@ -163,7 +163,7 @@ public sealed class SettingsWindow : Window
         body.Children.Add(Ui.Group("Import",
                                    Ui.Row("Clean DBC folder", Ui.FolderPicker(this, _source, "Clean DBC folder")),
                                    Ui.Hint(CLEAN_FOLDER_HINT),
-                                   Ui.Row("Locale", _locale)));
+                                   Ui.Row("Locale", _locale), _locale.Note));
         body.Children.Add(Ui.Group("Server and client",
                                    Ui.Row("Server data folder", Ui.FolderPicker(this, _server, "Server data folder")),
                                    Ui.Row(string.Empty, _serverResolved),

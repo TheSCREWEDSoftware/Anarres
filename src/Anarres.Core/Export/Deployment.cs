@@ -86,7 +86,8 @@ public static class Deployment
             byte[]? data = archives.TryRead(names[i]);
             if (data == null)
                 continue;
-            string file = Path.GetFileName(names[i]);
+            // MPQ names use backslashes, which Path splits only on Windows
+            string file = names[i][(names[i].LastIndexOf('\\') + 1)..];
             results.Add(await ImportTableAsync(store, () =>
             {
                 DbcTable table = DbcFile.Read(data, file, definitions);

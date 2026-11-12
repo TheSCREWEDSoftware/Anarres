@@ -14,7 +14,8 @@ public sealed class LocalePicker : StackPanel
     private readonly TextBlock _slower = new TextBlock
     {
         Text = "Importing every locale takes longer",
-        VerticalAlignment = VerticalAlignment.Center,
+        // Lined up under the picker in a Ui.Row, so a long client path can't push it out of sight
+        Margin = new Avalonia.Thickness(Ui.LABEL_WIDTH + Ui.GAP, 0, 0, 0),
         IsVisible = false
     };
     private readonly TextBlock _found = new TextBlock
@@ -25,6 +26,9 @@ public sealed class LocalePicker : StackPanel
 
     public const string ALL = "All available";
 
+    // The red note for All available; the window puts it on its own line under the picker's row
+    public Control Note => _slower;
+
     private List<string> _foundLocales = new List<string>();
 
     public LocalePicker(string locale, bool all = false)
@@ -34,7 +38,7 @@ public sealed class LocalePicker : StackPanel
         _box.Width = 150;
         Children.Add(_box);
         Children.Add(_found);
-        Children.Add(Ui.Themed(_slower, TextBlock.ForegroundProperty, ThemeColours.ERROR));
+        Ui.Themed(_slower, TextBlock.ForegroundProperty, ThemeColours.ERROR);
         Fill(new List<string>(), locale, all);
     }
 

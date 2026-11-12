@@ -6,6 +6,16 @@ namespace Anarres.Core.Spells;
 // One locale's copy of a table, read from that locale's MPQs, with the text column it fills
 public sealed record LocaleSource(string Locale, int Slot, DbcTable Table);
 
+// One locale's text from a table: Fields names each text field, and each row's strings follow that order
+public sealed record LocaleTexts(int Slot, string[] Fields, Dictionary<uint, string[]> Rows)
+{
+    public string Get(uint key, string field)
+    {
+        int index = Array.IndexOf(Fields, field);
+        return index >= 0 && Rows.TryGetValue(key, out string[]? texts) ? texts[index] : string.Empty;
+    }
+}
+
 // Gathers each locale's own language column into one table, so a single Spell.dbc carries every language
 public static class LocaleMerge
 {
@@ -71,6 +81,24 @@ public static class LocaleMerge
         }
 
         return changed;
+    }
+
+    // Only the source's text, by row key and field (Name, NameSubtext...), so a preview needn't keep the whole table
+    public static LocaleTexts Texts(LocaleSource source)
+    {
+        DbcDefinition definition = source.Table.Definition;
+        List<int> fields = TextFields(definition);
+        string suffix = "_Lang_" + SpellRecord.ENGLISH;
+        string[] names = fields.Select(field => definition.Columns[field].Name[..^suffix.Length]).ToArray();
+        Dictionary<uint, string[]> rows = new Dictionary<uint, string[]>(source.Table.Rows.Count);
+        for (int row = 0; row < source.Table.Rows.Count; ++row)
+        {
+            string[] texts = fields.Select(field => source.Table.GetString(row, field + source.Slot)).ToArray();
+            if (texts.Any(text => text.Length > 0))
+                rows[source.Table.Key(row)] = texts;
+        }
+
+        return new LocaleTexts(source.Slot, names, rows);
     }
 
     public static bool HasText(DbcDefinition definition)

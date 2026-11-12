@@ -7,6 +7,7 @@ using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -78,6 +79,14 @@ public sealed class SpellEditorView : Grid
     private Grid? _previewBox;
     private ColumnDefinition? _previewColumn;
     private string _locale = SpellRecord.ENGLISH;
+    // The Localisation tab's red previews of the client's own text, and that text once read
+    private const double PREVIEW_INSET = 11;
+    private readonly CheckBox _clientPreview = new CheckBox { Content = "Preview the client's text", IsChecked = true };
+    private readonly List<(TextBox Box, TextBlock Preview, string Field, int Slot)> _localeBoxes =
+        new List<(TextBox, TextBlock, string, int)>();
+    private List<LocaleTexts>? _clientTexts;
+    private string? _clientTextsFolder;
+    private bool _loadingClientTexts;
     private bool _showRank = true;
     private SpellListLayout _layout = SpellListLayout.Normal;
     private bool _showPreview = true;
@@ -379,7 +388,7 @@ public sealed class SpellEditorView : Grid
         int selected = _tabs?.SelectedIndex ?? 0;
         // Revert and imports rebuild the tabs: the old ones free shared controls and stop following the spell
         foreach (Control kept in new Control[] { _preview, _auraPreview, _lookIcon, _visual, _level, _levelText,
-                                                 _levelBox, _levelRange, _talentBoxes })
+                                                 _levelBox, _levelRange, _talentBoxes, _clientPreview })
             Detach(kept);
         _fixedFields ??= _binding.Count;
         _binding.TrimTo(_fixedFields.Value);
@@ -399,7 +408,13 @@ public sealed class SpellEditorView : Grid
         TabItem modelsTab = Tab("3D", models.View);
         _tabs.Items.Add(modelsTab);
         _tabs.SelectionChanged += (_, _) => models.Active = _tabs.SelectedItem == modelsTab;
-        _tabs.Items.Add(Tab("Localisation", LocalesTab()));
+        TabItem localesTab = Tab("Localisation", LocalesTab());
+        _tabs.Items.Add(localesTab);
+        _tabs.SelectionChanged += (_, _) =>
+        {
+            if (_tabs.SelectedItem == localesTab && _clientPreview.IsChecked == true)
+                _ = LoadClientTextsAsync();
+        };
         _tabs.Items.Add(new TabItem { Header = "All fields", Content = new AllFieldsView(_binding, definition).View });
         _tabs.SelectedIndex = Math.Clamp(selected, 0, _tabs.ItemCount - 1);
         models.Active = _tabs.SelectedItem == modelsTab;
@@ -1019,21 +1034,25 @@ public sealed class SpellEditorView : Grid
 
     private Control LocalesTab()
     {
+        _localeBoxes.Clear();
         StackPanel panel = new StackPanel();
         CheckBox onlyEmpty = new CheckBox { Content = "Only fill text that's empty here", IsChecked = true };
-        Button fill = Ui.AsyncButton("Fill in every language from the client",
-                                     () => FillLanguagesAsync(onlyEmpty.IsChecked == true));
+        Button fill = Ui.AsyncButton("Import from the client", () => FillLanguagesAsync(onlyEmpty.IsChecked == true));
         ToolTip.SetTip(fill, "Reads Spell.dbc from each locale folder in the WoW client's Data folder and copies its " +
                              "language into these columns, for every spell. Save afterwards to keep it; Undo takes " +
                              "it back.");
+        _clientPreview.IsCheckedChanged -= OnPreviewChanged;
+        _clientPreview.IsCheckedChanged += OnPreviewChanged;
+        ToolTip.SetTip(_clientPreview, "Shows in red, in each empty box, the text the client has for this spell. " +
+                                       "Nothing changes until Import from the client.");
         panel.Children.Add(Ui.Group("Languages",
                                     Ui.Hint("The 3.3.5a client reads 9 of the 16 columns, one per language, in the " +
                                             "order below. AzerothCore names the columns after a later list, so the " +
                                             "!'s column names differ: German is Name_Lang_frFR, and the 10th " +
                                             "column, unused, is Name_Lang_esES."),
-                                    Ui.Hint("Each locale's client only has its own language, so a project " +
-                                            "imported from one has the others empty."),
-                                    Ui.Horizontal(fill, onlyEmpty)));
+                                    Ui.Hint("Each locale's client only has its own language. Importing with All " +
+                                            "available fills them all; otherwise the others are empty here."),
+                                    Ui.Horizontal(fill, onlyEmpty, _clientPreview)));
         foreach (string prefix in new[] { "Name", "NameSubtext", "Description", "AuraDescription" })
         {
             StackPanel rows = new StackPanel();
@@ -1044,8 +1063,8 @@ public sealed class SpellEditorView : Grid
                 string column = prefix + "_Lang_" + SpellRecord.Locales[slot];
                 string label = slot < SpellRecord.ClientLocales.Length ? SpellRecord.ClientLocales[slot]
                                                                          : "Unused " + (slot + 1);
-                rows.Children.Add(Named(Ui.Row(label, new CellField(_binding, column, longText ? 640 : 360).Box),
-                                        column));
+                TextBox box = new CellField(_binding, column, longText ? 640 : 360).Box;
+                rows.Children.Add(Named(Ui.Row(label, PreviewOver(box, prefix, slot)), column));
             }
 
             rows.Children.Add(Named(Ui.Row("Mask", new CellField(_binding, prefix + "_Lang_Mask").Box),
@@ -1054,6 +1073,92 @@ public sealed class SpellEditorView : Grid
         }
 
         return panel;
+    }
+
+    // The client's text drawn in red over an empty box; it isn't the box's text, so nothing is changed by it
+    private Control PreviewOver(TextBox box, string field, int slot)
+    {
+        TextBlock preview = Ui.Themed(new TextBlock
+        {
+            Margin = new Thickness(PREVIEW_INSET, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            IsHitTestVisible = false,
+            IsVisible = false
+        }, TextBlock.ForegroundProperty, ThemeColours.ERROR);
+        box.TextChanged += (_, _) => preview.IsVisible = preview.Text is { Length: > 0 } &&
+                                                         string.IsNullOrEmpty(box.Text);
+        _localeBoxes.Add((box, preview, field, slot));
+        Grid grid = new Grid { Width = box.Width, HorizontalAlignment = HorizontalAlignment.Left };
+        grid.Children.Add(box);
+        grid.Children.Add(preview);
+        return grid;
+    }
+
+    private void OnPreviewChanged(object? sender, RoutedEventArgs args)
+    {
+        if (_clientPreview.IsChecked == true)
+            _ = LoadClientTextsAsync();
+        ShowLocalePreview();
+    }
+
+    // Fills the red previews for the spell shown, from the client's text read once
+    private void ShowLocalePreview()
+    {
+        if (!_binding.IsBound)
+            return;
+        uint id = new SpellRecord(_spells!, _binding.Row).Id;
+        bool show = _clientPreview.IsChecked == true && _clientTexts != null;
+        foreach ((TextBox box, TextBlock preview, string field, int slot) in _localeBoxes)
+        {
+            string text = show ? _clientTexts!.FirstOrDefault(texts => texts.Slot == slot)?.Get(id, field) ?? ""
+                               : string.Empty;
+            preview.Text = text;
+            preview.IsVisible = text.Length > 0 && string.IsNullOrEmpty(box.Text);
+        }
+    }
+
+    // Each locale folder's Spell.dbc, kept as text only; read when the Localisation tab first shows
+    private async Task LoadClientTextsAsync()
+    {
+        string data = _session.Settings.ClientData();
+        if (data.Length == 0 || (_clientTexts != null && _clientTextsFolder == data) || _loadingClientTexts)
+            return;
+        _loadingClientTexts = true;
+        try
+        {
+            string patch = _session.Settings.PatchPath();
+            DbcDefinitions definitions = _session.Definitions;
+            _window.SetStatus("Reading the client's text for the preview...");
+            _clientTexts = await Task.Run(() =>
+            {
+                List<LocaleTexts> found = new List<LocaleTexts>();
+                foreach (string locale in LocaleMerge.Order(ClientArchives.FindLocales(data)))
+                {
+                    try
+                    {
+                        if (LocaleMerge.Read(data, locale, SpellRecord.FILE, patch, definitions) is { } source &&
+                            found.All(texts => texts.Slot != source.Slot))
+                            found.Add(LocaleMerge.Texts(source));
+                    }
+                    catch (Exception exception) when (exception is IOException or InvalidDataException)
+                    {
+                        // A locale that can't be read just has no preview
+                    }
+                }
+
+                return found;
+            });
+            _clientTextsFolder = data;
+            _window.SetStatus("The client's text is shown in red where a box is empty (" + _clientTexts.Count +
+                              (_clientTexts.Count == 1 ? " locale)." : " locales)."));
+        }
+        finally
+        {
+            _loadingClientTexts = false;
+        }
+
+        ShowLocalePreview();
     }
 
     private string CastTime(uint index)
@@ -1200,6 +1305,7 @@ public sealed class SpellEditorView : Grid
         _subtitle.Text = "Spell " + spell.Id.ToString(CultureInfo.InvariantCulture) +
                          (rank.Length > 0 ? "  -  " + rank : string.Empty);
         ShowBadges(spell);
+        ShowLocalePreview();
         _unsaved.IsVisible = _session.ModifiedTables.Any();
         _headerIcon.Source = _images?.Get(spell.U("SpellIconID"));
         _lookIcon.Source = _headerIcon.Source;

@@ -52,26 +52,58 @@ public static class Ui
         return row;
     }
 
-    // Progress that reads "Importing Spell.dbc (12 of 246, 5%)..." as each file comes up
-    public static Progress<(string File, double Done)> Steps(string verb, int total, TextBlock status, ProgressBar bar)
+    // "Importing Spell.dbc (12 of 246, 5%)..."; tableBar and tableText follow each file on its own, for big ones
+    public static Progress<(string File, double Done)> Steps(string verb, int total, TextBlock status, ProgressBar bar,
+                                                             ProgressBar? tableBar = null, TextBlock? tableText = null)
     {
         int index = 0;
         string last = string.Empty;
+        double start = 0;
         return new Progress<(string File, double Done)>(update =>
         {
             bar.Value = update.Done;
             if (update.File.Length == 0)
+            {
+                ShowTable(tableBar, tableText, false);
                 return;
+            }
+
             if (update.File != last)
             {
                 last = update.File;
+                start = update.Done;
                 ++index;
             }
 
-            string percent = (update.Done * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+            System.Globalization.CultureInfo invariant = System.Globalization.CultureInfo.InvariantCulture;
+            string percent = (update.Done * 100).ToString("0", invariant);
             status.Text = verb + " " + update.File + " (" + Math.Min(index, Math.Max(total, 1)) + " of " + total +
-                          ", " + percent + "%)...";
+                          ", " + percent + "% of all)...";
+            if (tableBar == null)
+                return;
+            // Each file takes an equal share of the whole, so its own part is how far into that share it is
+            double part = Math.Clamp((update.Done - start) * Math.Max(total, 1), 0, 1);
+            ShowTable(tableBar, tableText, true);
+            // Reading and merging the file comes before the first row is saved, with nothing to count
+            tableBar.IsIndeterminate = part <= 0;
+            tableBar.Value = part;
+            if (tableText != null)
+                tableText.Text = update.File + (part > 0 ? ": " + (part * 100).ToString("0", invariant) + "%"
+                                                         : ": reading...");
         });
+    }
+
+    private static void ShowTable(ProgressBar? tableBar, TextBlock? tableText, bool show)
+    {
+        if (tableBar != null)
+        {
+            tableBar.IsVisible = show;
+            if (!show)
+                tableBar.IsIndeterminate = false;
+        }
+
+        if (tableText != null)
+            tableText.IsVisible = show;
     }
 
     // A small x inside a search box that empties it; shown only while there's text

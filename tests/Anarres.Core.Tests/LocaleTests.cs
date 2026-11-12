@@ -1,5 +1,6 @@
 using Anarres.Core.Dbc;
 using Anarres.Core.Export;
+using Anarres.Core.Mpq;
 using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 
@@ -68,5 +69,31 @@ public static class LocaleTests
         Assert.True(results[0].Skipped && results[0].Problem != null, "the empty file skipped with a reason");
         Assert.Equal("Sample.dbc", string.Join(",", (await store.ListTablesAsync()).Select(table => table.File)),
                      "the other file imported");
+    }
+
+    // All available: each locale's MPQ fills its own language column of the one imported table
+    public static async Task ImportFillsEveryLocale()
+    {
+        using TempFolder temp = new TempFolder();
+        string data = Directory.CreateDirectory(temp.File("Data")).FullName;
+        (string Locale, int Slot, string Name)[] clients = { ("enUS", 0, "Human"), ("deDE", 3, "Mensch") };
+        foreach ((string locale, int slot, string name) in clients)
+        {
+            Directory.CreateDirectory(Path.Combine(data, locale));
+            MpqWriter.Write(Path.Combine(data, locale, "locale-" + locale + ".MPQ"),
+                            new List<(string, byte[])>
+                            {
+                                ("DBFilesClient\\ChrRaces.dbc", DbcFile.Write(Names(slot, name)))
+                            });
+        }
+
+        DbcDefinitions definitions = new DbcDefinitions();
+        definitions.Add(Names(0).Definition);
+        using SqliteDbcStore store = await SqliteDbcStore.OpenAsync(temp.File("p.anarres"));
+        await Deployment.ImportClientAsync(store, data, "enUS", definitions,
+                                           otherLocales: new[] { "deDE" });
+        DbcTable table = await store.LoadAsync("ChrRaces.dbc", definitions);
+        Assert.Equal("Human", table.GetString(0, 1), "enUS");
+        Assert.Equal("Mensch", table.GetString(0, 1 + 3), "deDE from its own folder");
     }
 }

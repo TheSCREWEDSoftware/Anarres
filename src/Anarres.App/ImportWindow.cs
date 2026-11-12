@@ -41,7 +41,15 @@ public sealed class ImportWindow : Window
     private readonly StackPanel _files = new StackPanel { Spacing = 0 };
     private readonly ProgressBar _progress = new ProgressBar { Minimum = 0, Maximum = 1, Height = 6 };
     private readonly TextBlock _status = new TextBlock { Classes = { "hint" } };
+    private readonly ProgressBar _tableProgress = new ProgressBar
+    {
+        Minimum = 0, Maximum = 1, Height = 4, IsVisible = false
+    };
+    private readonly TextBlock _tableStatus = new TextBlock { Classes = { "hint" }, IsVisible = false };
     private readonly Button _import;
+    // Set while an import runs; closing then stops it after the current table instead of leaving it behind
+    private CancellationTokenSource? _running;
+    private bool _closeWhenStopped;
     private List<CheckBox> _boxes = new List<CheckBox>();
     private readonly CheckBox _skipImported = new CheckBox
     {
@@ -63,6 +71,15 @@ public sealed class ImportWindow : Window
         _locale = new LocalePicker(session.Settings.Locale, session.Settings.AllLocales);
         _locale.Detect(session.Settings.ClientDataFolder);
         _client.TextChanged += (_, _) => _locale.Detect(_client.Text ?? string.Empty);
+        Closing += (_, args) =>
+        {
+            if (_running == null)
+                return;
+            args.Cancel = true;
+            _closeWhenStopped = true;
+            _status.Text = "Stopping; the table being imported is left as it was...";
+            _running.Cancel();
+        };
         _fromFolder.IsChecked = true;
 
         Button list = Ui.AsyncButton("List files", ListAsync);
@@ -89,6 +106,7 @@ public sealed class ImportWindow : Window
         top.Children.Add(_fromClient);
         top.Children.Add(Ui.Row("WoW client folder", Ui.FolderPicker(this, _client, "WoW client folder")));
         top.Children.Add(Ui.Row("Locale", _locale));
+        top.Children.Add(_locale.Note);
         top.Children.Add(_language);
         top.Children.Add(_skipImported);
         top.Children.Add(Ui.Hint("Each table is saved as soon as it's imported, replacing the project's copy. Files " +
@@ -99,6 +117,8 @@ public sealed class ImportWindow : Window
         StackPanel bottom = new StackPanel { Margin = new Thickness(20, 8, 20, 16), Spacing = 8 };
         bottom.Children.Add(_progress);
         bottom.Children.Add(_status);
+        bottom.Children.Add(_tableProgress);
+        bottom.Children.Add(_tableStatus);
         StackPanel buttons = Ui.Horizontal(_import, close);
         buttons.HorizontalAlignment = HorizontalAlignment.Right;
         bottom.Children.Add(buttons);
@@ -276,8 +296,11 @@ public sealed class ImportWindow : Window
             return;
 
         IDbcStore store = await _session.StoreAsync(createDatabase: true);
-        Progress<(string File, double Done)> progress = Ui.Steps("Importing", chosen.Count, _status, _progress);
+        Progress<(string File, double Done)> progress = Ui.Steps("Importing", chosen.Count, _status, _progress,
+                                                                        _tableProgress, _tableStatus);
 
+        using CancellationTokenSource stop = new CancellationTokenSource();
+        _running = stop;
         try
         {
             List<ImportResult> results;
@@ -286,7 +309,7 @@ public sealed class ImportWindow : Window
                 string folder = ProjectSettings.ResolveServerDbc((_folder.Text ?? string.Empty).Trim());
                 _session.Settings.SourceDbcFolder = folder;
                 results = await Task.Run(() => Deployment.ImportFolderAsync(store, folder, _session.Definitions,
-                                                                             chosen, progress));
+                                                                             chosen, progress, stop.Token));
             }
             else
             {
@@ -297,8 +320,8 @@ public sealed class ImportWindow : Window
                 _session.Settings.Locale = locale;
                 _session.Settings.AllLocales = _locale.All;
                 results = await Task.Run(() => Deployment.ImportClientAsync(store, data, locale, _session.Definitions,
-                                                                             chosen, progress,
-                                                                             otherLocales: others));
+                                                                             chosen, progress, stop.Token,
+                                                                             others));
             }
 
             Imported = true;
@@ -307,6 +330,7 @@ public sealed class ImportWindow : Window
             results = results.Where(result => !result.Skipped).ToList();
             int guessed = results.Count(result => result.Inferred);
             _progress.Value = 1;
+            _tableProgress.IsVisible = _tableStatus.IsVisible = false;
             _status.Text = "Imported " + results.Count + (results.Count == 1 ? " table" : " tables") + " (" +
                            results.Sum(result => result.Rows).ToString("N0") + " rows)" +
                            (guessed > 0 ? "; " + guessed + " with a guessed layout" : string.Empty) +
@@ -323,9 +347,24 @@ public sealed class ImportWindow : Window
                                               System.Data.Common.DbException)
         {
             Imported = true;
+            _tableProgress.IsVisible = _tableStatus.IsVisible = false;
             _status.Text = "The import stopped: " + exception.Message + " The tables before it are saved; Import " +
                            "again carries on with the rest.";
             await MarkImportedAsync();
         }
+        catch (OperationCanceledException)
+        {
+            Imported = true;
+            _tableProgress.IsVisible = _tableStatus.IsVisible = false;
+            _status.Text = "The import was stopped. The tables before it are saved; tick \"Skip tables already in " +
+                           "the project\" and Import again to carry on.";
+        }
+        finally
+        {
+            _running = null;
+        }
+
+        if (_closeWhenStopped)
+            Close();
     }
 }
