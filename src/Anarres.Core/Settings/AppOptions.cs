@@ -10,6 +10,13 @@ public enum ThemeLook
     Light
 }
 
+// What the window's close button does
+public enum CloseAction
+{
+    Exit,
+    Tray
+}
+
 public enum StartEditor
 {
     Last,
@@ -78,6 +85,12 @@ public sealed class AppOptions
     public int MaxUndoSteps { get; set; } = DEFAULT_UNDO_STEPS;
 
     public bool RememberWindow { get; set; } = true;
+
+    // The close button exits, or hides Anarres in the system tray
+    public CloseAction OnClose { get; set; } = CloseAction.Exit;
+
+    // Asks before Anarres exits, even with nothing unsaved
+    public bool ConfirmExit { get; set; }
 
     // The program .sql and .csv files open in, and the one the project's database opens in (Tools menu)
     public ProgramChoice TextEditor { get; set; } = new ProgramChoice { Name = ProgramChoice.SYSTEM };

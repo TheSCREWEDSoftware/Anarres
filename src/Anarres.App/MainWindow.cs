@@ -222,6 +222,7 @@ public sealed class MainWindow : Window
         file.Items.Add(new Separator());
         file.Items.Add(Item("E_xit", () =>
         {
+            _exiting = true;
             Close();
             return Task.CompletedTask;
         }));
@@ -745,11 +746,82 @@ public sealed class MainWindow : Window
             await _spells.LoadAsync();
     }
 
+    private TrayIcon? _tray;
+    private bool _exiting;
+
+    private void HideToTray()
+    {
+        if (_tray == null)
+        {
+            NativeMenu menu = new NativeMenu();
+            NativeMenuItem show = new NativeMenuItem("Show Anarres");
+            show.Click += (_, _) => ShowFromTray();
+            NativeMenuItem exit = new NativeMenuItem("Exit");
+            exit.Click += (_, _) =>
+            {
+                ShowFromTray();
+                _exiting = true;
+                Close();
+            };
+            menu.Items.Add(show);
+            menu.Items.Add(new NativeMenuItemSeparator());
+            menu.Items.Add(exit);
+            _tray = new TrayIcon
+            {
+                Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://Anarres/Assets/anarres.png"))),
+                ToolTipText = "Anarres",
+                Menu = menu
+            };
+            _tray.Clicked += (_, _) => ShowFromTray();
+            if (Application.Current != null)
+                TrayIcon.SetIcons(Application.Current, new TrayIcons { _tray });
+        }
+
+        _tray.IsVisible = true;
+        Hide();
+    }
+
+    private void ShowFromTray()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Activate();
+        if (_tray != null)
+            _tray.IsVisible = false;
+    }
+
     private async void OnClosing(object? sender, WindowClosingEventArgs e)
     {
         CommitEdits();
-        if (_closingConfirmed || (!_session.ModifiedTables.Any() && _tables.UnsavedFile == null))
+        // The close button hides Anarres in the tray; Exit from the tray menu closes it for real
+        if (!_exiting && !_closingConfirmed && !IsTest && _options.OnClose == CloseAction.Tray &&
+            e.CloseReason == WindowCloseReason.WindowClosing)
         {
+            e.Cancel = true;
+            HideToTray();
+            return;
+        }
+
+        bool unsaved = _session.ModifiedTables.Any() || _tables.UnsavedFile != null;
+        if (!_closingConfirmed && !unsaved && _options.ConfirmExit && !IsTest &&
+            e.CloseReason != WindowCloseReason.OSShutdown)
+        {
+            e.Cancel = true;
+            if (!await Dialogs.ConfirmAsync(this, "Exit Anarres", "Exit Anarres?", "Exit"))
+            {
+                _exiting = false;
+                return;
+            }
+
+            _closingConfirmed = true;
+            Close();
+            return;
+        }
+
+        if (_closingConfirmed || !unsaved)
+        {
+            _tray?.Dispose();
             if (!IsTest)
                 RememberState();
             _session.Dispose();
@@ -761,6 +833,10 @@ public sealed class MainWindow : Window
         {
             _closingConfirmed = true;
             Close();
+        }
+        else
+        {
+            _exiting = false;
         }
     }
 }
