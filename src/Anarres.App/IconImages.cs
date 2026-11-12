@@ -47,6 +47,22 @@ public sealed class IconImages
         return bitmap;
     }
 
+    private readonly Dictionary<string, Bitmap?> _byPath =
+        new Dictionary<string, Bitmap?>(StringComparer.OrdinalIgnoreCase);
+
+    // Any texture by its client path, such as an item's inventory icon
+    public Bitmap? GetFile(string path)
+    {
+        if (!Library.IsAvailable || path.Length == 0)
+            return null;
+        if (_byPath.TryGetValue(path, out Bitmap? cached))
+            return cached;
+        BlpImage? image = Library.Get(path);
+        Bitmap? bitmap = image == null ? null : ToBitmap(image);
+        _byPath[path] = bitmap;
+        return bitmap;
+    }
+
     public static Bitmap ToBitmap(BlpImage image)
     {
         WriteableBitmap bitmap = new WriteableBitmap(new PixelSize(image.Width, image.Height), new Vector(DPI, DPI),

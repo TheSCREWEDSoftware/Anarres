@@ -433,6 +433,18 @@ public sealed class SpellEditorView : Grid
         return id == 0 ? string.Empty : _session.WorldName(WorldNames.ITEMS, id) ?? string.Empty;
     }
 
+    // An item's name in its quality colour, with its inventory icon, as the game shows it
+    private (IBrush? Colour, IImage? Icon) ItemLook(uint id)
+    {
+        if (id == 0 || _session.ItemDetails(id) is not { } item)
+            return (null, null);
+        IBrush? colour = GameColours.ItemQuality(item.Quality) is { } hex ? GameBrush(hex) : null;
+        string? icon = _itemSources?.ItemIcon(item.Display);
+        return (colour, icon != null ? _images?.GetFile(icon) : null);
+    }
+
+    private Anarres.Core.Models.ModelSources? _itemSources;
+
     private string? WorldEntry(string table, uint id)
     {
         return id == 0 ? null : _session.WorldName(table, id);
@@ -444,6 +456,11 @@ public sealed class SpellEditorView : Grid
         int row = id == 0 || table == null ? -1 : table.FindRow(id);
         int name = table == null ? -1 : SpellRecord.TextColumn(table.Definition, "Name", SpellRecord.ENGLISH);
         return row < 0 || name < 0 ? string.Empty : table!.GetString(row, name);
+    }
+
+    private Control ItemLookup(string label, string column)
+    {
+        return Named(Ui.Row(label, new LookupField(_binding, column, ItemName, ItemLook).View), column);
     }
 
     private Control Lookup(string label, string column, Func<uint, string> describe)
@@ -638,7 +655,7 @@ public sealed class SpellEditorView : Grid
                      new MiscField(_binding, Column("EffectMiscValueB"), Column("Effect"), Column("EffectAura"),
                                    second: true, "Misc value B", WorldEntry).View,
                      Lookup("Trigger spell", Column("EffectTriggerSpell"), SpellName),
-                     Lookup("Item created", Column("EffectItemType"), ItemName),
+                     ItemLookup("Item created", Column("EffectItemType")),
                      Named(Ui.Row("Affected family mask",
                                   new CellField(_binding, Column("EffectSpellClassMaskA"), Ui.FIELD_WIDTH).Box,
                                   new CellField(_binding, Column("EffectSpellClassMaskB"), Ui.FIELD_WIDTH).Box,
@@ -693,7 +710,7 @@ public sealed class SpellEditorView : Grid
         StackPanel reagents = new StackPanel();
         for (int reagent = 1; reagent <= SpellRecord.REAGENT_COUNT; ++reagent)
         {
-            LookupField item = new LookupField(_binding, "Reagent_" + reagent, ItemName);
+            LookupField item = new LookupField(_binding, "Reagent_" + reagent, ItemName, ItemLook);
             item.View.Children.Insert(1, new TextBlock { Text = "x", Classes = { "label" },
                                                          VerticalAlignment = VerticalAlignment.Center });
             item.View.Children.Insert(2, new CellField(_binding, "ReagentCount_" + reagent, Ui.FIELD_WIDTH).Box);
@@ -704,8 +721,8 @@ public sealed class SpellEditorView : Grid
         return Ui.Vertical(0,
             Ui.Group("Reagents (item ID x count)", reagents),
             Ui.Group("Tools",
-                     Lookup("Totem 1", "Totem_1", ItemName),
-                     Lookup("Totem 2", "Totem_2", ItemName),
+                     ItemLookup("Totem 1", "Totem_1"),
+                     ItemLookup("Totem 2", "Totem_2"),
                      Lookup("Tool category 1", "RequiredTotemCategoryID_1", ToolCategory),
                      Lookup("Tool category 2", "RequiredTotemCategoryID_2", ToolCategory),
                      Ui.Hint("Item names come from item_template in the world database (Project settings > " +
@@ -1200,6 +1217,7 @@ public sealed class SpellEditorView : Grid
     private async Task ShowWorldNamesAsync()
     {
         await _session.LoadWorldNamesAsync();
+        _itemSources = await _session.ModelSourcesAsync();
         _binding.Refresh();
     }
 

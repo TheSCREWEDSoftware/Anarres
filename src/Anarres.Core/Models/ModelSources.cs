@@ -173,6 +173,17 @@ public sealed class ModelSources
         return found;
     }
 
+    // An item display's inventory icon, as a path in the client
+    public string? ItemIcon(uint display)
+    {
+        DbcTable? displays = _tables(ITEM_DISPLAY);
+        int row = displays?.FindRow(display) ?? -1;
+        if (displays == null || row < 0)
+            return null;
+        string icon = Text(displays, row, "InventoryIcon_1");
+        return icon.Length > 0 ? "Interface\\Icons\\" + icon + TEXTURE_EXTENSION : null;
+    }
+
     public string? EffectFile(uint effect)
     {
         DbcTable? names = _tables(EFFECT_NAME);

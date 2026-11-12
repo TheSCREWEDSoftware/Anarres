@@ -24,6 +24,22 @@ public static class WorldNames
         return names;
     }
 
+    // Each item's quality (0 poor to 7 heirloom) and display, for colouring its name and finding its icon
+    public static async Task<Dictionary<uint, (byte Quality, uint Display)>> ItemDetailsAsync(
+        MySqlSettings world, CancellationToken cancellation = default)
+    {
+        Dictionary<uint, (byte, uint)> details = new Dictionary<uint, (byte, uint)>();
+        await using MySqlConnection connection = new MySqlConnection(world.ConnectionString());
+        await connection.OpenAsync(cancellation);
+        await using MySqlCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT `entry`, `Quality`, `displayid` FROM `" + ITEMS + "`";
+        await using MySqlDataReader reader = await command.ExecuteReaderAsync(cancellation);
+        while (await reader.ReadAsync(cancellation))
+            details[Convert.ToUInt32(reader.GetValue(0))] = (Convert.ToByte(reader.GetValue(1)),
+                                                             Convert.ToUInt32(reader.GetValue(2)));
+        return details;
+    }
+
     // The display an entry is drawn with (a creature's first model), and an item's InventoryType; null if missing
     public static async Task<(uint Display, uint Slot)?> DisplayAsync(MySqlSettings world, string table, uint entry,
                                                                      CancellationToken cancellation = default)

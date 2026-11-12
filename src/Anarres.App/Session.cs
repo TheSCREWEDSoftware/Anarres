@@ -182,7 +182,29 @@ public sealed class Session : IDisposable
                     // No world database here; IDs show without names
                 }
             }
+
+            try
+            {
+                Dictionary<uint, (byte, uint)> items = await WorldNames.ItemDetailsAsync(world);
+                lock (_world)
+                    _items = items;
+            }
+            catch (Exception exception) when (exception is System.Data.Common.DbException or
+                                                  InvalidOperationException or TimeoutException or
+                                                  InvalidCastException or OverflowException)
+            {
+                // Names show without quality colours or icons
+            }
         });
+    }
+
+    private Dictionary<uint, (byte Quality, uint Display)> _items = new Dictionary<uint, (byte, uint)>();
+
+    // An item's quality and display from item_template, once the world names have loaded
+    public (byte Quality, uint Display)? ItemDetails(uint entry)
+    {
+        lock (_world)
+            return _items.TryGetValue(entry, out (byte, uint) details) ? details : null;
     }
 
     // The name of an entry of item_template, creature_template or gameobject_template, or null

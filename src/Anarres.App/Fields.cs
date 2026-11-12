@@ -415,17 +415,31 @@ public sealed class MiscField : IField
 // An index into another table, with what it means shown beside it, such as "1.5 sec" for a cast time
 public sealed class LookupField : IField
 {
-    private readonly Func<uint, string> _describe;
-    private readonly TextBlock _meaning = new TextBlock { Classes = { "label" }, MaxWidth = 380,
-                                                          TextTrimming = TextTrimming.CharacterEllipsis };
+    private const double ICON_SIZE = 24;
 
-    public LookupField(RecordBinding binding, string column, Func<uint, string> describe)
+    private readonly Func<uint, string> _describe;
+    private readonly Func<uint, (IBrush? Colour, IImage? Icon)>? _look;
+    private readonly TextBlock _meaning = new TextBlock { Classes = { "label" }, MaxWidth = 380,
+                                                          TextTrimming = TextTrimming.CharacterEllipsis,
+                                                          VerticalAlignment = VerticalAlignment.Center };
+    private readonly Image _icon = new Image
+    {
+        Width = ICON_SIZE,
+        Height = ICON_SIZE,
+        IsVisible = false,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+
+    // look can colour the meaning and give it an icon, such as an item's quality and inventory icon
+    public LookupField(RecordBinding binding, string column, Func<uint, string> describe,
+                       Func<uint, (IBrush? Colour, IImage? Icon)>? look = null)
     {
         _describe = describe;
+        _look = look;
         Value = new CellField(binding, column, Ui.FIELD_WIDTH);
         Value.ValueChanged += Refresh;
         binding.Add(this);
-        View = Ui.Horizontal(Value.Box, _meaning);
+        View = Ui.Horizontal(Value.Box, _icon, _meaning);
     }
 
     public CellField Value { get; }
@@ -434,7 +448,17 @@ public sealed class LookupField : IField
 
     public void Refresh()
     {
-        _meaning.Text = _describe(Value.Raw());
+        uint value = Value.Raw();
+        _meaning.Text = _describe(value);
+        if (_look == null)
+            return;
+        (IBrush? colour, IImage? icon) = _look(value);
+        if (colour != null)
+            _meaning.Foreground = colour;
+        else
+            _meaning.ClearValue(TextBlock.ForegroundProperty);
+        _icon.Source = icon;
+        _icon.IsVisible = icon != null;
     }
 }
 

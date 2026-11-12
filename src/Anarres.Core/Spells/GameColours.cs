@@ -14,6 +14,17 @@ public static class GameColours
     // Magic, Curse, Disease, Poison: dispel types 1 to 4
     private static readonly string[] DispelTypes = { "#3399FF", "#9900FF", "#996600", "#009900" };
 
+    // Item names by quality: poor, common, uncommon, rare, epic, legendary, artifact, heirloom
+    private static readonly string[] Qualities =
+    {
+        "#9D9D9D", "#FFFFFF", "#1EFF00", "#0070DD", "#A335EE", "#FF8000", "#E6CC80", "#E6CC80"
+    };
+
+    public static string? ItemQuality(int quality)
+    {
+        return quality >= 0 && quality < Qualities.Length ? Qualities[quality] : null;
+    }
+
     // The colour of a mask's lowest school, or null for none
     public static string? School(uint mask)
     {
