@@ -37,11 +37,16 @@ Open **File > Project settings**.
     `acore_dbc_extracted` by default, created on first use.
   - *AzerothCore names* use `acore_world`'s `spell_dbc` and the other `*_dbc` tables. The worldserver loads those
     rows over the `.dbc` files at start-up, so keep only the rows you change there.
-- **Clean DBC folder.** Unmodified 3.3.5a files, such as the `dbc` folder of AzerothCore's client data.
+- **Clean DBC folder** (optional). Unmodified files are how Anarres tells what you changed: the `spell_dbc` rows
+  Apply writes, the SQL of changed spells, and which tables count as edited. Left empty, it uses the server's own
+  `dbc` files; the first time Apply replaces one it keeps the original in the export folder's `server-backup` and
+  compares with that from then on. After those comes the client's MPQs, leaving out the patch Anarres builds. Set
+  this folder only when your server's files already hold earlier edits; the `dbc` folder of AzerothCore's client
+  data release is a clean set.
 - **Server data folder**: the worldserver's `DataDir` (the folder with `dbc`, `maps` and `vmaps`) or its `dbc`
   folder. The window shows where files will go.
-- **WoW client folder**: the folder with `Wow.exe`, or its `Data` folder, and the **Locale** (such as `enUS`): to
-  import from the client's MPQs, show icons, and put the patch in.
+- **WoW client folder**: the folder with `Wow.exe`, or its `Data` folder, and the **Locale**, chosen from the
+  locale folders found in it (such as `enUS`): to import from the client's MPQs, show icons, and put the patch in.
 - **Export folder**: where exported `.dbc` files are written, under `DBFilesClient`.
 - **Patch name**: `patch-A.MPQ` by default. The client loads `patch-2` to `patch-9`, then `patch-A` to `patch-Z`;
   later ones win, so pick one after any other custom patch you use.
@@ -103,7 +108,7 @@ afterwards; the client still needs the patch to show new or changed spells.
   difference, so only the size matters, and changed-only files are a few kilobytes.
 
 With *AzerothCore names*, the world tables hold only the rows that differ, so Export lays them over the clean
-file from the Clean DBC folder or the client's MPQs; without one it refuses, rather than write a `.dbc` with only
+file from the clean files (see Clean DBC folder above); without one it refuses, rather than write a `.dbc` with only
 those rows.
 
 ## Apply: one click
