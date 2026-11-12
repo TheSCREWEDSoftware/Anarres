@@ -8,7 +8,7 @@ for Windows and Linux. It shares its look with [Urras](https://github.com/TheSCR
 
 **Status:** early development, first version.
 
-![Anarres: the spell list, and Blizzard's effects in the spell editor](docs/screenshots/spell-editor.png)
+![Anarres: the spell list, and Blizzard's description beside its live preview](docs/screenshots/spell-editor.png)
 
 ## Contents
 
@@ -154,13 +154,26 @@ also in **File > Project settings**.
 
 Laid out after Stoneharry's [WoW Spell Editor](https://github.com/stoneharry/WoW-Spell-Editor).
 
-- A searchable spell list: by ID, name, or `effect:6`, `aura:3`, `family:3`, `trigger:`, `icon:`...
-- The chosen spell in tabs: Base, Attributes, Effects, Targets and Requirements, Procs and Interrupts, Items and
-  Reagents, Visual, Localisation and All fields.
+- A searchable spell list: by ID, name, or `effect:6`, `aura:3`, `family:3`, `trigger:`, `icon:`... Normal rows
+  show each spell's icon, ID and rank with a strip in its school's colour, and hovering one shows its tooltip;
+  Compact rows fit more on screen (**View > Options > Spell Editor**).
+- The chosen spell in tabs: Base, Attributes, Effects, Targets and Requirements, Procs and Interrupts, Talents,
+  Items and Reagents, Skill, Visual, 3D, Localisation and All fields.
+- The header shows the icon (with a border in the game's debuff colour for its dispel type), a badge for the
+  school in the game's colour, and how many talents change the spell.
+- Base tab: the description and buff text beside a live preview. A level slider (or a typed level, within the
+  spell's own levels) and a checkbox per talent show the tooltip as a character of that level with those talents
+  would see it, as Wowhead does.
+- **Talents** tab: every talent, glyph, set bonus and buff that changes the spell through its family masks, with
+  what each one changes. Under each effect, **Affected spells** lists the spells that effect changes.
 - Effects, auras, targets, mechanics, powers and the rest picked from named lists; misc values say what they mean
   for the chosen effect or aura (a stat, a power, a school mask, a creature entry...).
-- Attributes as toggles, one per bit, with AzerothCore's names and notes; other masks (school, procs, interrupts,
-  target flags, shapeshifts) show their set bits and open a bit list.
+- Every bit mask (attributes, procs, interrupts, target flags, shapeshifts, item subclasses...) as switches in
+  columns, each with its name, its bit value (1, 2, 4...) and a note, and the whole value beside them as a number
+  and in hex. The school is a dropdown of its own.
+- Lists read like AzerothCore's code, such as `13 - POTION`, with *Other value...* for anything else.
+- Money fields (trainer costs...) as gold, silver and copper with the raw copper value beside them; items show in
+  their quality's colour with their icon.
 - Cast times, durations, ranges, radii, icons and other spells shown by what they mean, not just their index.
 - Spell icons from the client's MPQs, in the header and in an icon picker.
 - A Visual tab for the spell's SpellVisual row and its kits; "own copy" gives the spell its own visual or kit so
@@ -216,6 +229,7 @@ All in the **Spell...** menu above the editor.
   says what the column does ("the global cooldown group; 133 is the normal global cooldown...") and its `spell_dbc`
   name. Every Spell.dbc column is described, and the lookup tables it uses; the DBC editor shows the same notes on
   its column headers.
+- SQL is shown with syntax colours.
 - **Ctrl+F** in a spell finds a field or flag by its label, column, notes or AzerothCore name (`school`,
   `cooldown`, `range`, `passive`, `SPELL_ATTR0_PASSIVE`), opens its tab and shows it. Ctrl+F again goes to the
   spell search.
@@ -228,16 +242,23 @@ All in the **Spell...** menu above the editor.
 In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 
 - Every table in the project, or any `.dbc` opened straight from disk, in a grid that draws only what's on screen
-  (Spell.dbc's 50,000 rows by 234 columns scroll smoothly).
+  (Spell.dbc's 50,000 rows by 234 columns scroll smoothly). Search the table list by name.
+- The **Spell Editor | DBC Editor** switch in the title bar moves between them; Spell.dbc has an **Open in Spell
+  Editor** button.
 - Edit cells in place, add, copy and delete rows, undo and redo, filter by ID, text or `Column=value`.
-- Several tables open at once in tabs (`*` marks unsaved ones).
+- Several tables open at once in tabs (`*` marks unsaved ones) and **Close all**. A single click opens a preview
+  tab (in italics) that the next table replaces, as in VS Code; double-click or edit to keep it. Preview tabs can be
+  turned off in Options.
 - Shift+click, Shift+arrows and Ctrl+A select rows; Ctrl+C copies them with a header line and Ctrl+V pastes them
   into any table with matching columns. A pasted row whose ID is taken gets the next free one.
 - Click a header to sort; right-click it to hide the column, hide every empty column, or show them all again.
+  Double-click a column's edge to fit it to its contents; text columns start wide enough to read.
 - Save to the project or back to the file, save as `.dbc` or CSV, import CSV, and write the shown rows or the rows
   changed from the clean file as SQL.
 - See and rename a layout's columns, saved as a definition file that replaces the built-in one.
 - 240 file layouts built in; anything else gets one guessed from its data.
+- **Tools > Table links...** maps which tables point at which: pick a table to see the tables and columns that
+  point at it and the ones it points at, open any of them, or save every link as a Mermaid diagram.
 
 </details>
 
@@ -246,7 +267,12 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 
 - Import from a folder of `.dbc` files (or a server's Data folder) or straight out of the client's MPQs. Each
   table is saved as it's imported, and a stopped import carries on where it left off. The window says what
-  language the files are in, and the locale is picked from the client's own folders.
+  language the files are in, and the locale is picked from the client's own folders. A second bar follows the
+  table being imported, so a big one such as Spell.dbc visibly moves; closing the window stops the import.
+- Locale **All available** reads every locale folder the client has and puts each language in its own column, so
+  one Spell.dbc carries every language. It takes longer, and says so.
+- The **Localisation** tab shows, in red, the client's own text for every empty language box; **Import from the
+  client** copies it in for every spell.
 - **Apply** (F6) in one click: save, write the edited tables, copy them to the worldserver (keeping its own copy
   once), build the client patch MPQ, empty the client's cache, and put the changed rows in `acore_world`'s
   `spell_dbc` and other `_dbc` tables.
@@ -285,8 +311,12 @@ In the spirit of [WDBX Editor](https://github.com/WowDevTools/WDBXEditor).
 - System, Dark or Light, with built-in colours, ready-made themes (Urras's GitHub, GitLab, SourceGit and Fork
   themes, and Urras, Frost, Fel, Horde, Alliance and Parchment) or your own, made in the theme editor and kept as
   files in Urras's format ([docs/themes.md](docs/themes.md)).
-- Text sizes, the language spell names are shown in, which editor opens first, confirmations, undo depth and more,
-  in **View > Options**.
+- Text size and font (any font on your system) for every theme or just one, with a button to give every theme the
+  same size; the theme editor says which theme you're changing and restores a theme's original colours.
+- The language spell names are shown in, which editor opens first, the spell list layout, preview tabs,
+  confirmations, undo depth and more, in **View > Options**.
+- Close to the tray instead of quitting, and confirm before exiting; both off by default.
+- **View > Write a performance log** records how long loading, drawing and the 3D view take, for bug reports.
 - Unexpected errors go to `crash.log` instead of closing Anarres.
 
 </details>
@@ -327,24 +357,62 @@ the layouts.
 <details>
 <summary><b>Show the screenshots</b></summary>
 
-<img src="docs/screenshots/base-tab.png" alt="Screenshot: the Base tab"><br>
-The Base tab: name, rank, description and a live tooltip preview, with a **!** note on every field
+The screenshots are 1920 × 1080 and show a project imported from clean 3.3.5a `.dbc` files with no client, so
+there are no spell icons; with your client's folder set, the list, header and talents show the game's icons.
+
+<img src="docs/screenshots/spell-editor.png" alt="Screenshot: the spell editor's Base tab"><br>
+The Base tab: Blizzard's description beside its live preview, with the level slider, a typed level and a checkbox
+for each talent that changes it
 
 <table>
   <tr>
     <td>
-      <img src="docs/screenshots/attributes.png" alt="Screenshot: attributes as toggles"><br>
-      Attributes as toggles, one per bit
+      <img src="docs/screenshots/talents.png" alt="Screenshot: the Talents tab"><br>
+      The Talents tab: the 52 talents and 20 other auras that change Frostbolt, and what each one changes
     </td>
     <td>
-      <img src="docs/screenshots/flags.png" alt="Screenshot: the bit list"><br>
-      The bit list, with AzerothCore's names and notes
+      <img src="docs/screenshots/attributes.png" alt="Screenshot: attributes as switches"><br>
+      Attributes as switches, with each bit's value and the whole value in hex
     </td>
   </tr>
   <tr>
-    <td colspan="2">
+    <td>
+      <img src="docs/screenshots/effects.png" alt="Screenshot: the Effects tab"><br>
+      Effects: effect, aura and targets picked from named lists, with a note on every field
+    </td>
+    <td>
+      <img src="docs/screenshots/compact-list.png" alt="Screenshot: the compact spell list"><br>
+      The compact spell list beside Frostbolt's procs and interrupts
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/localisation.png" alt="Screenshot: the Localisation tab"><br>
+      Localisation: the client's German text previewed in red in the empty box
+    </td>
+    <td>
+      <img src="docs/screenshots/import.png" alt="Screenshot: the Import window"><br>
+      Import from the client with every locale, and the note that it takes longer
+    </td>
+  </tr>
+  <tr>
+    <td>
       <img src="docs/screenshots/dbc-editor.png" alt="Screenshot: the DBC editor"><br>
-      The DBC editor with Spell.dbc: 49,839 rows by 234 columns
+      The DBC editor: the searchable table list, tabs with Close all, and SpellIcon.dbc
+    </td>
+    <td>
+      <img src="docs/screenshots/table-links.png" alt="Screenshot: Table links"><br>
+      Table links: the tables that point at Spell.dbc, and the ones it points at
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/options-appearance.png" alt="Screenshot: Options, Appearance"><br>
+      Options: the theme with a live preview, and text size and font for every theme or just one
+    </td>
+    <td>
+      <img src="docs/screenshots/theme-editor.png" alt="Screenshot: the theme editor"><br>
+      Editing the ready-made Frost theme; Restore defaults brings back its original colours
     </td>
   </tr>
 </table>

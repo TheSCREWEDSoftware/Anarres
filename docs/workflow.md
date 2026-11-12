@@ -64,6 +64,14 @@ description variables). Importing replaces the project's copy of each ticked tab
   for its locale, so the filled column tells it (from ChrRaces, ChrClasses or Spell). AzerothCore's `spell_dbc`
   names those columns after a later list (`Name_Lang_enGB` is where the 3.3.5a client keeps Korean), so the
   Localisation tab labels each by the language the client reads from it.
+- **All available**, at the top of the Locale list, reads every locale folder the client has (each with its own
+  MPQs) and puts each language in its own column, so one Spell.dbc carries every language. enGB, enCN and enTW
+  share a column with enUS, zhCN and zhTW and only fill it where those left it empty. It reads every locale's
+  archives, so it takes longer.
+- A second bar follows the table being imported. Closing the window stops the import; the table it was on is left
+  as it was, and *Skip tables already in the project* carries on later.
+- A project imported from one locale can get the others later: the spell editor's **Localisation** tab previews
+  the client's own text in red in each empty box, and **Import from the client** copies it in for every spell.
 
 Import once; the project keeps the data from then on.
 
