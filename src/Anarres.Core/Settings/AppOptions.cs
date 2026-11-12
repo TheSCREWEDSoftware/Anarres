@@ -106,6 +106,9 @@ public sealed class AppOptions
     // DBC editor
     public bool HideEmptyColumns { get; set; }
 
+    // A table opened from the list replaces the last one's tab until it's edited or kept, like a file preview
+    public bool PreviewTabs { get; set; } = true;
+
     // Columns named Flags, Mask or Attributes show as 0x... in the grid
     public bool FlagsInHex { get; set; } = true;
 

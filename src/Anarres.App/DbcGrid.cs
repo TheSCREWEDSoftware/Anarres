@@ -640,6 +640,30 @@ public sealed class DbcGrid : Grid
             return (_grid._order.Count, left);
         }
 
+        private const int MOST_ROWS_MEASURED = 20000;
+        private const double MAX_FITTED_WIDTH = 640;
+
+        private void FitColumn(int column)
+        {
+            DbcTable? table = _grid._table;
+            if (table == null)
+                return;
+            double widest = Measure(table.Definition.Columns[column].Name, _bold);
+            foreach (int row in _grid._rows.Take(MOST_ROWS_MEASURED))
+                widest = Math.Max(widest, Measure(_grid.Display(table, row, column), _typeface));
+            _grid._widths[column] = Math.Clamp(widest + CELL_PADDING * 2 + 2, MIN_COLUMN_WIDTH, MAX_FITTED_WIDTH);
+            _grid.UpdateScrollBars();
+            InvalidateVisual();
+        }
+
+        private double Measure(string text, Typeface typeface)
+        {
+            if (text.Length == 0)
+                return 0;
+            return new FormattedText(text.Replace('\n', ' '), CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                                     typeface, _grid.CellFontSize, Brushes.Black).WidthIncludingTrailingWhitespace;
+        }
+
         private void DrawText(DrawingContext context, string value, Rect cell, IBrush brush, Typeface typeface,
                               bool rightAlign)
         {
@@ -664,6 +688,13 @@ public sealed class DbcGrid : Grid
             Focus();
             Point point = e.GetPosition(this);
             int resize = _grid.ResizeColumn(point);
+            // Double-clicking a column's edge fits it to its widest value, as Excel does
+            if (resize >= 0 && e.ClickCount == 2)
+            {
+                FitColumn(resize);
+                return;
+            }
+
             if (resize >= 0)
             {
                 _resizing = resize;

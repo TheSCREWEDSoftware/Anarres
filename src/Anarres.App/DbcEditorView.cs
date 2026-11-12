@@ -41,6 +41,7 @@ public sealed class DbcEditorView : Grid
     private readonly DispatcherTimer _filterTimer;
     private DbcTable? _table;
     private readonly Button _preview;
+    private readonly Button _spellEditor;
     // Set when the table came from a file on disk instead of the project
     private string? _filePath;
     private bool _refreshing;
@@ -51,6 +52,15 @@ public sealed class DbcEditorView : Grid
         _session = session;
         _preview = Ui.AsyncButton("3D preview", PreviewAsync);
         _preview.IsVisible = false;
+        _spellEditor = Ui.AsyncButton("Open in Spell Editor", async () =>
+        {
+            if (_table != null && _grid.SelectedRow >= 0)
+                await _window.OpenInSpellEditorAsync(_table.Key(_grid.SelectedRow));
+            else
+                await _window.OpenInSpellEditorAsync(0);
+        }, accent: true);
+        ToolTip.SetTip(_spellEditor, "The selected spell in the spell editor, with its fields in tabs and named lists");
+        _spellEditor.IsVisible = false;
         _names = new ValueNames(session);
         _grid.Names = _names.For;
         ColumnDefinitions = new ColumnDefinitions("Auto,8,*");
@@ -68,7 +78,17 @@ public sealed class DbcEditorView : Grid
         _tables.SelectionChanged += async (_, _) =>
         {
             if (!_refreshing && _tables.SelectedItem is StoredTable stored)
-                await OpenStoredAsync(stored.File);
+                await OpenStoredAsync(stored.File, keep: !_previewTabs);
+        };
+        // Double-clicking a table in the list keeps its tab
+        _tables.DoubleTapped += (_, _) =>
+        {
+            if (_tables.SelectedItem is StoredTable stored &&
+                string.Equals(_transient, stored.File, StringComparison.OrdinalIgnoreCase))
+            {
+                _transient = null;
+                ShowTabs();
+            }
         };
         _tables.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<StoredTable>((table, _) =>
             new StackPanel
@@ -158,8 +178,30 @@ public sealed class DbcEditorView : Grid
     }
 
     // A tab per table opened this session; the shown one is marked, and each closes with its x
+    private bool IsModified(string file)
+    {
+        return _session.ModifiedTables.Any(table => string.Equals(table.Definition.File, file,
+                                                                  StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task CloseAllTabsAsync()
+    {
+        _open.Clear();
+        _transient = null;
+        _table = null;
+        _grid.Show(null);
+        ShowInfo();
+        ShowTabs();
+        await Task.CompletedTask;
+    }
+
     private void ShowTabs()
     {
+        // An edited preview tab is kept
+        if (_transient != null && IsModified(_transient))
+            _transient = null;
+        _spellEditor.IsVisible = _table != null && _filePath == null &&
+                                 string.Equals(_table.Definition.File, "Spell.dbc", StringComparison.OrdinalIgnoreCase);
         _preview.IsVisible = _table != null &&
                              PreviewTables.Contains(_table.Definition.File, StringComparer.OrdinalIgnoreCase);
         _tabStrip.Children.Clear();
@@ -177,6 +219,17 @@ public sealed class DbcEditorView : Grid
             };
             if (current)
                 tab.Classes.Add("accent");
+            if (string.Equals(file, _transient, StringComparison.OrdinalIgnoreCase))
+            {
+                tab.FontStyle = FontStyle.Italic;
+                ToolTip.SetTip(tab, "A preview: the next table from the list replaces it until it's edited or " +
+                                    "double-clicked");
+                tab.DoubleTapped += (_, _) =>
+                {
+                    _transient = null;
+                    ShowTabs();
+                };
+            }
             tab.Click += async (_, _) => await OpenStoredAsync(file);
             Button close = new Button
             {
@@ -188,6 +241,15 @@ public sealed class DbcEditorView : Grid
             close.Click += async (_, _) => await CloseTabAsync(file);
             _tabStrip.Children.Add(tab);
             _tabStrip.Children.Add(close);
+        }
+
+        if (_open.Count > 1)
+        {
+            Button closeAll = Ui.AsyncButton("Close all", CloseAllTabsAsync);
+            closeAll.Margin = new Thickness(0, 0, 0, 4);
+            closeAll.Padding = new Thickness(10, 3);
+            ToolTip.SetTip(closeAll, "Close every tab; unsaved changes stay until you save or revert them");
+            _tabStrip.Children.Add(closeAll);
         }
     }
 
@@ -242,6 +304,26 @@ public sealed class DbcEditorView : Grid
         _grid.NamesInCells = options.NamesInCells;
         _grid.HideEmptyByDefault = options.HideEmptyColumns;
         _grid.UseFontSize(options.GridFontSize);
+        _previewTabs = options.PreviewTabs;
+    }
+
+    private bool _previewTabs = true;
+    // The tab that the next table opened from the list replaces, while it's unedited
+    private string? _transient;
+    private List<StoredTable> _allTables = new List<StoredTable>();
+    private readonly TextBox _tableSearch = Ui.Clearable(new TextBox { Watermark = "Search tables" });
+
+    private void ShowTableList()
+    {
+        string text = _tableSearch.Text?.Trim() ?? string.Empty;
+        string? selected = (_tables.SelectedItem as StoredTable)?.File;
+        _refreshing = true;
+        List<StoredTable> shown = _allTables
+                                  .Where(table => table.File.Contains(text, StringComparison.OrdinalIgnoreCase))
+                                  .ToList();
+        _tables.ItemsSource = shown;
+        _tables.SelectedItem = shown.FirstOrDefault(table => table.File == selected);
+        _refreshing = false;
     }
 
     internal DbcGrid Grid => _grid;
@@ -301,7 +383,8 @@ public sealed class DbcEditorView : Grid
         {
             IDbcStore store = await _session.StoreAsync();
             List<StoredTable> tables = await store.ListTablesAsync();
-            _tables.ItemsSource = tables;
+            _allTables = tables;
+            ShowTableList();
             if (tables.Count == 0)
                 _info.Text = "The project has no tables yet. Use Import to bring .dbc files in.";
         }
@@ -317,11 +400,10 @@ public sealed class DbcEditorView : Grid
     {
         string? selected = (_tables.SelectedItem as StoredTable)?.File;
         IDbcStore store = await _session.StoreAsync();
-        List<StoredTable> tables = await store.ListTablesAsync();
-        _refreshing = true;
-        _tables.ItemsSource = tables;
-        _tables.SelectedItem = tables.FirstOrDefault(table => table.File == selected);
-        _refreshing = false;
+        _allTables = await store.ListTablesAsync();
+        ShowTableList();
+        _tables.SelectedItem = (_tables.ItemsSource as List<StoredTable>)
+                               ?.FirstOrDefault(table => table.File == selected);
     }
 
     private Control BuildList()
@@ -332,8 +414,12 @@ public sealed class DbcEditorView : Grid
         StackPanel buttons = Ui.Horizontal(open, refresh);
         buttons.Margin = new Thickness(0, 8, 0, 0);
         TextBlock title = Ui.Title("Tables in the project");
+        _tableSearch.TextChanged += (_, _) => ShowTableList();
+        _tableSearch.Margin = new Thickness(0, 0, 0, 6);
         DockPanel panel = new DockPanel { Margin = new Thickness(10) };
         DockPanel.SetDock(title, Dock.Top);
+        DockPanel.SetDock(_tableSearch, Dock.Top);
+        panel.Children.Add(_tableSearch);
         DockPanel.SetDock(buttons, Dock.Bottom);
         panel.Children.Add(title);
         panel.Children.Add(buttons);
@@ -369,7 +455,7 @@ public sealed class DbcEditorView : Grid
         WrapPanel toolbar = new WrapPanel { Margin = new Thickness(12, 10, 12, 6) };
         foreach (Control control in new Control[]
                  {
-                     save, add, copy, remove, _filter, export, csv, importCsv, sql, columns, _preview
+                     _spellEditor, save, add, copy, remove, _filter, export, csv, importCsv, sql, columns, _preview
                  })
         {
             control.Margin = new Thickness(0, 0, 8, 4);
@@ -390,7 +476,7 @@ public sealed class DbcEditorView : Grid
         return panel;
     }
 
-    private async Task OpenStoredAsync(string file)
+    private async Task OpenStoredAsync(string file, bool keep = true)
     {
         if (!await LeaveFileAsync())
             return;
@@ -398,8 +484,23 @@ public sealed class DbcEditorView : Grid
         {
             _window.SetStatus("Loading " + file + "...");
             _table = await _session.LoadAsync(file);
-            if (!_open.Contains(_table.Definition.File, StringComparer.OrdinalIgnoreCase))
-                _open.Add(_table.Definition.File);
+            string opened = _table.Definition.File;
+            if (!_open.Contains(opened, StringComparer.OrdinalIgnoreCase))
+            {
+                // A preview tab is replaced in place by the next table, unless it was edited
+                int replace = _transient == null ? -1 : _open.FindIndex(name => string.Equals(name, _transient,
+                                                                       StringComparison.OrdinalIgnoreCase));
+                bool edited = _transient != null && IsModified(_transient);
+                if (!keep && replace >= 0 && !edited)
+                    _open[replace] = opened;
+                else
+                    _open.Add(opened);
+                _transient = keep ? null : opened;
+            }
+            else if (keep && string.Equals(_transient, opened, StringComparison.OrdinalIgnoreCase))
+            {
+                _transient = null;
+            }
             ShowTabs();
             await _session.LoadNamingTablesAsync();
             _names.Forget();

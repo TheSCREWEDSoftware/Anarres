@@ -19,6 +19,8 @@ namespace Anarres.App;
 public sealed class MainWindow : Window
 {
     private const double TITLE_BAR_HEIGHT = 40;
+    private const double SWITCH_RADIUS = 6;
+    private const double SWITCH_PADDING = 2;
     // The maximise button's square, and two overlapping squares once maximised
     private const string MAXIMISE_GLYPH = "M0.5,0.5 H9.5 V9.5 H0.5 Z";
     private const string RESTORE_GLYPH = "M2.5,0.5 H9.5 V7.5 M0.5,2.5 H7.5 V9.5 H0.5 Z";
@@ -407,8 +409,18 @@ public sealed class MainWindow : Window
                               "as set in Project settings, acore_world");
         ToolTip.SetTip(import, "Bring .dbc files into the project from a folder or the client's MPQs");
         ToolTip.SetTip(export, "Write .dbc files, copy them to the server and build the client patch MPQ");
-        StackPanel tabs = Ui.Horizontal(_spellTab, _tableTab);
-        tabs.Spacing = 2;
+        // A two-way switch: one track with both editors, the chosen one lit
+        _spellTab.CornerRadius = new CornerRadius(SWITCH_RADIUS);
+        _tableTab.CornerRadius = new CornerRadius(SWITCH_RADIUS);
+        StackPanel segments = Ui.Horizontal(_spellTab, _tableTab);
+        segments.Spacing = 0;
+        Border tabs = Ui.Themed(new Border
+        {
+            CornerRadius = new CornerRadius(SWITCH_RADIUS + SWITCH_PADDING),
+            Padding = new Thickness(SWITCH_PADDING),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = segments
+        }, Border.BackgroundProperty, ThemeColours.RAISED);
         StackPanel actions = Ui.Horizontal(import, export, apply);
         actions.VerticalAlignment = VerticalAlignment.Center;
 
@@ -479,6 +491,13 @@ public sealed class MainWindow : Window
         _content.Content = _spells;
         if (_spells.Spells == null)
             await _spells.LoadAsync();
+    }
+
+    // From the DBC editor's Spell.dbc: the same spell in the spell editor's friendlier tabs
+    internal async Task OpenInSpellEditorAsync(uint id)
+    {
+        await ShowSpellsAsync();
+        _spells.Select(id);
     }
 
     private async Task ShowTablesAsync()
