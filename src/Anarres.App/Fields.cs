@@ -1,5 +1,6 @@
 using System.Globalization;
 using Anarres.Core.Dbc;
+using Anarres.Core.Settings;
 using Anarres.Core.Spells;
 using Anarres.Core.Storage;
 using Avalonia;
@@ -258,86 +259,6 @@ public sealed class EnumField : IField
     }
 }
 
-// A flags column as its number, a ... button that opens the bit list, and the names of the bits that are set
-public sealed class FlagsField : IField
-{
-    private const double SUMMARY_WIDTH = 760;
-
-    private readonly RecordBinding _binding;
-    private readonly string _column;
-    private readonly Func<EnumTable?> _table;
-    private readonly CellField _value;
-    private readonly TextBlock _summary = new TextBlock
-    {
-        Classes = { "hint" },
-        MaxWidth = SUMMARY_WIDTH,
-        TextWrapping = TextWrapping.Wrap,
-        HorizontalAlignment = HorizontalAlignment.Left
-    };
-
-    public FlagsField(RecordBinding binding, string column, EnumTable table) : this(binding, column, () => table)
-    {
-    }
-
-    // The list may change with the row, such as an item class's subclasses
-    public FlagsField(RecordBinding binding, string column, Func<EnumTable?> table)
-    {
-        _binding = binding;
-        _column = column;
-        _table = table;
-        _value = new CellField(binding, column, Ui.FIELD_WIDTH);
-        _value.ValueChanged += Refresh;
-        Button pick = new Button { Content = "...", Padding = new Thickness(10, 2) };
-        ToolTip.SetTip(pick, "Choose the bits of " + column);
-        pick.Click += async (_, _) => await PickAsync(pick);
-        binding.Add(this);
-        // A list that depends on another column, such as an item class's subclasses, follows its edits
-        binding.Edited += edited =>
-        {
-            if (edited != _column)
-                Refresh();
-        };
-        View = Ui.Vertical(4, Ui.Horizontal(_value.Box, pick), _summary);
-    }
-
-    public Control View { get; }
-
-    public void Refresh()
-    {
-        if (!_binding.IsBound)
-        {
-            _summary.Text = string.Empty;
-            return;
-        }
-
-        EnumTable? table = _table();
-        if (table == null)
-        {
-            _summary.Text = string.Empty;
-            ToolTip.SetTip(_summary, null);
-            return;
-        }
-
-        _summary.Text = table.Describe(_value.Raw());
-        ToolTip.SetTip(_summary, table.Lines(_value.Raw()));
-    }
-
-    private async Task PickAsync(Control anchor)
-    {
-        int column = _binding.Column(_column);
-        if (!_binding.IsBound || column < 0 || TopLevel.GetTopLevel(anchor) is not Window owner ||
-            _table() is not { } table)
-            return;
-        FlagsDialog dialog = new FlagsDialog(_column, table, _binding.Table!.GetRaw(_binding.Row, column));
-        uint? chosen = await dialog.ShowDialog<uint?>(owner);
-        if (chosen is not { } value || value == _binding.Table.GetRaw(_binding.Row, column))
-            return;
-        _binding.Table.SetRaw(_binding.Row, column, value);
-        _binding.ReportEdit(_column);
-        _value.Refresh();
-    }
-}
-
 // A small bit mask such as a school as a list ("4 - FIRE"); mixes show as one entry, "Choose several" opens bits
 public sealed class MaskListField : IField
 {
@@ -555,35 +476,118 @@ public sealed class AllFieldsView
     public DockPanel View { get; }
 }
 
-// Every bit of a flags column as a toggle on the page, like Stoneharry's attribute checkboxes
+// A flags column as one switch per bit with its value; knownOnly shows only named bits and any other set bit
 public sealed class FlagToggles : IField
 {
     public const string BIT_CLASS = "flag-bit";
     private const double ITEM_WIDTH = 380;
     private const double VALUE_GAP = 14;
+    private const double CELL_PADDING = 10;
     private const int BITS = 32;
 
     private readonly RecordBinding _binding;
     private readonly string _column;
-    private readonly ToggleSwitch[] _switches = new ToggleSwitch[BITS];
+    private readonly Func<EnumTable?> _table;
+    private readonly bool _knownOnly;
+    private readonly WrapPanel _bits = new WrapPanel();
+    private readonly Dictionary<int, ToggleSwitch> _switches = new Dictionary<int, ToggleSwitch>();
     private readonly TextBlock _hex = new TextBlock
     {
         Classes = { "hint" },
         VerticalAlignment = VerticalAlignment.Center
     };
+    private readonly TextBlock _empty = new TextBlock { Classes = { "hint" }, Text = "No bits are named for this." };
+    private EnumTable? _builtFor;
+    private List<int> _shown = new List<int>();
     private bool _updating;
 
-    public FlagToggles(RecordBinding binding, string column, EnumTable table)
+    public FlagToggles(RecordBinding binding, string column, EnumTable table) : this(binding, column, () => table)
+    {
+    }
+
+    public FlagToggles(RecordBinding binding, string column, Func<EnumTable?> table, bool knownOnly = false)
     {
         _binding = binding;
         _column = column;
+        _table = table;
+        _knownOnly = knownOnly;
         Value = new CellField(binding, column);
         Value.ValueChanged += Refresh;
-        WrapPanel bits = new WrapPanel();
-        for (int bit = 0; bit < BITS; ++bit)
+        Bits = Ui.Vertical(0, _bits, _empty);
+        Build(_table(), 0);
+        binding.Add(this);
+        // A list that depends on another column, such as an item class's subclasses, follows its edits
+        binding.Edited += edited =>
+        {
+            if (edited != _column)
+                Refresh();
+        };
+    }
+
+    public CellField Value { get; }
+
+    // The value as hex, shown beside the value box
+    public TextBlock Hex => _hex;
+
+    public Control Bits { get; }
+
+    public void Refresh()
+    {
+        uint raw = _binding.IsBound ? Value.Raw() : 0;
+        EnumTable? table = _table();
+        if (!SameBits(table, _builtFor) || !Wanted(table, raw).SequenceEqual(_shown))
+            Build(table, raw);
+        _updating = true;
+        foreach ((int bit, ToggleSwitch toggle) in _switches)
+        {
+            toggle.IsChecked = (raw & (1u << bit)) != 0;
+            toggle.IsEnabled = _binding.IsBound;
+        }
+
+        _hex.Text = _binding.IsBound ? "0x" + raw.ToString("X8", CultureInfo.InvariantCulture) : string.Empty;
+        _updating = false;
+    }
+
+    public void Clear()
+    {
+        int column = _binding.Column(_column);
+        if (!_binding.IsBound || column < 0 || _binding.Table!.GetRaw(_binding.Row, column) == 0)
+            return;
+        _binding.Table.SetRaw(_binding.Row, column, 0);
+        _binding.ReportEdit(_column);
+        Value.Refresh();
+        Refresh();
+    }
+
+    // Lists built afresh per row (an item class's subclasses) count as the same when they name the same bits
+    private static bool SameBits(EnumTable? left, EnumTable? right)
+    {
+        if (ReferenceEquals(left, right))
+            return true;
+        return left != null && right != null &&
+               left.Values.Select(value => (value.Value, value.Label))
+                   .SequenceEqual(right.Values.Select(value => (value.Value, value.Label)));
+    }
+
+    // The bits to show: all 32, or the named ones plus any other that's set
+    private List<int> Wanted(EnumTable? table, uint raw)
+    {
+        return Enumerable.Range(0, BITS)
+                         .Where(bit => !_knownOnly || (raw & (1u << bit)) != 0 ||
+                                       table?.Values.Any(value => value.Value == 1L << bit) == true)
+                         .ToList();
+    }
+
+    private void Build(EnumTable? table, uint raw)
+    {
+        _builtFor = table;
+        _shown = Wanted(table, raw);
+        _bits.Children.Clear();
+        _switches.Clear();
+        foreach (int bit in _shown)
         {
             uint mask = 1u << bit;
-            EnumValue? entry = table.Values.FirstOrDefault(value => value.Value == mask);
+            EnumValue? entry = table?.Values.FirstOrDefault(value => value.Value == mask);
             ToggleSwitch toggle = new ToggleSwitch { OnContent = null, OffContent = null, MinWidth = 0 };
             int index = bit;
             toggle.IsCheckedChanged += (_, _) => Toggle(index, toggle.IsChecked == true);
@@ -604,54 +608,29 @@ public sealed class FlagToggles : IField
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, VALUE_GAP, 0)
             };
-            DockPanel item = new DockPanel { Width = ITEM_WIDTH, Classes = { BIT_CLASS } };
+            DockPanel item = new DockPanel { Classes = { BIT_CLASS } };
             DockPanel.SetDock(toggle, Dock.Left);
             DockPanel.SetDock(value, Dock.Right);
             item.Children.Add(toggle);
             item.Children.Add(value);
             item.Children.Add(text);
+            // A line on the left of each flag divides the columns however many fit across
+            Border cell = Ui.Themed(new Border
+            {
+                Width = ITEM_WIDTH,
+                BorderThickness = new Thickness(1, 0, 0, 0),
+                Padding = new Thickness(CELL_PADDING, 0, 0, 0),
+                Child = item
+            }, Border.BorderBrushProperty, ThemeColours.DIVIDER);
             string details = entry == null ? string.Empty
                              : "\n\n" + entry.Name + (entry.Description.Length > 0 ? ": " + entry.Description : "");
             ToolTip.SetTip(item, label + details + "\n\nBit " + bit + " (" +
                                  mask.ToString(CultureInfo.InvariantCulture) + ", 0x" +
-                                 mask.ToString("X", CultureInfo.InvariantCulture) + ") of " + column);
-            bits.Children.Add(item);
+                                 mask.ToString("X", CultureInfo.InvariantCulture) + ") of " + _column);
+            _bits.Children.Add(cell);
         }
 
-        Bits = bits;
-        binding.Add(this);
-    }
-
-    public CellField Value { get; }
-
-    // The value as hex, shown beside the value box
-    public TextBlock Hex => _hex;
-
-    public Control Bits { get; }
-
-    public void Refresh()
-    {
-        _updating = true;
-        uint raw = _binding.IsBound ? Value.Raw() : 0;
-        for (int bit = 0; bit < BITS; ++bit)
-        {
-            _switches[bit].IsChecked = (raw & (1u << bit)) != 0;
-            _switches[bit].IsEnabled = _binding.IsBound;
-        }
-
-        _hex.Text = _binding.IsBound ? "0x" + raw.ToString("X8", CultureInfo.InvariantCulture) : string.Empty;
-        _updating = false;
-    }
-
-    public void Clear()
-    {
-        int column = _binding.Column(_column);
-        if (!_binding.IsBound || column < 0 || _binding.Table!.GetRaw(_binding.Row, column) == 0)
-            return;
-        _binding.Table.SetRaw(_binding.Row, column, 0);
-        _binding.ReportEdit(_column);
-        Value.Refresh();
-        Refresh();
+        _empty.IsVisible = _shown.Count == 0;
     }
 
     private void Toggle(int bit, bool on)

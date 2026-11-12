@@ -41,7 +41,15 @@ public sealed class SpellEditorView : Grid
     private readonly SelectableTextBlock _preview = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap };
     private readonly SelectableTextBlock _auraPreview = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap };
     private readonly DispatcherTimer _searchTimer;
-    private readonly Image _headerIcon = new Image { Width = 48, Height = 48, Margin = new Thickness(0, 0, 12, 0) };
+    private readonly Image _headerIcon = new Image { Width = 48, Height = 48 };
+    // A debuff-style border in the dispel type's colour (Magic blue, Curse purple, Disease brown, Poison green)
+    private readonly Border _iconFrame = new Border
+    {
+        BorderThickness = new Thickness(2),
+        CornerRadius = new CornerRadius(4),
+        Margin = new Thickness(0, 0, 12, 0),
+        VerticalAlignment = VerticalAlignment.Center
+    };
     private readonly Image _lookIcon = new Image { Width = 32, Height = 32 };
     private readonly SpellVisualView _visual;
     private DbcTable? _spells;
@@ -57,6 +65,7 @@ public sealed class SpellEditorView : Grid
 
     public SpellEditorView(MainWindow window, Session session)
     {
+        _iconFrame.Child = _headerIcon;
         _window = window;
         _session = session;
         _finder = new FieldFinder(() => _tabs);
@@ -238,10 +247,23 @@ public sealed class SpellEditorView : Grid
             TextBlock name = new TextBlock { TextTrimming = TextTrimming.CharacterEllipsis };
             TextBlock rank = Ui.Themed(new TextBlock { FontSize = 12, VerticalAlignment = VerticalAlignment.Center },
                                        TextBlock.ForegroundProperty, ThemeColours.MUTED_TEXT);
+            // A strip in the school's combat text colour, as the game shows it
+            Border school = new Border
+            {
+                Width = SCHOOL_STRIP_WIDTH,
+                CornerRadius = new CornerRadius(2),
+                Margin = new Thickness(0, 3, 4, 3)
+            };
+            school.Bind(Border.BackgroundProperty, new Avalonia.Data.Binding(nameof(SpellItem.SchoolBrush)));
             id.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Id)));
             name.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.DisplayName)));
             rank.Bind(TextBlock.TextProperty, new Avalonia.Data.Binding(nameof(SpellItem.Rank)));
-            return new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { id, name, rank } };
+            return new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children = { school, id, name, rank }
+            };
         });
 
         DockPanel panel = new DockPanel { Margin = new Thickness(10) };
@@ -286,7 +308,7 @@ public sealed class SpellEditorView : Grid
                               "worldserver.\n\nThe client still needs the patch MPQ (Apply, F6) to show new or " +
                               "changed spells.");
 
-        StackPanel heading = Ui.Horizontal(_headerIcon, Ui.Vertical(2, _title, _subtitle));
+        StackPanel heading = Ui.Horizontal(_iconFrame, Ui.Vertical(2, _title, _subtitle));
         Button tools = new Button { Content = "Spell..." };
         tools.Flyout = new MenuFlyout
         {
@@ -564,17 +586,18 @@ public sealed class SpellEditorView : Grid
         return groups;
     }
 
-    private Control Flags(string label, string column, EnumTable table)
+    private Control Flags(string title, string column, EnumTable table)
     {
-        return Flags(label, column, () => table);
+        return Flags(title, column, () => table);
     }
 
-    private Control Flags(string label, string column, Func<EnumTable?> table)
+    // A bit mask as a group of switches, like Attributes: the value, its hex, Clear, then each named bit
+    private Control Flags(string title, string column, Func<EnumTable?> table)
     {
-        StackPanel row = Ui.Row(label, new FlagsField(_binding, column, table).View);
-        row.Children[0].VerticalAlignment = VerticalAlignment.Top;
-        row.Children[0].Margin = new Thickness(0, 6, 0, 0);
-        return Named(row, column);
+        FlagToggles toggles = new FlagToggles(_binding, column, table, knownOnly: true);
+        Button clear = Ui.Button("Clear", toggles.Clear);
+        ToolTip.SetTip(clear, "Turn every bit of " + column + " off");
+        return Ui.Group(title, Named(Ui.Row("Value", toggles.Value.Box, toggles.Hex, clear), column), toggles.Bits);
     }
 
     private Control EffectsTab()
@@ -627,14 +650,11 @@ public sealed class SpellEditorView : Grid
     private Control TargetsTab()
     {
         return Ui.Vertical(0,
-            Ui.Group("Target flags (Targets)",
-                     new FlagsField(_binding, "Targets", SpellEnums.Get(SpellEnums.CAST_TARGET_FLAGS)).View),
-            Ui.Group("Creature types (TargetCreatureType)",
-                     new FlagsField(_binding, "TargetCreatureType", SpellEnums.CreatureTypeMask()).View),
-            Ui.Group("Shapeshift forms that can cast (ShapeshiftMask)",
-                     new FlagsField(_binding, "ShapeshiftMask", SpellEnums.StanceMask()).View),
-            Ui.Group("Shapeshift forms that can't cast (ShapeshiftExclude)",
-                     new FlagsField(_binding, "ShapeshiftExclude", SpellEnums.StanceMask()).View),
+            Flags("Target flags (Targets)", "Targets", SpellEnums.Get(SpellEnums.CAST_TARGET_FLAGS)),
+            Flags("Creature types (TargetCreatureType)", "TargetCreatureType", SpellEnums.CreatureTypeMask()),
+            Flags("Shapeshift forms that can cast (ShapeshiftMask)", "ShapeshiftMask", SpellEnums.StanceMask()),
+            Flags("Shapeshift forms that can't cast (ShapeshiftExclude)", "ShapeshiftExclude",
+                  SpellEnums.StanceMask()),
             Ui.Group("Aura states",
                      Enum("Caster needs", "CasterAuraState", SpellEnums.AURA_STATE),
                      Enum("Target needs", "TargetAuraState", SpellEnums.AURA_STATE),
@@ -659,16 +679,13 @@ public sealed class SpellEditorView : Grid
         return Ui.Vertical(0,
             Ui.Group("Proc",
                      Cell("Chance (%)", "ProcChance"),
-                     Cell("Charges", "ProcCharges"),
-                     new FlagsField(_binding, "ProcTypeMask", SpellEnums.Get(SpellEnums.PROC_FLAGS)).View),
-            Ui.Group("Interrupted by (InterruptFlags)",
-                     new FlagsField(_binding, "InterruptFlags", SpellEnums.Get(SpellEnums.INTERRUPT_FLAGS)).View),
-            Ui.Group("Aura removed by (AuraInterruptFlags)",
-                     new FlagsField(_binding, "AuraInterruptFlags",
-                                    SpellEnums.Get(SpellEnums.AURA_INTERRUPT_FLAGS)).View),
-            Ui.Group("Channel interrupted by (ChannelInterruptFlags)",
-                     new FlagsField(_binding, "ChannelInterruptFlags",
-                                    SpellEnums.Get(SpellEnums.CHANNEL_INTERRUPT_FLAGS)).View));
+                     Cell("Charges", "ProcCharges")),
+            Flags("Procs on (ProcTypeMask)", "ProcTypeMask", SpellEnums.Get(SpellEnums.PROC_FLAGS)),
+            Flags("Interrupted by (InterruptFlags)", "InterruptFlags", SpellEnums.Get(SpellEnums.INTERRUPT_FLAGS)),
+            Flags("Aura removed by (AuraInterruptFlags)", "AuraInterruptFlags",
+                  SpellEnums.Get(SpellEnums.AURA_INTERRUPT_FLAGS)),
+            Flags("Channel interrupted by (ChannelInterruptFlags)", "ChannelInterruptFlags",
+                  SpellEnums.Get(SpellEnums.CHANNEL_INTERRUPT_FLAGS)));
     }
 
     private Control ItemsTab()
@@ -696,15 +713,15 @@ public sealed class SpellEditorView : Grid
             Ui.Group("Equipped item",
                      Lookup("Item class", "EquippedItemClass",
                             value => ColumnValues.ItemClasses(_session.NamingTable)?.Names((int)value) ?? string.Empty),
-                     Flags("Item subclass mask", "EquippedItemSubclass",
-                           () => _binding.IsBound
-                                     ? ColumnValues.ItemSubclasses(_session.NamingTable,
-                                                                   new SpellRecord(_binding.Table!, _binding.Row)
-                                                                       .I("EquippedItemClass"))
-                                     : null),
-                     Flags("Inventory type mask", "EquippedItemInvTypes", ColumnValues.InventoryTypeMask()),
                      Ui.Hint("-1 in Item class means no item is needed. The subclasses listed are the class's, from " +
-                             "ItemSubClass.dbc, so custom ones show too.")));
+                             "ItemSubClass.dbc, so custom ones show too.")),
+            Flags("Item subclasses (EquippedItemSubclass)", "EquippedItemSubclass",
+                  () => _binding.IsBound
+                            ? ColumnValues.ItemSubclasses(_session.NamingTable,
+                                                          new SpellRecord(_binding.Table!, _binding.Row)
+                                                              .I("EquippedItemClass"))
+                            : null),
+            Flags("Inventory types (EquippedItemInvTypes)", "EquippedItemInvTypes", ColumnValues.InventoryTypeMask()));
     }
 
     private Control LocalesTab()
@@ -830,6 +847,7 @@ public sealed class SpellEditorView : Grid
         int rankColumn = SpellRecord.TextColumn(table.Definition, "NameSubtext", _locale);
         int englishName = table.Definition.IndexOf("Name_Lang_" + SpellRecord.ENGLISH);
         int englishRank = table.Definition.IndexOf("NameSubtext_Lang_" + SpellRecord.ENGLISH);
+        int schoolColumn = table.Definition.IndexOf("SchoolMask");
         string query = (_search.Text ?? string.Empty).Trim();
         Func<int, bool> matches = SpellSearch.Build(table, query);
         List<SpellItem> items = new List<SpellItem>();
@@ -839,7 +857,10 @@ public sealed class SpellEditorView : Grid
                 continue;
             string name = Localised(table, row, nameColumn, englishName);
             string rank = _showRank ? Localised(table, row, rankColumn, englishRank) : string.Empty;
-            items.Add(new SpellItem(table.Key(row), name, rank));
+            items.Add(new SpellItem(table.Key(row), name, rank)
+            {
+                SchoolBrush = SchoolBrush(schoolColumn >= 0 ? table.GetRaw(row, schoolColumn) : 0)
+            });
         }
 
         uint? selected = (_list.SelectedItem as SpellItem)?.Id;
@@ -887,6 +908,12 @@ public sealed class SpellEditorView : Grid
         _unsaved.IsVisible = _session.ModifiedTables.Any();
         _headerIcon.Source = _images?.Get(spell.U("SpellIconID"));
         _lookIcon.Source = _headerIcon.Source;
+        uint dispel = spell.U("DispelType");
+        _iconFrame.BorderBrush = GameColours.DispelType(dispel) is { } border ? GameBrush(border) : null;
+        ToolTip.SetTip(_iconFrame, GameColours.DispelType(dispel) != null
+                                       ? SpellEnums.Get(SpellEnums.DISPEL).Describe(dispel) +
+                                         " (border in the game's debuff colour)"
+                                       : null);
     }
 
     private void UpdatePreview()
@@ -1287,6 +1314,22 @@ public sealed class SpellEditorView : Grid
         }
     }
 
+    private const double SCHOOL_STRIP_WIDTH = 4;
+
+    private static readonly Dictionary<string, IBrush> GameBrushes = new Dictionary<string, IBrush>();
+
+    private static IBrush? SchoolBrush(uint mask)
+    {
+        return GameColours.School(mask) is { } colour ? GameBrush(colour) : null;
+    }
+
+    private static IBrush GameBrush(string colour)
+    {
+        if (!GameBrushes.TryGetValue(colour, out IBrush? brush))
+            GameBrushes[colour] = brush = new SolidColorBrush(Color.Parse(colour));
+        return brush;
+    }
+
     private sealed class SpellItem : System.ComponentModel.INotifyPropertyChanged
     {
         private uint _id;
@@ -1323,6 +1366,8 @@ public sealed class SpellEditorView : Grid
         }
 
         public string DisplayName => _name.Length == 0 ? "(no name)" : _name;
+
+        public IBrush? SchoolBrush { get; set; }
 
         public string Rank
         {
