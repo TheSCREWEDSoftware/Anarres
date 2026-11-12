@@ -23,6 +23,11 @@ The DBC editor can still open a `.dbc` straight from disk, like WDBX Editor, for
 
 ## 1. Set up the project
 
+On first start, **Set up Anarres** asks the few things that matter: where your edits are kept, the clean files and
+the WoW client, the server's data folder, and whether Apply also updates `spell_dbc` in the world database. It
+opens at every start until you tick *Don't show this again*; **Tools > Setup** brings it back.
+
+
 Open **File > Project settings**.
 
 - **Where the data is kept.** A SQLite project file needs nothing else. For MySQL or MariaDB, give the server,
@@ -75,9 +80,11 @@ the list), or the ticked ones when that option is off. Then, when ticked:
 - packs them into the patch MPQ in the WoW Data folder: restart the client (and clear its `Cache` folder when spell
   text looks out of date).
 
-For a few spells, the spell editor's **SQL...** writes the shown spell, or every spell that differs from the clean
-Spell.dbc, for `spell_dbc`; **Send to world DB...** writes a spell straight into `acore_world.spell_dbc`. The client
-still needs the patch to know the spells.
+`spell_dbc` in `acore_world` holds server-side spells and changes to existing ones; the worldserver loads it over its
+Spell.dbc at start-up. In the spell editor, **Save as SQL...** saves a `.sql` file of `spell_dbc` rows (the shown
+spell, or every spell that differs from the clean Spell.dbc) to run yourself or keep with your server's SQL
+updates, and **Update spell_dbc...** writes the same rows straight into the world database. Restart the worldserver
+afterwards; the client still needs the patch to show new or changed spells.
 
 ### Only what changed
 
@@ -88,9 +95,9 @@ still needs the patch to know the spells.
   compared once, then remembered.
 - **Inside a table**: a `.dbc` file has no way to hold only some rows, so the client always needs the whole
   Spell.dbc in its patch. The server is different: AzerothCore's `spell_dbc` overrides only the rows it holds, so
-  SQL for it should hold only the changed spells (**SQL... > changed**, `anarres-cli sql Spell --changed`, or
-  Apply's world database step). Stoneharry's editor writes every spell; putting all 49,839 rows in `spell_dbc`
-  makes the worldserver load them all on every start and override every spell in the `.dbc` files.
+  it should hold just the server-side and changed spells (**Save as SQL... > every changed spell**,
+  `anarres-cli sql Spell --changed`, or Apply's world database step). Stoneharry's editor writes every spell;
+  putting all 49,839 rows in `spell_dbc` makes the worldserver load them all on every start.
 - **SQL speed**: SQL files are written as `INSERT`s of 200 rows each. A full spell_dbc file (47 MB) runs in about
   4 seconds on a local MariaDB; splitting it into more files or wrapping it in one transaction made no measurable
   difference, so only the size matters, and changed-only files are a few kilobytes.
@@ -109,7 +116,8 @@ Project settings:
   folder's `server-backup`);
 - the client patch is built in the WoW `Data` folder;
 - optionally, the client's `Cache` folder is emptied, so WoW doesn't show old spell text;
-- optionally, rows that differ from the clean files go into `acore_world`'s `_dbc` tables.
+- rows that differ from the clean files go into `acore_world`'s `_dbc` tables, such as `spell_dbc` (on by
+  default; most servers keep server-side spells and spell changes there).
 
 It lists what it will do first (an option turns that off), and says when the worldserver or WoW is running and
 needs a restart.
